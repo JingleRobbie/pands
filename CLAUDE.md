@@ -35,6 +35,8 @@ DB_PASSWORD=
 DB_NAME=pands
 ```
 
+> **Note:** Escape `$` in passwords with `\$` -- Vite's dotenv-expand treats `$word` as a variable reference and silently strips it (e.g. write `DB_PASSWORD=Tak3me2\$hurch`, not `Tak3me2$hurch`).
+
 ## Architecture
 
 ### Stack
