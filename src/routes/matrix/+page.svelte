@@ -51,7 +51,11 @@
 					{#each matrix.skus as sku}
 						{@const cell = matrix.balanceRow.cells[sku.id]}
 						<td></td>
-						<td class="text-right font-mono text-sm {cell?.runningTotal < 0 ? 'sqft-negative' : ''}">
+						<td
+							class="text-right font-mono text-sm {cell?.runningTotal < 0
+								? 'sqft-negative'
+								: ''}"
+						>
 							{fmtSqft(cell?.runningTotal ?? 0)}
 						</td>
 					{/each}
@@ -62,11 +66,17 @@
 					<tr class="row-{row.rowType}">
 						<td class="font-medium">
 							{#if row.rowType === 'po'}
-								<a href="/po/{row.objectId}" class="hover:underline text-blue-700">{row.description}</a>
+								<a href="/po/{row.objectId}" class="hover:underline text-blue-700"
+									>{row.description}</a
+								>
 							{:else if row.rowType === 'production'}
-								<a href="/production/{row.objectId}/confirm" class="hover:underline">{row.description}</a>
+								<a href="/production/{row.objectId}/confirm" class="hover:underline"
+									>{row.description}</a
+								>
 							{:else}
-								<a href="/so/{row.objectId}" class="hover:underline text-amber-700">{row.description}</a>
+								<a href="/so/{row.objectId}" class="hover:underline text-amber-700"
+									>{row.description}</a
+								>
 							{/if}
 						</td>
 						<td class="text-gray-600 text-sm">{row.soNumber}</td>
@@ -82,12 +92,16 @@
 							{@const cell = row.cells[sku.id]}
 							<td class="text-right font-mono text-sm">
 								{#if cell?.delta != null}
-									<span class="{cell.delta > 0 ? 'sqft-positive' : ''}">
+									<span class={cell.delta > 0 ? 'sqft-positive' : ''}>
 										{cell.delta > 0 ? '+' : ''}{fmtSqft(cell.delta)}
 									</span>
 								{/if}
 							</td>
-							<td class="text-right font-mono text-sm {cell?.runningTotal < 0 ? 'sqft-negative' : 'text-gray-500'}">
+							<td
+								class="text-right font-mono text-sm {cell?.runningTotal < 0
+									? 'sqft-negative'
+									: 'text-gray-500'}"
+							>
 								{fmtSqft(cell?.runningTotal ?? 0)}
 							</td>
 						{/each}
@@ -106,8 +120,14 @@
 	</div>
 
 	<p class="mt-3 text-xs text-gray-400">
-		<span class="inline-block w-3 h-3 rounded-sm bg-blue-100 border border-blue-200 mr-1 align-middle"></span>PO arrival &nbsp;
-		<span class="inline-block w-3 h-3 rounded-sm bg-white border border-gray-200 mr-1 align-middle"></span>Scheduled production &nbsp;
-		<span class="inline-block w-3 h-3 rounded-sm bg-amber-50 border border-amber-200 mr-1 align-middle"></span>Unscheduled
+		<span
+			class="inline-block w-3 h-3 rounded-sm bg-blue-100 border border-blue-200 mr-1 align-middle"
+		></span>PO arrival &nbsp;
+		<span
+			class="inline-block w-3 h-3 rounded-sm bg-white border border-gray-200 mr-1 align-middle"
+		></span>Scheduled production &nbsp;
+		<span
+			class="inline-block w-3 h-3 rounded-sm bg-amber-50 border border-amber-200 mr-1 align-middle"
+		></span>Unscheduled
 	</p>
 </main>

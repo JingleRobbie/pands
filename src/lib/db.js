@@ -9,5 +9,5 @@ export const db = mysql.createPool({
 	database: DB_NAME,
 	waitForConnections: true,
 	connectionLimit: 10,
-	decimalNumbers: true,   // return DECIMAL columns as JS numbers, not strings
+	decimalNumbers: true, // return DECIMAL columns as JS numbers, not strings
 });

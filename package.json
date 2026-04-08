@@ -1,30 +1,42 @@
 {
-  "name": "pands",
-  "version": "1.0.0",
-  "description": "PandS insulation inventory tracking",
-  "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
-    "build:css": "tailwindcss -i src/app.css -o static/css/app.css --minify",
-    "watch:css": "tailwindcss -i src/app.css -o static/css/app.css --watch",
-    "seed": "node scripts/seed-skus.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
-  "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^7.0.0",
-    "@tailwindcss/forms": "^0.5.11",
-    "tailwindcss": "^3.4.19",
-    "vite": "^8.0.7"
-  },
-  "dependencies": {
-    "@sveltejs/adapter-node": "^5.5.4",
-    "@sveltejs/kit": "^2.56.1",
-    "dotenv": "^17.4.1",
-    "mysql2": "^3.20.0",
-    "svelte": "^5.55.2"
-  }
+	"name": "pands",
+	"version": "1.0.0",
+	"description": "PandS insulation inventory tracking",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"build:css": "tailwindcss -i src/app.css -o static/css/app.css --minify",
+		"watch:css": "tailwindcss -i src/app.css -o static/css/app.css --watch",
+		"seed": "node scripts/seed-skus.js",
+		"lint": "eslint .",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"test": "vitest run",
+		"test:watch": "vitest"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"type": "module",
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"@sveltejs/vite-plugin-svelte": "^7.0.0",
+		"@tailwindcss/forms": "^0.5.11",
+		"eslint": "^10.2.0",
+		"eslint-plugin-svelte": "^3.17.0",
+		"globals": "^17.4.0",
+		"prettier": "^3.8.1",
+		"prettier-plugin-svelte": "^3.5.1",
+		"tailwindcss": "^3.4.19",
+		"vite": "^8.0.7",
+		"vitest": "^4.1.3"
+	},
+	"dependencies": {
+		"@sveltejs/adapter-node": "^5.5.4",
+		"@sveltejs/kit": "^2.56.1",
+		"dotenv": "^17.4.1",
+		"mysql2": "^3.20.0",
+		"svelte": "^5.55.2"
+	}
 }

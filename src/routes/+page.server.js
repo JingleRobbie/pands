@@ -3,7 +3,9 @@ import { redirect } from '@sveltejs/kit';
 
 export async function load({ locals }) {
 	if (locals.appUser) redirect(302, '/matrix');
-	const [users] = await db.query('SELECT id, display_name FROM app_users WHERE is_active = TRUE ORDER BY display_name');
+	const [users] = await db.query(
+		'SELECT id, display_name FROM app_users WHERE is_active = TRUE ORDER BY display_name'
+	);
 	return { users };
 }
 

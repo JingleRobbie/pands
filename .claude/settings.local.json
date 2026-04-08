@@ -1,7 +1,18 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(py -3 -m venv venv)"
-    ]
-  }
+	"permissions": {
+		"allow": ["Bash(py -3 -m venv venv)"]
+	},
+	"hooks": {
+		"PostToolUse": [
+			{
+				"matcher": "Edit|Write",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const f=JSON.parse(d).tool_input.file_path;if(f){require('child_process').execSync('npx prettier --write \\\"'+f+'\\\"',{stdio:'inherit'});}}catch(e){process.exit(0);}});\""
+					}
+				]
+			}
+		]
+	}
 }

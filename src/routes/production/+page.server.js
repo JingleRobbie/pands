@@ -9,7 +9,8 @@ export async function load() {
 		 JOIN sales_order_lines sol ON sol.id = pr.so_line_id
 		 JOIN sales_orders so ON so.id = sol.so_id
 		 WHERE pr.run_date = ? AND pr.status = 'SCHEDULED'
-		 ORDER BY pr.run_number`, [today]
+		 ORDER BY pr.run_number`,
+		[today]
 	);
 	const [upcoming] = await db.query(
 		`SELECT pr.*, ms.display_label, so.so_number, so.job_name
@@ -18,7 +19,8 @@ export async function load() {
 		 JOIN sales_order_lines sol ON sol.id = pr.so_line_id
 		 JOIN sales_orders so ON so.id = sol.so_id
 		 WHERE pr.run_date > ? AND pr.status = 'SCHEDULED'
-		 ORDER BY pr.run_date, pr.run_number`, [today]
+		 ORDER BY pr.run_date, pr.run_number`,
+		[today]
 	);
 	return { todayRuns, upcoming, today };
 }

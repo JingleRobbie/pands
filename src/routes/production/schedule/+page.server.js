@@ -20,14 +20,18 @@ export async function load({ url }) {
 			                  WHERE so_line_id = sol.id AND status != 'CONFIRMED'), 0) AS sqft_scheduled
 			 FROM sales_order_lines sol
 			 JOIN material_skus ms ON ms.id = sol.sku_id
-			 WHERE sol.so_id = ?`, [so.id]
+			 WHERE sol.so_id = ?`,
+			[so.id]
 		);
 		soLines[so.id] = lines
-			.map(l => ({
+			.map((l) => ({
 				...l,
-				sqftUnscheduled: Math.max(Number(l.sqft_ordered) - Number(l.sqft_produced) - Number(l.sqft_scheduled), 0)
+				sqftUnscheduled: Math.max(
+					Number(l.sqft_ordered) - Number(l.sqft_produced) - Number(l.sqft_scheduled),
+					0
+				),
 			}))
-			.filter(l => l.sqftUnscheduled > 0.01);
+			.filter((l) => l.sqftUnscheduled > 0.01);
 	}
 
 	return { sos, soLines, preselectSo: url.searchParams.get('so') };
@@ -36,11 +40,12 @@ export async function load({ url }) {
 export const actions = {
 	default: async ({ request, locals }) => {
 		const data = await request.formData();
-		const soLineId     = data.get('so_line_id');
-		const runDate      = data.get('run_date')?.trim() || null;
+		const soLineId = data.get('so_line_id');
+		const runDate = data.get('run_date')?.trim() || null;
 		const sqftScheduled = Math.round(Number(data.get('sqft_scheduled')));
 
-		if (!soLineId || isNaN(sqftScheduled)) return fail(400, { error: 'SO line and sq ft are required.' });
+		if (!soLineId || isNaN(sqftScheduled))
+			return fail(400, { error: 'SO line and sq ft are required.' });
 
 		try {
 			await scheduleRun(Number(soLineId), runDate, sqftScheduled, locals.appUser?.id);

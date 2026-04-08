@@ -8,7 +8,8 @@ export async function load({ params }) {
 	const [lines] = await db.query(
 		`SELECT pol.*, ms.display_label FROM purchase_order_lines pol
 		 JOIN material_skus ms ON ms.id = pol.sku_id
-		 WHERE pol.po_id = ? AND pol.status = 'OPEN'`, [params.id]
+		 WHERE pol.po_id = ? AND pol.status = 'OPEN'`,
+		[params.id]
 	);
 	return { po, lines };
 }
@@ -18,7 +19,8 @@ export const actions = {
 		const data = await request.formData();
 		const [[po]] = await db.query('SELECT * FROM purchase_orders WHERE id = ?', [params.id]);
 		const [lines] = await db.query(
-			`SELECT * FROM purchase_order_lines WHERE po_id = ? AND status = 'OPEN'`, [params.id]
+			`SELECT * FROM purchase_order_lines WHERE po_id = ? AND status = 'OPEN'`,
+			[params.id]
 		);
 		for (const line of lines) {
 			const val = data.get(`sqft_${line.id}`);

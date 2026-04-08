@@ -1,6 +1,6 @@
 import { db } from '$lib/db.js';
 
-const IN_TYPES  = ['RECEIPT', 'ADJUSTMENT_IN'];
+const IN_TYPES = ['RECEIPT', 'ADJUSTMENT_IN'];
 const OUT_TYPES = ['CONSUMPTION', 'ADJUSTMENT_OUT'];
 
 // ── Balance helpers ──────────────────────────────────────────
@@ -30,7 +30,7 @@ export async function getMatrixData(fromDate = null) {
 	const [skus] = await db.query(
 		'SELECT * FROM material_skus WHERE is_active = TRUE ORDER BY sort_order, thickness_in, width_in'
 	);
-	const skuIds = skus.map(s => s.id);
+	const skuIds = skus.map((s) => s.id);
 
 	// 2. Current on-hand balances (starting point for running totals)
 	const balanceMap = await getAllBalances();
@@ -45,14 +45,17 @@ export async function getMatrixData(fromDate = null) {
 	};
 
 	// 4. Upcoming PO lines (grouped by PO)
-	const [poLines] = await db.query(`
+	const [poLines] = await db.query(
+		`
 		SELECT pol.id, pol.po_id, pol.sku_id, pol.sqft_ordered,
 		       po.po_number, po.expected_date, po.status AS po_status
 		FROM purchase_order_lines pol
 		JOIN purchase_orders po ON po.id = pol.po_id
 		WHERE po.expected_date >= ? AND po.status = 'OPEN' AND pol.status = 'OPEN'
 		ORDER BY po.expected_date, po.po_number
-	`, [today]);
+	`,
+		[today]
+	);
 
 	const poRowMap = {};
 	for (const line of poLines) {
@@ -72,7 +75,8 @@ export async function getMatrixData(fromDate = null) {
 	}
 
 	// 5. Scheduled production runs
-	const [prodRuns] = await db.query(`
+	const [prodRuns] = await db.query(
+		`
 		SELECT pr.id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
 		       so.so_number, so.job_name, so.id AS so_id
 		FROM production_runs pr
@@ -80,7 +84,9 @@ export async function getMatrixData(fromDate = null) {
 		JOIN sales_orders so ON so.id = sol.so_id
 		WHERE pr.run_date >= ? AND pr.status = 'SCHEDULED'
 		ORDER BY pr.run_date, pr.run_number
-	`, [today]);
+	`,
+		[today]
+	);
 
 	const prodRowMap = {};
 	for (const run of prodRuns) {
@@ -96,15 +102,19 @@ export async function getMatrixData(fromDate = null) {
 	}
 
 	// 6. Sort dated rows: same date → POs before production runs
-	const allDates = [...new Set([
-		...Object.values(poRowMap).map(r => fmtDate(r.eventDate)),
-		...Object.values(prodRowMap).map(r => fmtDate(r.eventDate)),
-	])].sort();
+	const allDates = [
+		...new Set([
+			...Object.values(poRowMap).map((r) => fmtDate(r.eventDate)),
+			...Object.values(prodRowMap).map((r) => fmtDate(r.eventDate)),
+		]),
+	].sort();
 
 	const datedRows = [];
 	for (const d of allDates) {
-		for (const row of Object.values(poRowMap))   if (fmtDate(row.eventDate) === d) datedRows.push(row);
-		for (const row of Object.values(prodRowMap)) if (fmtDate(row.eventDate) === d) datedRows.push(row);
+		for (const row of Object.values(poRowMap))
+			if (fmtDate(row.eventDate) === d) datedRows.push(row);
+		for (const row of Object.values(prodRowMap))
+			if (fmtDate(row.eventDate) === d) datedRows.push(row);
 	}
 
 	// 7. Compute running totals for dated rows
@@ -132,7 +142,8 @@ export async function getMatrixData(fromDate = null) {
 
 	const unscheduledRows = [];
 	for (const line of unscheduledLines) {
-		const unscheduled = Number(line.sqft_ordered) - Number(line.sqft_produced) - Number(line.sqft_scheduled);
+		const unscheduled =
+			Number(line.sqft_ordered) - Number(line.sqft_produced) - Number(line.sqft_scheduled);
 		if (unscheduled <= 0) continue;
 
 		const delta = -unscheduled;

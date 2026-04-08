@@ -6,20 +6,20 @@ export async function receivePoLine(poLineId, sqftReceived, userId) {
 		await conn.beginTransaction();
 
 		const [[line]] = await conn.query(
-			'SELECT * FROM purchase_order_lines WHERE id = ? FOR UPDATE', [poLineId]
+			'SELECT * FROM purchase_order_lines WHERE id = ? FOR UPDATE',
+			[poLineId]
 		);
 		if (!line) throw new Error('PO line not found.');
 		if (line.status === 'RECEIVED') throw new Error('This line has already been received.');
 
 		// Create RECEIPT transaction
-		await conn.query(`
+		await conn.query(
+			`
 			INSERT INTO inventory_transactions (sku_id, transaction_type, sqft_quantity, reference_type, reference_id, memo, created_by)
 			VALUES (?, 'RECEIPT', ?, 'PO_LINE', ?, ?, ?)
-		`, [
-			line.sku_id, sqftReceived, poLineId,
-			`Received on PO line ${poLineId}`,
-			userId ?? null,
-		]);
+		`,
+			[line.sku_id, sqftReceived, poLineId, `Received on PO line ${poLineId}`, userId ?? null]
+		);
 
 		// Mark line received
 		await conn.query(
@@ -33,7 +33,9 @@ export async function receivePoLine(poLineId, sqftReceived, userId) {
 			[line.po_id]
 		);
 		if (openCount === 0) {
-			await conn.query('UPDATE purchase_orders SET status = "RECEIVED" WHERE id = ?', [line.po_id]);
+			await conn.query('UPDATE purchase_orders SET status = "RECEIVED" WHERE id = ?', [
+				line.po_id,
+			]);
 		}
 
 		await conn.commit();

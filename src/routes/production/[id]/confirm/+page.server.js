@@ -9,7 +9,8 @@ export async function load({ params }) {
 		 JOIN material_skus ms ON ms.id = pr.sku_id
 		 JOIN sales_order_lines sol ON sol.id = pr.so_line_id
 		 JOIN sales_orders so ON so.id = sol.so_id
-		 WHERE pr.id = ?`, [params.id]
+		 WHERE pr.id = ?`,
+		[params.id]
 	);
 	if (!run) error(404, 'Production run not found');
 	return { run };
@@ -19,7 +20,8 @@ export const actions = {
 	default: async ({ request, params, locals }) => {
 		const data = await request.formData();
 		const sqftActual = Math.round(Number(data.get('sqft_actual')));
-		if (isNaN(sqftActual) || sqftActual <= 0) return fail(400, { error: 'Enter a valid sq ft value.' });
+		if (isNaN(sqftActual) || sqftActual <= 0)
+			return fail(400, { error: 'Enter a valid sq ft value.' });
 
 		try {
 			await confirmRun(Number(params.id), sqftActual, locals.appUser?.id);

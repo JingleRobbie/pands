@@ -23,7 +23,9 @@
 			<button type="submit" class="btn-primary w-full justify-center">Continue</button>
 		</form>
 		{#if data.users.length === 0}
-			<p class="mt-4 text-center text-xs text-gray-400">No users yet. Run the seed script or add rows to the <code>app_users</code> table.</p>
+			<p class="mt-4 text-center text-xs text-gray-400">
+				No users yet. Run the seed script or add rows to the <code>app_users</code> table.
+			</p>
 		{/if}
 	</div>
 </div>
