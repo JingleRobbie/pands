@@ -1,0 +1,24 @@
+# Node
+node_modules/
+*.log
+
+# SvelteKit / Vite
+.svelte-kit/
+build/
+
+# Compiled CSS (regenerate with npm run build:css)
+static/css/app.css
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python (legacy)
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

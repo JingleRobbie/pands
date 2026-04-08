@@ -1,0 +1,30 @@
+{
+  "name": "pands",
+  "version": "1.0.0",
+  "description": "PandS insulation inventory tracking",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:css": "tailwindcss -i src/app.css -o static/css/app.css --minify",
+    "watch:css": "tailwindcss -i src/app.css -o static/css/app.css --watch",
+    "seed": "node scripts/seed-skus.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@tailwindcss/forms": "^0.5.11",
+    "tailwindcss": "^3.4.19",
+    "vite": "^8.0.7"
+  },
+  "dependencies": {
+    "@sveltejs/adapter-node": "^5.5.4",
+    "@sveltejs/kit": "^2.56.1",
+    "dotenv": "^17.4.1",
+    "mysql2": "^3.20.0",
+    "svelte": "^5.55.2"
+  }
+}
