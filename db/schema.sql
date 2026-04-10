@@ -5,9 +5,10 @@ CREATE DATABASE IF NOT EXISTS pands CHARACTER SET utf8mb4 COLLATE utf8mb4_unicod
 USE pands;
 
 CREATE TABLE IF NOT EXISTS app_users (
-  id            INT AUTO_INCREMENT PRIMARY KEY,
-  display_name  VARCHAR(100) NOT NULL,
-  is_active     BOOLEAN DEFAULT TRUE
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  display_name      VARCHAR(100) NOT NULL,
+  is_active         BOOLEAN DEFAULT TRUE,
+  sidebar_collapsed BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS material_skus (

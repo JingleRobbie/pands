@@ -6,7 +6,7 @@ export async function handle({ event, resolve }) {
 	if (userId) {
 		try {
 			const [[user]] = await db.query(
-				'SELECT id, display_name FROM app_users WHERE id = ? AND is_active = TRUE',
+				'SELECT id, display_name, sidebar_collapsed FROM app_users WHERE id = ? AND is_active = TRUE',
 				[userId]
 			);
 			event.locals.appUser = user ?? null;
