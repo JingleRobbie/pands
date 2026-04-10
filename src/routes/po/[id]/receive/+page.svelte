@@ -37,7 +37,7 @@
 										name="sqft_{line.id}"
 										step="1"
 										min="0"
-										placeholder={Math.round(line.sqft_ordered)}
+										value={Math.round(line.sqft_ordered)}
 										class="form-input text-sm text-right font-mono w-full"
 									/>
 								</td>

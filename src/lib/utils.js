@@ -1,3 +1,8 @@
+/** Return today's date (or a given Date) as YYYY-MM-DD in local time */
+export function localDate(d = new Date()) {
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /** Format an ISO date string to "Apr 7, 2026" */
 export function fmtDate(dateStr) {
 	if (!dateStr) return '—';

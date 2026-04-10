@@ -1,4 +1,5 @@
 import { db } from '$lib/db.js';
+import { localDate } from '$lib/utils.js';
 
 const IN_TYPES = ['RECEIPT', 'ADJUSTMENT_IN'];
 const OUT_TYPES = ['CONSUMPTION', 'ADJUSTMENT_OUT'];
@@ -24,7 +25,7 @@ export async function getAllBalances() {
 // ── Matrix data ──────────────────────────────────────────────
 
 export async function getMatrixData(fromDate = null) {
-	const today = fromDate ?? new Date().toISOString().slice(0, 10);
+	const today = fromDate ?? localDate();
 
 	// 1. All active SKUs
 	const [skus] = await db.query(
@@ -66,6 +67,7 @@ export async function getMatrixData(fromDate = null) {
 				poNumber: line.po_number,
 				soNumber: '',
 				eventDate: line.expected_date,
+				shipDate: null,
 				objectId: line.po_id,
 				deltas: {},
 			};
@@ -78,7 +80,7 @@ export async function getMatrixData(fromDate = null) {
 	const [prodRuns] = await db.query(
 		`
 		SELECT pr.id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
-		       so.so_number, so.job_name, so.id AS so_id
+		       so.so_number, so.job_name, so.id AS so_id, so.ship_date
 		FROM production_runs pr
 		JOIN sales_order_lines sol ON sol.id = pr.so_line_id
 		JOIN sales_orders so ON so.id = sol.so_id
@@ -96,6 +98,7 @@ export async function getMatrixData(fromDate = null) {
 			soNumber: run.so_number,
 			poNumber: '',
 			eventDate: run.run_date,
+			shipDate: run.ship_date,
 			objectId: run.id,
 			deltas: { [run.sku_id]: -Number(run.sqft_scheduled) },
 		};
@@ -155,6 +158,7 @@ export async function getMatrixData(fromDate = null) {
 			soNumber: line.so_number,
 			poNumber: '',
 			eventDate: null,
+			shipDate: line.ship_date,
 			objectId: line.so_id,
 			deltas: { [line.sku_id]: delta },
 			cells: buildCells(skuIds, { [line.sku_id]: delta }, running),

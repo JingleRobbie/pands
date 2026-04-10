@@ -29,7 +29,7 @@
 				<div class="card-header">
 					<span class="font-semibold text-sm text-gray-700">Order Details</span>
 				</div>
-				<div class="card-body grid grid-cols-3 gap-4">
+				<div class="card-body grid grid-cols-2 gap-4">
 					<div>
 						<label class="form-label">SO Number</label>
 						<input
@@ -38,6 +38,16 @@
 							class="form-input"
 							required
 							placeholder="e.g. 12345"
+						/>
+					</div>
+					<div>
+						<label class="form-label">Customer</label>
+						<input
+							type="text"
+							name="customer_name"
+							class="form-input"
+							required
+							placeholder="e.g. Acme Corp"
 						/>
 					</div>
 					<div>

@@ -1,12 +1,13 @@
 import { db } from '$lib/db.js';
 import { json } from '@sveltejs/kit';
+import { localDate } from '$lib/utils.js';
 
 export async function GET({ url }) {
 	const year = Number(url.searchParams.get('year') || new Date().getFullYear());
 	const month = Number(url.searchParams.get('month') || new Date().getMonth() + 1);
 
 	const start = `${year}-${String(month).padStart(2, '0')}-01`;
-	const end = new Date(year, month, 0).toISOString().slice(0, 10); // last day of month
+	const end = localDate(new Date(year, month, 0)); // last day of month
 
 	const [poRows] = await db.query(
 		`SELECT pol.id, po.po_number, po.expected_date AS event_date,

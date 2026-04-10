@@ -23,6 +23,7 @@
 				<thead
 					><tr class="border-b border-gray-100">
 						<th class="px-4 py-2 text-left text-gray-600">SO #</th>
+						<th class="px-4 py-2 text-left text-gray-600">Customer</th>
 						<th class="px-4 py-2 text-left text-gray-600">Job Name</th>
 						<th class="px-4 py-2 text-left text-gray-600">Ship Date</th>
 						<th class="px-4 py-2 text-left text-gray-600">Status</th>
@@ -39,6 +40,7 @@
 									>{so.so_number}</a
 								></td
 							>
+							<td class="px-4 py-2 text-gray-700">{so.customer_name}</td>
 							<td class="px-4 py-2 text-gray-800">{so.job_name}</td>
 							<td class="px-4 py-2 text-gray-600">{fmtDate(so.ship_date)}</td>
 							<td class="px-4 py-2">

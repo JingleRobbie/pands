@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS inventory_transactions (
 CREATE TABLE IF NOT EXISTS purchase_orders (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   po_number     VARCHAR(50) UNIQUE NOT NULL,
+  vendor_name   ENUM('JM','Certainteed') NOT NULL,
   expected_date DATE NOT NULL,
   status        ENUM('OPEN','RECEIVED','CANCELLED') DEFAULT 'OPEN',
   created_by    INT,
@@ -57,9 +58,10 @@ CREATE TABLE IF NOT EXISTS purchase_order_lines (
 );
 
 CREATE TABLE IF NOT EXISTS sales_orders (
-  id        INT AUTO_INCREMENT PRIMARY KEY,
-  so_number VARCHAR(50) UNIQUE NOT NULL,
-  job_name  VARCHAR(200) NOT NULL,
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  so_number     VARCHAR(50) UNIQUE NOT NULL,
+  customer_name VARCHAR(200) NOT NULL DEFAULT '',
+  job_name      VARCHAR(200) NOT NULL,
   ship_date DATE NOT NULL,
   status    ENUM('OPEN','IN_PROGRESS','COMPLETE','CANCELLED') DEFAULT 'OPEN',
   created_by INT,

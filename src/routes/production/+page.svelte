@@ -53,11 +53,17 @@
 							<td class="px-4 py-2 text-right font-mono"
 								>{Math.round(run.sqft_scheduled).toLocaleString()}</td
 							>
-							<td class="px-4 py-2 text-right"
-								><a href="/production/{run.id}/confirm" class="btn-primary btn-sm"
-									>Confirm</a
-								></td
-							>
+							<td class="px-4 py-2 text-right">
+								<div class="flex justify-end gap-2">
+									<a href="/production/{run.id}/edit" class="btn-secondary btn-sm"
+										>Edit</a
+									>
+									<a
+										href="/production/{run.id}/confirm"
+										class="btn-primary btn-sm">Confirm</a
+									>
+								</div>
+							</td>
 						</tr>
 					{/each}
 				</tbody>
@@ -80,6 +86,7 @@
 						<th class="px-4 py-2 text-left text-gray-600">Job</th>
 						<th class="px-4 py-2 text-left text-gray-600">SKU</th>
 						<th class="px-4 py-2 text-right text-gray-600">Sqft</th>
+						<th class="px-4 py-2 text-right"></th>
 					</tr></thead
 				>
 				<tbody>
@@ -95,6 +102,11 @@
 							<td class="px-4 py-2">{run.display_label}</td>
 							<td class="px-4 py-2 text-right font-mono"
 								>{Math.round(run.sqft_scheduled).toLocaleString()}</td
+							>
+							<td class="px-4 py-2 text-right"
+								><a href="/production/{run.id}/edit" class="btn-secondary btn-sm"
+									>Edit</a
+								></td
 							>
 						</tr>
 					{/each}

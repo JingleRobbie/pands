@@ -16,6 +16,9 @@
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">SO {so.so_number} — {so.job_name}</h1>
 	<div class="flex gap-2">
+		{#if so.status === 'OPEN' || so.status === 'IN_PROGRESS'}
+			<a href="/so/{so.id}/edit" class="btn-secondary btn-sm">Edit</a>
+		{/if}
 		<a href="/production/schedule?so={so.id}" class="btn-primary btn-sm">Schedule Run</a>
 		<a href="/so" class="btn-secondary btn-sm">Back</a>
 	</div>
@@ -23,7 +26,11 @@
 <main class="p-6">
 	<div class="max-w-3xl space-y-3">
 		<div class="card">
-			<div class="card-body grid grid-cols-3 gap-4 text-sm">
+			<div class="card-body grid grid-cols-4 gap-4 text-sm">
+				<div>
+					<span class="text-gray-500">Customer</span>
+					<p class="font-medium mt-0.5">{so.customer_name}</p>
+				</div>
 				<div>
 					<span class="text-gray-500">Ship Date</span>
 					<p class="font-medium mt-0.5">

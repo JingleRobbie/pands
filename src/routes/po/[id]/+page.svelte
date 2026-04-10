@@ -16,16 +16,21 @@
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">PO {po.po_number}</h1>
 	<div class="flex gap-2">
-		{#if po.status === 'OPEN'}<a href="/po/{po.id}/receive" class="btn-primary btn-sm"
-				>Receive</a
-			>{/if}
+		{#if po.status === 'OPEN'}
+			<a href="/po/{po.id}/edit" class="btn-secondary btn-sm">Edit</a>
+			<a href="/po/{po.id}/receive" class="btn-primary btn-sm">Receive</a>
+		{/if}
 		<a href="/po" class="btn-secondary btn-sm">Back</a>
 	</div>
 </header>
 <main class="p-6">
 	<div class="max-w-2xl">
 		<div class="card mb-4">
-			<div class="card-body grid grid-cols-2 gap-4 text-sm">
+			<div class="card-body grid grid-cols-3 gap-4 text-sm">
+				<div>
+					<span class="text-gray-500">Vendor</span>
+					<p class="font-medium mt-0.5">{po.vendor_name}</p>
+				</div>
 				<div>
 					<span class="text-gray-500">Expected</span>
 					<p class="font-medium mt-0.5">{fmtDate(po.expected_date)}</p>

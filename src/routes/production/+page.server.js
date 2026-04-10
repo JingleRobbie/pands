@@ -1,7 +1,8 @@
 import { db } from '$lib/db.js';
+import { localDate } from '$lib/utils.js';
 
 export async function load() {
-	const today = new Date().toISOString().slice(0, 10);
+	const today = localDate();
 	const [todayRuns] = await db.query(
 		`SELECT pr.*, ms.display_label, so.so_number, so.job_name
 		 FROM production_runs pr

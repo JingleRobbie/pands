@@ -29,7 +29,7 @@
 				<div class="card-header">
 					<span class="font-semibold text-sm text-gray-700">PO Details</span>
 				</div>
-				<div class="card-body grid grid-cols-2 gap-4">
+				<div class="card-body grid grid-cols-3 gap-4">
 					<div>
 						<label class="form-label">PO Number</label>
 						<input
@@ -39,6 +39,14 @@
 							required
 							placeholder="e.g. 54321"
 						/>
+					</div>
+					<div>
+						<label class="form-label">Vendor</label>
+						<select name="vendor_name" class="form-select" required>
+							<option value="">— select —</option>
+							<option value="JM">JM</option>
+							<option value="Certainteed">Certainteed</option>
+						</select>
 					</div>
 					<div>
 						<label class="form-label">Expected Date</label>

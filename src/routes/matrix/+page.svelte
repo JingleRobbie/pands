@@ -35,9 +35,14 @@
 					<th class="min-w-[140px]">Description</th>
 					<th class="min-w-[90px]">SO #</th>
 					<th class="min-w-[90px]">PO #</th>
-					<th class="min-w-[80px]">Date</th>
+					<th class="min-w-[70px]">Run</th>
+					<th class="min-w-[70px]">Ship</th>
 					{#each matrix.skus as sku}
-						<th class="min-w-[70px] text-right">{sku.display_label}</th>
+						<th class="min-w-[40px] align-bottom pb-1 text-center">
+							<span class="inline-block [writing-mode:vertical-rl] rotate-180"
+								>{sku.display_label}</span
+							>
+						</th>
 						<th class="min-w-[80px] text-right text-gray-400 font-normal">← total</th>
 					{/each}
 				</tr>
@@ -48,6 +53,7 @@
 					<td class="font-semibold text-gray-700">Current Inventory</td>
 					<td></td><td></td>
 					<td class="text-xs text-gray-500">today</td>
+					<td></td>
 					{#each matrix.skus as sku}
 						{@const cell = matrix.balanceRow.cells[sku.id]}
 						<td></td>
@@ -84,9 +90,12 @@
 						<td class="text-sm text-gray-600">
 							{#if row.eventDate}
 								{fmtDate(row.eventDate)}
-							{:else}
+							{:else if row.rowType === 'unscheduled'}
 								<span class="text-amber-600 font-semibold">?</span>
 							{/if}
+						</td>
+						<td class="text-sm text-gray-600">
+							{#if row.shipDate}{fmtDate(row.shipDate)}{/if}
 						</td>
 						{#each matrix.skus as sku}
 							{@const cell = row.cells[sku.id]}

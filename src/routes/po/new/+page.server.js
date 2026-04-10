@@ -12,12 +12,15 @@ export const actions = {
 	default: async ({ request, locals }) => {
 		const data = await request.formData();
 		const poNumber = data.get('po_number')?.trim();
+		const vendorName = data.get('vendor_name')?.trim();
 		const expectedDate = data.get('expected_date')?.trim();
 		const skuIds = data.getAll('sku_id');
 		const sqfts = data.getAll('sqft_ordered');
 
 		if (!poNumber || !expectedDate)
 			return fail(400, { error: 'PO number and expected date are required.' });
+		if (!['JM', 'Certainteed'].includes(vendorName))
+			return fail(400, { error: 'Invalid vendor.' });
 
 		const [[existing]] = await db.query('SELECT id FROM purchase_orders WHERE po_number = ?', [
 			poNumber,
@@ -31,8 +34,8 @@ export const actions = {
 		if (!lines.length) return fail(400, { error: 'Add at least one line item.' });
 
 		const [result] = await db.query(
-			'INSERT INTO purchase_orders (po_number, expected_date, created_by) VALUES (?, ?, ?)',
-			[poNumber, expectedDate, locals.appUser?.id ?? null]
+			'INSERT INTO purchase_orders (po_number, vendor_name, expected_date, created_by) VALUES (?, ?, ?, ?)',
+			[poNumber, vendorName, expectedDate, locals.appUser?.id ?? null]
 		);
 		const poId = result.insertId;
 

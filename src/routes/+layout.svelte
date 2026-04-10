@@ -2,6 +2,7 @@
 	import '../app.css';
 	import { page } from '$app/stores';
 	let { data, children } = $props();
+	let collapsed = $state(false);
 </script>
 
 <svelte:head>
@@ -10,18 +11,49 @@
 
 <div class="bg-gray-100 min-h-screen flex">
 	<!-- Sidebar -->
-	<aside class="w-56 min-h-screen flex-shrink-0 flex flex-col" style="background-color:#1e2433;">
-		<div class="px-5 py-5 border-b border-white/10">
-			<span class="text-white font-bold text-lg tracking-tight">PandS</span>
-			<span class="text-white/40 text-xs ml-1">Inventory</span>
+	<aside
+		class="min-h-screen flex-shrink-0 flex flex-col transition-[width] duration-200 overflow-hidden"
+		style="background-color:#1e2433; width:{collapsed ? '3.5rem' : '14rem'};"
+	>
+		<div class="px-3 py-5 border-b border-white/10 flex items-center justify-between min-w-0">
+			{#if !collapsed}
+				<div class="flex items-center min-w-0">
+					<span class="text-white font-bold text-lg tracking-tight">PandS</span>
+					<span class="text-white/40 text-xs ml-1">Inventory</span>
+				</div>
+			{/if}
+			<button
+				onclick={() => (collapsed = !collapsed)}
+				class="text-white/40 hover:text-white/70 transition-colors flex-shrink-0 {collapsed
+					? 'mx-auto'
+					: ''}"
+				title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+			>
+				<svg
+					class="w-4 h-4 transition-transform duration-200 {collapsed
+						? 'rotate-180'
+						: ''}"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					viewBox="0 0 24 24"
+					><path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M15 19l-7-7 7-7"
+					/></svg
+				>
+			</button>
 		</div>
 
 		<nav class="flex-1 py-4 space-y-0.5 px-2">
 			{#each [{ href: '/matrix', label: 'Overview', icon: 'grid' }, { href: '/po', label: 'Purchase Orders', icon: 'box' }, { href: '/so', label: 'Sales Orders', icon: 'doc' }, { href: '/production', label: 'Production', icon: 'check' }, { href: '/calendar', label: 'Calendar', icon: 'cal' }] as nav}
 				<a
 					href={nav.href}
-					class="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors
-				          {$page.url.pathname.startsWith(nav.href)
+					title={collapsed ? nav.label : ''}
+					class="flex items-center py-2 rounded-md text-sm font-medium transition-colors
+					          {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}
+					          {$page.url.pathname.startsWith(nav.href)
 						? 'bg-blue-600 text-white'
 						: 'text-white/70 hover:bg-white/10 hover:text-white'}"
 				>
@@ -97,13 +129,13 @@
 							/></svg
 						>
 					{/if}
-					{nav.label}
+					{#if !collapsed}{nav.label}{/if}
 				</a>
 			{/each}
 		</nav>
 
 		<div class="px-4 py-4 border-t border-white/10">
-			{#if data.appUser}
+			{#if data.appUser && !collapsed}
 				<div class="flex items-center justify-between">
 					<span class="text-white/60 text-xs">{data.appUser.display_name}</span>
 					<a href="/logout" class="text-white/40 hover:text-white/70 text-xs">switch</a>

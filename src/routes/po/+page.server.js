@@ -1,7 +1,8 @@
 import { db } from '$lib/db.js';
+import { localDate } from '$lib/utils.js';
 
 export async function load() {
-	const today = new Date().toISOString().slice(0, 10);
+	const today = localDate(new Date());
 	const [upcoming] = await db.query(
 		`SELECT po.*, COUNT(pol.id) AS line_count
 		 FROM purchase_orders po

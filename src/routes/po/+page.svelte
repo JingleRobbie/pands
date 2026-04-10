@@ -27,6 +27,7 @@
 				<thead
 					><tr class="border-b border-gray-100">
 						<th class="px-4 py-2 text-left text-gray-600">PO #</th>
+						<th class="px-4 py-2 text-left text-gray-600">Vendor</th>
 						<th class="px-4 py-2 text-left text-gray-600">Expected</th>
 						<th class="px-4 py-2 text-right"></th>
 					</tr></thead
@@ -39,6 +40,7 @@
 									>{po.po_number}</a
 								></td
 							>
+							<td class="px-4 py-2 text-gray-700">{po.vendor_name}</td>
 							<td class="px-4 py-2 text-amber-600">{fmtDate(po.expected_date)}</td>
 							<td class="px-4 py-2 text-right"
 								><a href="/po/{po.id}/receive" class="btn-primary btn-sm">Receive</a
@@ -60,6 +62,7 @@
 				<thead
 					><tr class="border-b border-gray-100">
 						<th class="px-4 py-2 text-left text-gray-600">PO #</th>
+						<th class="px-4 py-2 text-left text-gray-600">Vendor</th>
 						<th class="px-4 py-2 text-left text-gray-600">Expected</th>
 						<th class="px-4 py-2 text-left text-gray-600">Lines</th>
 						<th class="px-4 py-2 text-right"></th>
@@ -75,6 +78,7 @@
 									>{po.po_number}</a
 								></td
 							>
+							<td class="px-4 py-2 text-gray-700">{po.vendor_name}</td>
 							<td class="px-4 py-2 text-gray-600">{fmtDate(po.expected_date)}</td>
 							<td class="px-4 py-2 text-gray-500">{po.line_count}</td>
 							<td class="px-4 py-2 text-right"

@@ -1,7 +1,8 @@
 import { db } from '$lib/db.js';
+import { localDate } from '$lib/utils.js';
 
 function todayStr() {
-	return new Date().toISOString().slice(0, 10);
+	return localDate();
 }
 
 async function nextRunNumber() {

@@ -16,6 +16,9 @@
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Confirm Production Run</h1>
+	{#if data.run.status !== 'CONFIRMED'}
+		<a href="/production/{data.run.id}/edit" class="btn-secondary btn-sm">Edit</a>
+	{/if}
 	<a href="/production" class="btn-secondary btn-sm">Back</a>
 </header>
 <main class="p-6">
