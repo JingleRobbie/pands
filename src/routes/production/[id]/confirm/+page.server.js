@@ -1,5 +1,6 @@
 import { db } from '$lib/db.js';
 import { confirmRun } from '$lib/services/production.js';
+import { getMatrixDataForSkus } from '$lib/services/inventory.js';
 import { redirect, error, fail } from '@sveltejs/kit';
 
 export async function load({ params }) {
@@ -13,7 +14,8 @@ export async function load({ params }) {
 		[params.id]
 	);
 	if (!run) error(404, 'Production run not found');
-	return { run };
+	const matrix = await getMatrixDataForSkus([run.sku_id]);
+	return { run, matrix };
 }
 
 export const actions = {

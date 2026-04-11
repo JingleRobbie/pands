@@ -1,5 +1,6 @@
 import { db } from '$lib/db.js';
 import { error } from '@sveltejs/kit';
+import { getMatrixDataForSkus } from '$lib/services/inventory.js';
 
 export async function load({ params }) {
 	const [[so]] = await db.query('SELECT * FROM sales_orders WHERE id = ?', [params.id]);
@@ -35,5 +36,7 @@ export async function load({ params }) {
 		})
 	);
 
-	return { so, lineData };
+	const skuIds = [...new Set(lines.map((l) => l.sku_id))];
+	const matrix = await getMatrixDataForSkus(skuIds);
+	return { so, lineData, matrix };
 }
