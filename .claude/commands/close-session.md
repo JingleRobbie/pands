@@ -1,54 +1,34 @@
 ---
-description: Close the current work session — interview the user, write a structured session doc to docs/sessions/, commit it, and send you off with style.
+description: Close the current work session — synthesize what happened, draft a session doc, get approval, commit it, and send off with style.
 ---
 
 You are closing this work session for the PandS inventory app. Work through these steps in order.
 
 ---
 
-## Step 1 — Interview
+## Step 1 — Gather context
 
-Ask the user the following questions **one block at a time** (don't dump them all at once). Wait for answers before proceeding to the next block.
+Run these commands to orient yourself:
 
-**Block A — What happened:**
+```bash
+git log --oneline -10
+git status
+git diff --stat HEAD
+```
 
-- What did we actually ship or finish this session?
-- Any decisions made that future-you should know about? (architecture, UX choices, tradeoffs)
-
-**Block B — The messy stuff:**
-
-- Any bugs discovered (fixed or unfixed)?
-- Anything left half-done or in a weird state?
-- Open questions or things you're unsure about?
-
-**Block C — Next session setup:**
-
-- What's the #1 thing to pick up next time?
-- Any context that will be hard to reconstruct cold? (e.g., "the weird MySQL edge case is in receiving.js:87")
-
-**Offer suggestions** based on what you observed during the session — things the user might not think to mention: uncommitted changes, TODO comments spotted in files, services or routes that seemed fragile, anything in git status that looks unresolved.
+Also review the conversation history — what was discussed, built, fixed, or decided this session.
 
 ---
 
-## Step 2 — Determine the filename
+## Step 2 — Draft the session document
 
-Today's date formatted as `ddmmyyyy` (e.g., April 7 2026 → `07042026`).
-
-Check `docs/sessions/` for existing files matching `ddmmyyyy-*.md` for today. The next file gets the next integer suffix starting at 1. If none exist today, use `1`.
-
-Filename: `docs/sessions/ddmmyyyy-N.md`
-
----
-
-## Step 3 — Write the session file
-
-Use this template:
+Using everything you observed, fill out the template below **yourself**. Do not ask the user questions yet — synthesize from the session. Be specific: name files, line numbers, routes, decisions, tradeoffs. If something is genuinely unknown, mark it `— unclear —` and flag it as a question for the user.
 
 ```markdown
 # Session — [Day Month Year, Session N]
 
-**Duration:** [ask or estimate]
-**Branch:** [run git branch --show-current]
+**Duration:** [estimate from conversation length / git timestamps]
+**Branch:** [git branch --show-current]
 
 ## Shipped / Completed
 
@@ -87,23 +67,43 @@ Use this template:
 [anything else that came up]
 ```
 
-Fill every section. Write `— none —` rather than leaving a section blank. Use `fmtDate`-style human dates (Apr 7, 2026), not ISO.
+Fill every section. Write `— none —` rather than leaving blank. Use human dates (Apr 10, 2026), not ISO.
 
 ---
 
-## Step 4 — Git activities
+## Step 3 — Present for approval
 
-1. Run `git status` and report any uncommitted changes to the user.
-2. Stage and commit the session file:
+Show the drafted document to the user in full. Then ask:
+
+> "Does this look right? Anything to add, correct, or cut before I commit it?"
+
+Wait for their response. Apply any edits they request. If they approve (or say "looks good", "ship it", etc.), proceed to Step 4.
+
+---
+
+## Step 4 — Determine the filename
+
+Today's date formatted as `ddmmyyyy` (e.g., April 10 2026 → `10042026`).
+
+Check `docs/sessions/` for existing files matching `ddmmyyyy-*.md` for today. The next file gets the next integer suffix starting at 1. If none exist today, use `1`.
+
+Filename: `docs/sessions/ddmmyyyy-N.md`
+
+---
+
+## Step 5 — Git activities
+
+1. Write the approved session doc to `docs/sessions/<filename>`.
+2. Stage and commit:
     ```
     git add docs/sessions/<filename>
     git commit -m "chore: session notes <ddmmyyyy>-<N>"
     ```
-3. If there are other staged/unstaged changes the user wants to commit before closing, offer to help write a commit message for them.
-4. Report the final `git log --oneline -5` so the user can see where things stand.
+3. If `git status` shows other uncommitted changes, mention them — offer to help commit if the user wants.
+4. Show the final `git log --oneline -5`.
 
 ---
 
-## Step 5 — Send-off
+## Step 6 — Send-off
 
-End with a short, genuinely useful "next session warmup" — two or three sentences the user can read cold to re-orient fast. Then add one fun or encouraging closing line. Vary it — don't always use the same line.
+End with a short "next session warmup" — two or three sentences the user can read cold to re-orient fast. Then one fun or encouraging closing line. Vary it each session.
