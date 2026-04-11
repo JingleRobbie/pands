@@ -79,6 +79,12 @@
 	.row-balance td {
 		@apply bg-gray-100 font-semibold;
 	}
+	.sku-col-start th,
+	.sku-col-start td,
+	th.sku-col-start,
+	td.sku-col-start {
+		@apply border-l border-l-gray-300;
+	}
 	.sqft-negative {
 		@apply text-red-600 font-semibold;
 	}

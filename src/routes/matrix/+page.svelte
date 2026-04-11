@@ -37,13 +37,26 @@
 					<th class="min-w-[90px]">PO #</th>
 					<th class="min-w-[70px]">Run</th>
 					<th class="min-w-[70px]">Ship</th>
-					{#each matrix.skus as sku}
-						<th class="min-w-[40px] align-bottom pb-1 text-center">
-							<span class="inline-block [writing-mode:vertical-rl] rotate-180"
-								>{sku.display_label}</span
-							>
+					{#each matrix.skus as sku (sku.id)}
+						{@const trimmed = sku.display_label.trim()}
+						<th class="sku-col-start min-w-[50px] align-bottom">
+							<div class="h-16 relative overflow-visible">
+								<span
+									class="absolute bottom-1 left-1/2 inline-block origin-bottom-left -rotate-45 whitespace-nowrap text-xs font-normal"
+								>
+									{trimmed} Δ
+								</span>
+							</div>
 						</th>
-						<th class="min-w-[80px] text-right text-gray-400 font-normal">← total</th>
+						<th class="min-w-[80px] align-bottom">
+							<div class="h-16 relative overflow-visible">
+								<span
+									class="absolute bottom-1 left-1/2 inline-block origin-bottom-left -rotate-45 whitespace-nowrap text-xs font-normal text-gray-400"
+								>
+									{trimmed} bal
+								</span>
+							</div>
+						</th>
 					{/each}
 				</tr>
 			</thead>
@@ -54,9 +67,9 @@
 					<td></td><td></td>
 					<td class="text-xs text-gray-500">today</td>
 					<td></td>
-					{#each matrix.skus as sku}
+					{#each matrix.skus as sku (sku.id)}
 						{@const cell = matrix.balanceRow.cells[sku.id]}
-						<td></td>
+						<td class="sku-col-start"></td>
 						<td
 							class="text-right font-mono text-sm {cell?.runningTotal < 0
 								? 'sqft-negative'
@@ -68,7 +81,7 @@
 				</tr>
 
 				<!-- Dated + unscheduled rows -->
-				{#each matrix.rows as row}
+				{#each matrix.rows as row (row.rowType + row.objectId)}
 					<tr class="row-{row.rowType}">
 						<td class="font-medium">
 							{#if row.rowType === 'po'}
@@ -97,9 +110,9 @@
 						<td class="text-sm text-gray-600">
 							{#if row.shipDate}{fmtDate(row.shipDate)}{/if}
 						</td>
-						{#each matrix.skus as sku}
+						{#each matrix.skus as sku (sku.id)}
 							{@const cell = row.cells[sku.id]}
-							<td class="text-right font-mono text-sm">
+							<td class="sku-col-start text-right font-mono text-sm">
 								{#if cell?.delta != null}
 									<span class={cell.delta > 0 ? 'sqft-positive' : ''}>
 										{cell.delta > 0 ? '+' : ''}{fmtSqft(cell.delta)}
