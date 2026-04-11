@@ -123,12 +123,25 @@
 					<th class="min-w-[70px]">Date</th>
 					<th class="min-w-[70px]">Ship</th>
 					{#each matrix.skus as sku (sku.id)}
-						<th class="min-w-[40px] align-bottom pb-1 text-center">
-							<span class="inline-block [writing-mode:vertical-rl] rotate-180"
-								>{sku.display_label}</span
-							>
+						{@const trimmed = sku.display_label.trim()}
+						<th class="sku-col-start min-w-[50px] align-bottom">
+							<div class="h-16 relative overflow-visible">
+								<span
+									class="absolute bottom-1 left-1/2 inline-block origin-bottom-left -rotate-45 whitespace-nowrap text-xs font-normal"
+								>
+									{trimmed} Δ
+								</span>
+							</div>
 						</th>
-						<th class="min-w-[80px] text-right text-gray-400 font-normal">← total</th>
+						<th class="min-w-[80px] align-bottom">
+							<div class="h-16 relative overflow-visible">
+								<span
+									class="absolute bottom-1 left-1/2 inline-block origin-bottom-left -rotate-45 whitespace-nowrap text-xs font-normal text-gray-400"
+								>
+									{trimmed} bal
+								</span>
+							</div>
+						</th>
 					{/each}
 				</tr>
 			</thead>
@@ -141,7 +154,7 @@
 					<td></td>
 					{#each matrix.skus as sku (sku.id)}
 						{@const cell = matrix.balanceRow.cells[sku.id]}
-						<td></td>
+						<td class="sku-col-start"></td>
 						<td
 							class="text-right font-mono text-sm {cell?.runningTotal < 0
 								? 'sqft-negative'
@@ -183,7 +196,7 @@
 						</td>
 						{#each matrix.skus as sku (sku.id)}
 							{@const cell = row.cells[sku.id]}
-							<td class="text-right font-mono text-sm">
+							<td class="sku-col-start text-right font-mono text-sm">
 								{#if cell?.delta != null}
 									<span class={cell.delta > 0 ? 'sqft-positive' : ''}>
 										{cell.delta > 0 ? '+' : ''}{fmtSqft(cell.delta)}

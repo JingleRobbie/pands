@@ -32,6 +32,7 @@
 		<table class="matrix-table w-full text-left border-collapse">
 			<thead>
 				<tr>
+					<th class="min-w-[120px]">Name</th>
 					<th class="min-w-[140px]">Description</th>
 					<th class="min-w-[90px]">SO #</th>
 					<th class="min-w-[90px]">PO #</th>
@@ -48,7 +49,7 @@
 								</span>
 							</div>
 						</th>
-						<th class="min-w-[80px] align-bottom">
+						<th class="min-w-[90px] align-bottom">
 							<div class="h-16 relative overflow-visible">
 								<span
 									class="absolute bottom-1 left-1/2 inline-block origin-bottom-left -rotate-45 whitespace-nowrap text-xs font-normal text-gray-400"
@@ -63,6 +64,7 @@
 			<tbody>
 				<!-- Current inventory balance row -->
 				<tr class="row-balance">
+					<td></td>
 					<td class="font-semibold text-gray-700">Current Inventory</td>
 					<td></td><td></td>
 					<td class="text-xs text-gray-500">today</td>
@@ -83,6 +85,7 @@
 				<!-- Dated + unscheduled rows -->
 				{#each matrix.rows as row (row.rowType + row.objectId)}
 					<tr class="row-{row.rowType}">
+						<td class="text-gray-600 text-sm">{row.partyName ?? ''}</td>
 						<td class="font-medium">
 							{#if row.rowType === 'po'}
 								<a href="/po/{row.objectId}" class="hover:underline text-blue-700"

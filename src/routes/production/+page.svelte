@@ -59,6 +59,7 @@
 					<thead>
 						<tr class="border-b border-gray-100">
 							<th class="px-4 py-2 text-left text-gray-600">Run #</th>
+							<th class="px-4 py-2 text-left text-gray-600">Company</th>
 							<th class="px-4 py-2 text-left text-gray-600">Job</th>
 							<th class="px-4 py-2 text-left text-gray-600">SO #</th>
 							<th class="px-4 py-2 text-left text-gray-600">SKU</th>
@@ -72,6 +73,7 @@
 						{#each data.searchResults as run (run.id)}
 							<tr class="border-b border-gray-50 hover:bg-gray-50">
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
+								<td class="px-4 py-2 text-gray-600">{run.customer_name}</td>
 								<td class="px-4 py-2 font-medium">{run.job_name}</td>
 								<td class="px-4 py-2 text-gray-600">{run.so_number}</td>
 								<td class="px-4 py-2">{run.display_label}</td>
@@ -121,6 +123,7 @@
 						<tr class="border-b border-gray-100">
 							<th class="px-4 py-2 text-left text-gray-600">Date</th>
 							<th class="px-4 py-2 text-left text-gray-600">Run #</th>
+							<th class="px-4 py-2 text-left text-gray-600">Company</th>
 							<th class="px-4 py-2 text-left text-gray-600">Job</th>
 							<th class="px-4 py-2 text-left text-gray-600">SO #</th>
 							<th class="px-4 py-2 text-left text-gray-600">SKU</th>
@@ -133,6 +136,7 @@
 							<tr class="border-b border-amber-50 hover:bg-amber-50">
 								<td class="px-4 py-2 text-amber-600">{fmtDate(run.run_date)}</td>
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
+								<td class="px-4 py-2 text-gray-600">{run.customer_name}</td>
 								<td class="px-4 py-2 font-medium">{run.job_name}</td>
 								<td class="px-4 py-2 text-gray-600">{run.so_number}</td>
 								<td class="px-4 py-2">{run.display_label}</td>
@@ -162,6 +166,7 @@
 					<thead>
 						<tr class="border-b border-gray-100">
 							<th class="px-4 py-2 text-left text-gray-600">Run #</th>
+							<th class="px-4 py-2 text-left text-gray-600">Company</th>
 							<th class="px-4 py-2 text-left text-gray-600">Job</th>
 							<th class="px-4 py-2 text-left text-gray-600">SO #</th>
 							<th class="px-4 py-2 text-left text-gray-600">SKU</th>
@@ -173,6 +178,7 @@
 						{#each data.todayRuns as run (run.id)}
 							<tr class="border-b border-gray-50 hover:bg-gray-50">
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
+								<td class="px-4 py-2 text-gray-600">{run.customer_name}</td>
 								<td class="px-4 py-2 font-medium">{run.job_name}</td>
 								<td class="px-4 py-2 text-gray-600">{run.so_number}</td>
 								<td class="px-4 py-2">{run.display_label}</td>
@@ -210,6 +216,7 @@
 						<tr class="border-b border-gray-100">
 							<th class="px-4 py-2 text-left text-gray-600">Date</th>
 							<th class="px-4 py-2 text-left text-gray-600">Run #</th>
+							<th class="px-4 py-2 text-left text-gray-600">Company</th>
 							<th class="px-4 py-2 text-left text-gray-600">Job</th>
 							<th class="px-4 py-2 text-left text-gray-600">SKU</th>
 							<th class="px-4 py-2 text-right text-gray-600">Sqft</th>
@@ -221,6 +228,7 @@
 							<tr class="border-b border-gray-50 hover:bg-gray-50">
 								<td class="px-4 py-2 text-gray-600">{fmtDate(run.run_date)}</td>
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
+								<td class="px-4 py-2 text-gray-600">{run.customer_name}</td>
 								<td class="px-4 py-2">
 									<a href="/production/{run.id}/confirm" class="hover:underline"
 										>{run.job_name}</a

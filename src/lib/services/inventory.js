@@ -49,7 +49,7 @@ export async function getMatrixData(fromDate = null) {
 	const [poLines] = await db.query(
 		`
 		SELECT pol.id, pol.po_id, pol.sku_id, pol.sqft_ordered,
-		       po.po_number, po.expected_date, po.status AS po_status
+		       po.po_number, po.expected_date, po.status AS po_status, po.vendor_name
 		FROM purchase_order_lines pol
 		JOIN purchase_orders po ON po.id = pol.po_id
 		WHERE po.expected_date >= ? AND po.status = 'OPEN' AND pol.status = 'OPEN'
@@ -63,6 +63,7 @@ export async function getMatrixData(fromDate = null) {
 		if (!poRowMap[line.po_id]) {
 			poRowMap[line.po_id] = {
 				rowType: 'po',
+				partyName: line.vendor_name,
 				description: `PO ${line.po_number}`,
 				poNumber: line.po_number,
 				soNumber: '',
@@ -80,7 +81,7 @@ export async function getMatrixData(fromDate = null) {
 	const [prodRuns] = await db.query(
 		`
 		SELECT pr.id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
-		       so.so_number, so.job_name, so.id AS so_id, so.ship_date
+		       so.so_number, so.job_name, so.id AS so_id, so.ship_date, so.customer_name
 		FROM production_runs pr
 		JOIN sales_order_lines sol ON sol.id = pr.so_line_id
 		JOIN sales_orders so ON so.id = sol.so_id
@@ -94,6 +95,7 @@ export async function getMatrixData(fromDate = null) {
 	for (const run of prodRuns) {
 		prodRowMap[run.id] = {
 			rowType: 'production',
+			partyName: run.customer_name,
 			description: run.job_name,
 			soNumber: run.so_number,
 			poNumber: '',
@@ -131,7 +133,7 @@ export async function getMatrixData(fromDate = null) {
 	// 8. Unscheduled SO lines
 	const [unscheduledLines] = await db.query(`
 		SELECT sol.id, sol.sku_id, sol.sqft_ordered, sol.sqft_produced,
-		       so.so_number, so.job_name, so.id AS so_id,
+		       so.so_number, so.job_name, so.id AS so_id, so.customer_name,
 		       COALESCE(
 		         (SELECT SUM(pr.sqft_scheduled)
 		          FROM production_runs pr
@@ -154,6 +156,7 @@ export async function getMatrixData(fromDate = null) {
 
 		unscheduledRows.push({
 			rowType: 'unscheduled',
+			partyName: line.customer_name,
 			description: line.job_name,
 			soNumber: line.so_number,
 			poNumber: '',
@@ -195,7 +198,7 @@ export async function getMatrixDataForSkus(skuIds) {
 	const [poLines] = await db.query(
 		`
 		SELECT pol.id, pol.po_id, pol.sku_id, pol.sqft_ordered,
-		       po.po_number, po.expected_date
+		       po.po_number, po.expected_date, po.vendor_name
 		FROM purchase_order_lines pol
 		JOIN purchase_orders po ON po.id = pol.po_id
 		WHERE po.expected_date >= ? AND po.status = 'OPEN' AND pol.status = 'OPEN'
@@ -210,6 +213,7 @@ export async function getMatrixDataForSkus(skuIds) {
 		if (!poRowMap[line.po_id]) {
 			poRowMap[line.po_id] = {
 				rowType: 'po',
+				partyName: line.vendor_name,
 				description: `PO ${line.po_number}`,
 				poNumber: line.po_number,
 				soNumber: '',
@@ -227,7 +231,7 @@ export async function getMatrixDataForSkus(skuIds) {
 	const [prodRuns] = await db.query(
 		`
 		SELECT pr.id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
-		       so.so_number, so.job_name, so.id AS so_id, so.ship_date
+		       so.so_number, so.job_name, so.id AS so_id, so.ship_date, so.customer_name
 		FROM production_runs pr
 		JOIN sales_order_lines sol ON sol.id = pr.so_line_id
 		JOIN sales_orders so ON so.id = sol.so_id
@@ -242,6 +246,7 @@ export async function getMatrixDataForSkus(skuIds) {
 	for (const run of prodRuns) {
 		prodRowMap[run.id] = {
 			rowType: 'production',
+			partyName: run.customer_name,
 			description: run.job_name,
 			soNumber: run.so_number,
 			poNumber: '',
@@ -280,7 +285,7 @@ export async function getMatrixDataForSkus(skuIds) {
 	const [unscheduledLines] = await db.query(
 		`
 		SELECT sol.id, sol.sku_id, sol.sqft_ordered, sol.sqft_produced,
-		       so.so_number, so.job_name, so.id AS so_id,
+		       so.so_number, so.job_name, so.id AS so_id, so.customer_name,
 		       COALESCE(
 		         (SELECT SUM(pr.sqft_scheduled)
 		          FROM production_runs pr
@@ -306,6 +311,7 @@ export async function getMatrixDataForSkus(skuIds) {
 
 		unscheduledRows.push({
 			rowType: 'unscheduled',
+			partyName: line.customer_name,
 			description: line.job_name,
 			soNumber: line.so_number,
 			poNumber: '',

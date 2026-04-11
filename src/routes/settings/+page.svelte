@@ -16,7 +16,7 @@
 					<span class="font-semibold text-sm text-gray-700">Sidebar</span>
 				</div>
 				<div class="card-body">
-					<label class="flex items-center gap-3 cursor-pointer">
+					<label for="sidebar_collapsed" class="flex items-center gap-3 cursor-pointer">
 						<input
 							type="checkbox"
 							name="sidebar_collapsed"
