@@ -69,7 +69,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.searchResults as run}
+						{#each data.searchResults as run (run.id)}
 							<tr class="border-b border-gray-50 hover:bg-gray-50">
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
 								<td class="px-4 py-2 font-medium">{run.job_name}</td>
@@ -129,7 +129,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.overdueRuns as run}
+						{#each data.overdueRuns as run (run.id)}
 							<tr class="border-b border-amber-50 hover:bg-amber-50">
 								<td class="px-4 py-2 text-amber-600">{fmtDate(run.run_date)}</td>
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
@@ -170,7 +170,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.todayRuns as run}
+						{#each data.todayRuns as run (run.id)}
 							<tr class="border-b border-gray-50 hover:bg-gray-50">
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
 								<td class="px-4 py-2 font-medium">{run.job_name}</td>
@@ -217,7 +217,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.upcoming as run}
+						{#each data.upcoming as run (run.id)}
 							<tr class="border-b border-gray-50 hover:bg-gray-50">
 								<td class="px-4 py-2 text-gray-600">{fmtDate(run.run_date)}</td>
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>

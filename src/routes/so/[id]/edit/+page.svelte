@@ -44,8 +44,9 @@
 				</div>
 				<div class="card-body grid grid-cols-2 gap-4">
 					<div>
-						<label class="form-label">SO Number</label>
+						<label for="so_number" class="form-label">SO Number</label>
 						<input
+							id="so_number"
 							type="text"
 							name="so_number"
 							class="form-input"
@@ -54,8 +55,9 @@
 						/>
 					</div>
 					<div>
-						<label class="form-label">Customer</label>
+						<label for="customer_name" class="form-label">Customer</label>
 						<input
+							id="customer_name"
 							type="text"
 							name="customer_name"
 							class="form-input"
@@ -64,8 +66,9 @@
 						/>
 					</div>
 					<div>
-						<label class="form-label">Job Name</label>
+						<label for="job_name" class="form-label">Job Name</label>
 						<input
+							id="job_name"
 							type="text"
 							name="job_name"
 							class="form-input"
@@ -74,8 +77,9 @@
 						/>
 					</div>
 					<div>
-						<label class="form-label">Ship Date</label>
+						<label for="ship_date" class="form-label">Ship Date</label>
 						<input
+							id="ship_date"
 							type="date"
 							name="ship_date"
 							class="form-input"
@@ -100,14 +104,15 @@
 						<div class="flex items-end gap-3">
 							<input type="hidden" name="line_id" value={line.id} />
 							<div class="flex-1">
-								<label class="form-label text-xs">SKU</label>
-								<p class="form-input text-sm bg-gray-50 text-gray-700">
+								<label for="sku-{line.id}" class="form-label text-xs">SKU</label>
+								<p id="sku-{line.id}" class="form-input text-sm bg-gray-50 text-gray-700">
 									{line.display_label}
 								</p>
 							</div>
 							<div class="w-36">
-								<label class="form-label text-xs">Sq Ft</label>
+								<label for="sqft-{line.id}" class="form-label text-xs">Sq Ft</label>
 								<input
+									id="sqft-{line.id}"
 									type="number"
 									name="line_sqft"
 									step="1"
@@ -127,17 +132,18 @@
 					{/each}
 
 					{#if lockedLines.length}
-						{#each lockedLines as line}
+						{#each lockedLines as line (line.id)}
 							<div class="flex items-end gap-3 opacity-60">
 								<div class="flex-1">
-									<label class="form-label text-xs">SKU</label>
-									<p class="form-input text-sm bg-gray-50 text-gray-500">
+									<label for="locked-sku-{line.id}" class="form-label text-xs">SKU</label>
+									<p id="locked-sku-{line.id}" class="form-input text-sm bg-gray-50 text-gray-500">
 										{line.display_label}
 									</p>
 								</div>
 								<div class="w-36">
-									<label class="form-label text-xs">Sq Ft</label>
+									<label for="locked-sqft-{line.id}" class="form-label text-xs">Sq Ft</label>
 									<p
+										id="locked-sqft-{line.id}"
 										class="form-input text-sm text-right font-mono bg-gray-50 text-gray-500"
 									>
 										{Math.round(line.sqft_ordered).toLocaleString()}
@@ -148,27 +154,29 @@
 						{/each}
 					{/if}
 
-					{#each newLines as line, i}
+					{#each newLines as line, i (i)}
 						<div
 							class="flex items-end gap-3 border-t border-dashed border-gray-200 pt-3"
 						>
 							<div class="flex-1">
-								<label class="form-label text-xs">SKU</label>
+								<label for="newsku-{i}" class="form-label text-xs">SKU</label>
 								<select
+									id="newsku-{i}"
 									name="sku_id"
 									class="form-select text-sm"
 									bind:value={line.sku_id}
 									required
 								>
 									<option value="">— select —</option>
-									{#each skus as sku}<option value={sku.id}
+									{#each skus as sku (sku.id)}<option value={sku.id}
 											>{sku.display_label}</option
 										>{/each}
 								</select>
 							</div>
 							<div class="w-36">
-								<label class="form-label text-xs">Sq Ft</label>
+								<label for="newsqft-{i}" class="form-label text-xs">Sq Ft</label>
 								<input
+									id="newsqft-{i}"
 									type="number"
 									name="sqft_ordered"
 									step="1"

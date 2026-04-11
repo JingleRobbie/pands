@@ -40,8 +40,9 @@
 				</div>
 				<div class="card-body space-y-4">
 					<div>
-						<label class="form-label">Sales Order</label>
+						<label for="so-select" class="form-label">Sales Order</label>
 						<select
+							id="so-select"
 							class="form-select"
 							bind:value={selectedSo}
 							onchange={() => {
@@ -50,7 +51,7 @@
 							}}
 						>
 							<option value="">— select SO —</option>
-							{#each data.sos as so}
+							{#each data.sos as so (so.id)}
 								<option value={String(so.id)}
 									>SO {so.so_number} — {so.job_name}</option
 								>
@@ -60,8 +61,9 @@
 
 					{#if selectedSo && availableLines.length}
 						<div>
-							<label class="form-label">SO Line (SKU)</label>
+							<label for="so-line-select" class="form-label">SO Line (SKU)</label>
 							<select
+								id="so-line-select"
 								name="so_line_id"
 								class="form-select"
 								value={selectedLine}
@@ -69,7 +71,7 @@
 								required
 							>
 								<option value="">— select line —</option>
-								{#each availableLines as line}
+								{#each availableLines as line (line.id)}
 									<option value={String(line.id)}
 										>{line.display_label} — {Math.round(
 											line.sqftUnscheduled
@@ -87,12 +89,13 @@
 					{#if selectedLine}
 						<div class="grid grid-cols-2 gap-4">
 							<div>
-								<label class="form-label"
+								<label for="run-date-input" class="form-label"
 									>Run Date <span class="text-gray-400 font-normal text-xs"
 										>(blank = unscheduled)</span
 									></label
 								>
 								<input
+									id="run-date-input"
 									type="date"
 									name="run_date"
 									class="form-input"
@@ -100,8 +103,9 @@
 								/>
 							</div>
 							<div>
-								<label class="form-label">Sq Ft to Schedule</label>
+								<label for="sqft-input" class="form-label">Sq Ft to Schedule</label>
 								<input
+									id="sqft-input"
 									type="number"
 									name="sqft_scheduled"
 									step="1"

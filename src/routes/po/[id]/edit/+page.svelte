@@ -43,8 +43,9 @@
 				</div>
 				<div class="card-body grid grid-cols-3 gap-4">
 					<div>
-						<label class="form-label">PO Number</label>
+						<label class="form-label" for="po_number">PO Number</label>
 						<input
+							id="po_number"
 							type="text"
 							name="po_number"
 							class="form-input"
@@ -53,8 +54,8 @@
 						/>
 					</div>
 					<div>
-						<label class="form-label">Vendor</label>
-						<select name="vendor_name" class="form-select" required>
+						<label class="form-label" for="vendor_name">Vendor</label>
+						<select id="vendor_name" name="vendor_name" class="form-select" required>
 							<option value="">— select —</option>
 							<option value="JM" selected={po.vendor_name === 'JM'}>JM</option>
 							<option value="Certainteed" selected={po.vendor_name === 'Certainteed'}
@@ -63,8 +64,9 @@
 						</select>
 					</div>
 					<div>
-						<label class="form-label">Expected Date</label>
+						<label class="form-label" for="expected_date">Expected Date</label>
 						<input
+							id="expected_date"
 							type="date"
 							name="expected_date"
 							class="form-input"
@@ -89,14 +91,15 @@
 						<div class="flex items-end gap-3">
 							<input type="hidden" name="line_id" value={line.id} />
 							<div class="flex-1">
-								<label class="form-label text-xs">SKU</label>
+								<label class="form-label text-xs" for="line-sku-{line.id}">SKU</label>
 								<p class="form-input text-sm bg-gray-50 text-gray-700">
 									{line.display_label}
 								</p>
 							</div>
 							<div class="w-36">
-								<label class="form-label text-xs">Sq Ft</label>
+								<label class="form-label text-xs" for="line-sqft-{line.id}">Sq Ft</label>
 								<input
+									id="line-sqft-{line.id}"
 									type="number"
 									name="line_sqft"
 									step="1"
@@ -116,17 +119,18 @@
 					{/each}
 
 					{#if receivedLines.length}
-						{#each receivedLines as line}
+						{#each receivedLines as line (line.id)}
 							<div class="flex items-end gap-3 opacity-60">
 								<div class="flex-1">
-									<label class="form-label text-xs">SKU</label>
-									<p class="form-input text-sm bg-gray-50 text-gray-500">
+									<label class="form-label text-xs" for="received-sku-{line.id}">SKU</label>
+									<p id="received-sku-{line.id}" class="form-input text-sm bg-gray-50 text-gray-500">
 										{line.display_label}
 									</p>
 								</div>
 								<div class="w-36">
-									<label class="form-label text-xs">Sq Ft</label>
+									<label class="form-label text-xs" for="received-sqft-{line.id}">Sq Ft</label>
 									<p
+										id="received-sqft-{line.id}"
 										class="form-input text-sm text-right font-mono bg-gray-50 text-gray-500"
 									>
 										{Math.round(line.sqft_ordered).toLocaleString()}
@@ -137,27 +141,29 @@
 						{/each}
 					{/if}
 
-					{#each newLines as line, i}
+					{#each newLines as line, i (i)}
 						<div
 							class="flex items-end gap-3 border-t border-dashed border-gray-200 pt-3"
 						>
 							<div class="flex-1">
-								<label class="form-label text-xs">SKU</label>
+								<label class="form-label text-xs" for="new-sku-{i}">SKU</label>
 								<select
+									id="new-sku-{i}"
 									name="sku_id"
 									class="form-select text-sm"
 									bind:value={line.sku_id}
 									required
 								>
 									<option value="">— select —</option>
-									{#each skus as sku}<option value={sku.id}
+									{#each skus as sku (sku.id)}<option value={sku.id}
 											>{sku.display_label}</option
 										>{/each}
 								</select>
 							</div>
 							<div class="w-36">
-								<label class="form-label text-xs">Sq Ft</label>
+								<label class="form-label text-xs" for="new-sqft-{i}">Sq Ft</label>
 								<input
+									id="new-sqft-{i}"
 									type="number"
 									name="sqft_ordered"
 									step="1"

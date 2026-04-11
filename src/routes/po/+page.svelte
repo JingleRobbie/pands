@@ -63,7 +63,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.searchResults as po}
+						{#each data.searchResults as po (po.id)}
 							<tr class="border-b border-gray-50 hover:bg-gray-50">
 								<td class="px-4 py-2 font-medium">
 									<a href="/po/{po.id}" class="text-blue-700 hover:underline"
@@ -109,7 +109,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.overdue as po}
+						{#each data.overdue as po (po.id)}
 							<tr class="border-b border-gray-50 hover:bg-gray-50">
 								<td class="px-4 py-2 font-medium">
 									<a href="/po/{po.id}" class="text-blue-700 hover:underline"
@@ -147,7 +147,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.upcoming as po}
+						{#each data.upcoming as po (po.id)}
 							<tr class="border-b border-gray-50 hover:bg-gray-50">
 								<td class="px-4 py-2">
 									<a

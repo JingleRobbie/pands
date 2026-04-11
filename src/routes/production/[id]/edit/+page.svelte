@@ -60,12 +60,13 @@
 				</div>
 				<div class="card-body space-y-4">
 					<div>
-						<label class="form-label"
+						<label for="run_date" class="form-label"
 							>Run Date <span class="text-gray-400 font-normal"
 								>(leave blank to unschedule)</span
 							></label
 						>
 						<input
+							id="run_date"
 							type="date"
 							name="run_date"
 							class="form-input"
@@ -73,8 +74,9 @@
 						/>
 					</div>
 					<div>
-						<label class="form-label">Sq Ft Scheduled</label>
+						<label for="sqft_scheduled" class="form-label">Sq Ft Scheduled</label>
 						<input
+							id="sqft_scheduled"
 							type="number"
 							name="sqft_scheduled"
 							step="1"

@@ -36,8 +36,8 @@ export default [
 			// SvelteKit uses plain <a href> links everywhere — the resolve() wrapper
 			// is only needed when intercepting navigation programmatically
 			'svelte/no-navigation-without-resolve': 'off',
-			// {#each} keys are good practice; warn instead of error so CI doesn't block
-			'svelte/require-each-key': 'warn',
+			// Every {#each} must have a key expression, e.g. {#each items as item (item.id)}
+			'svelte/require-each-key': 'error',
 		},
 	},
 ];

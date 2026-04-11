@@ -31,8 +31,9 @@
 				</div>
 				<div class="card-body grid grid-cols-2 gap-4">
 					<div>
-						<label class="form-label">SO Number</label>
+						<label for="so_number" class="form-label">SO Number</label>
 						<input
+							id="so_number"
 							type="text"
 							name="so_number"
 							class="form-input"
@@ -41,8 +42,9 @@
 						/>
 					</div>
 					<div>
-						<label class="form-label">Customer</label>
+						<label for="customer_name" class="form-label">Customer</label>
 						<input
+							id="customer_name"
 							type="text"
 							name="customer_name"
 							class="form-input"
@@ -51,8 +53,9 @@
 						/>
 					</div>
 					<div>
-						<label class="form-label">Job Name</label>
+						<label for="job_name" class="form-label">Job Name</label>
 						<input
+							id="job_name"
 							type="text"
 							name="job_name"
 							class="form-input"
@@ -61,8 +64,8 @@
 						/>
 					</div>
 					<div>
-						<label class="form-label">Ship Date</label>
-						<input type="date" name="ship_date" class="form-input" required />
+						<label for="ship_date" class="form-label">Ship Date</label>
+						<input id="ship_date" type="date" name="ship_date" class="form-input" required />
 					</div>
 				</div>
 			</div>
@@ -75,25 +78,27 @@
 					>
 				</div>
 				<div class="card-body space-y-3">
-					{#each lines as line, i}
+					{#each lines as line, i (i)}
 						<div class="flex items-end gap-3">
 							<div class="flex-1">
-								<label class="form-label text-xs">SKU</label>
+								<label for="sku_id_{i}" class="form-label text-xs">SKU</label>
 								<select
+									id="sku_id_{i}"
 									name="sku_id"
 									class="form-select text-sm"
 									bind:value={line.sku_id}
 									required
 								>
 									<option value="">— select —</option>
-									{#each data.skus as sku}<option value={sku.id}
+									{#each data.skus as sku (sku.id)}<option value={sku.id}
 											>{sku.display_label}</option
 										>{/each}
 								</select>
 							</div>
 							<div class="w-36">
-								<label class="form-label text-xs">Sq Ft</label>
+								<label for="sqft_ordered_{i}" class="form-label text-xs">Sq Ft</label>
 								<input
+									id="sqft_ordered_{i}"
 									type="number"
 									name="sqft_ordered"
 									step="1"

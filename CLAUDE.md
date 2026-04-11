@@ -132,6 +132,30 @@ export const actions = {
 {/if}
 ```
 
+### Svelte Template Rules
+
+**Keyed `{#each}` blocks** — always include a key expression. ESLint enforces this as an error.
+
+```svelte
+{#each items as item (item.id)}   <!-- ✓ keyed by id -->
+{#each items as item, i (i)}      <!-- ✓ keyed by index when no stable id -->
+{#each items as item}             <!-- ✗ ESLint error -->
+```
+
+**Labels** — always use explicit `for` + matching `id`, not implicit wrapping. The svelte ESLint plugin has no enforcement for this, so it is a manual convention.
+
+```svelte
+<!-- ✓ explicit association -->
+<label for="qty" class="form-label">Quantity</label>
+<input id="qty" name="qty" class="form-input" />
+
+<!-- ✗ avoid — implicit wrapping not caught by linter -->
+<label class="form-label">
+	Quantity
+	<input name="qty" class="form-input" />
+</label>
+```
+
 ### Svelte 5 Runes
 
 Always use runes — never legacy `let`/`$:` reactive syntax.

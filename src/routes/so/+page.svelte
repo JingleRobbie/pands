@@ -62,7 +62,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.searchResults as so}
+						{#each data.searchResults as so (so.id)}
 							<tr class="border-b border-gray-50 hover:bg-gray-50">
 								<td class="px-4 py-2">
 									<a
@@ -100,7 +100,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.sos as so}
+					{#each data.sos as so (so.id)}
 						<tr class="border-b border-gray-50 hover:bg-gray-50">
 							<td class="px-4 py-2">
 								<a

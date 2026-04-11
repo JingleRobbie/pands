@@ -25,7 +25,7 @@
 						</tr></thead
 					>
 					<tbody>
-						{#each data.lines as line}
+						{#each data.lines as line (line.id)}
 							<tr class="border-b border-gray-50">
 								<td class="px-4 py-2 font-medium">{line.display_label}</td>
 								<td class="px-4 py-2 text-right font-mono text-gray-500"

@@ -70,7 +70,7 @@
 					</tr></thead
 				>
 				<tbody>
-					{#each lines as line}
+					{#each lines as line (line.id)}
 						<tr class="border-b border-gray-50">
 							<td class="px-4 py-2 font-medium">{line.display_label}</td>
 							<td class="px-4 py-2 text-right font-mono"
@@ -108,7 +108,7 @@
 					<th class="min-w-[90px]">PO #</th>
 					<th class="min-w-[70px]">Date</th>
 					<th class="min-w-[70px]">Ship</th>
-					{#each matrix.skus as sku}
+					{#each matrix.skus as sku (sku.id)}
 						<th class="min-w-[40px] align-bottom pb-1 text-center">
 							<span class="inline-block [writing-mode:vertical-rl] rotate-180"
 								>{sku.display_label}</span
@@ -125,7 +125,7 @@
 					<td></td><td></td>
 					<td class="text-xs text-gray-500">today</td>
 					<td></td>
-					{#each matrix.skus as sku}
+					{#each matrix.skus as sku (sku.id)}
 						{@const cell = matrix.balanceRow.cells[sku.id]}
 						<td></td>
 						<td
@@ -137,7 +137,7 @@
 						</td>
 					{/each}
 				</tr>
-				{#each matrix.rows as row}
+				{#each matrix.rows as row (row.id)}
 					<tr class="row-{row.rowType}">
 						<td class="text-gray-600 text-sm">{row.partyName ?? ''}</td>
 						<td class="font-medium">
@@ -167,7 +167,7 @@
 						<td class="text-sm text-gray-600">
 							{#if row.shipDate}{fmtDate(row.shipDate)}{/if}
 						</td>
-						{#each matrix.skus as sku}
+						{#each matrix.skus as sku (sku.id)}
 							{@const cell = row.cells[sku.id]}
 							<td class="text-right font-mono text-sm">
 								{#if cell?.delta != null}

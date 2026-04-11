@@ -15,7 +15,7 @@
 				<label class="form-label" for="user_id">Select your name</label>
 				<select name="user_id" id="user_id" class="form-select" required>
 					<option value="">— choose —</option>
-					{#each data.users as user}
+					{#each data.users as user (user.id)}
 						<option value={user.id}>{user.display_name}</option>
 					{/each}
 				</select>

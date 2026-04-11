@@ -92,7 +92,7 @@
 </header>
 <main class="p-6">
 	<div class="grid grid-cols-7 text-xs font-semibold text-gray-500 border-b border-gray-200 mb-1">
-		{#each DAY_NAMES as name}
+		{#each DAY_NAMES as name (name)}
 			<div class="py-1 text-center">{name}</div>
 		{/each}
 	</div>
@@ -100,7 +100,7 @@
 	<div
 		class="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-md overflow-hidden"
 	>
-		{#each cells() as cell}
+		{#each cells() as cell, i (i)}
 			<div
 				class="bg-white min-h-24 p-1 {isToday(cell)
 					? 'ring-2 ring-inset ring-blue-400'
@@ -114,7 +114,7 @@
 					>
 						{cell}
 					</div>
-					{#each events[dateKey(cell)] ?? [] as ev}
+					{#each events[dateKey(cell)] ?? [] as ev (ev.id)}
 						<div
 							class="text-xs rounded px-1 py-0.5 mb-0.5 leading-tight truncate
 				{ev.type === 'po' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}"
