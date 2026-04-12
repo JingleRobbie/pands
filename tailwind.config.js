@@ -4,9 +4,14 @@ module.exports = {
 	theme: {
 		extend: {
 			colors: {
-				sidebar: '#1e2433',
-				'sidebar-hover': '#2a3347',
-				'sidebar-active': '#3b4a6b',
+				brand: '#1E3A5F',
+				'brand-hover': '#122540',
+				'brand-light': '#EEF2F8',
+				accent: '#D97706',
+				'accent-light': '#FEF3C7',
+				sidebar: '#0F1E2E',
+				'sidebar-hover': '#1A3050',
+				'sidebar-active': '#1E3A5F',
 			},
 		},
 	},

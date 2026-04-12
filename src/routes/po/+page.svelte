@@ -51,7 +51,7 @@
 				</span>
 			</div>
 			{#if data.searchResults.length}
-				<table class="w-full text-sm">
+				<table class="w-full text-sm list-table">
 					<thead>
 						<tr class="border-b border-gray-100">
 							<th class="px-4 py-2 text-left text-gray-600">PO #</th>
@@ -64,7 +64,7 @@
 					</thead>
 					<tbody>
 						{#each data.searchResults as po (po.id)}
-							<tr class="border-b border-gray-50 hover:bg-gray-50">
+							<tr class="border-b border-gray-100">
 								<td class="px-4 py-2 font-medium">
 									<a href="/po/{po.id}" class="text-blue-700 hover:underline"
 										>{po.po_number}</a
@@ -99,7 +99,7 @@
 				<div class="card-header">
 					<span class="text-sm font-semibold text-amber-700">Overdue</span>
 				</div>
-				<table class="w-full text-sm">
+				<table class="w-full text-sm list-table">
 					<thead>
 						<tr class="border-b border-gray-100">
 							<th class="px-4 py-2 text-left text-gray-600">PO #</th>
@@ -110,7 +110,7 @@
 					</thead>
 					<tbody>
 						{#each data.overdue as po (po.id)}
-							<tr class="border-b border-gray-50 hover:bg-gray-50">
+							<tr class="border-b border-gray-100">
 								<td class="px-4 py-2 font-medium">
 									<a href="/po/{po.id}" class="text-blue-700 hover:underline"
 										>{po.po_number}</a
@@ -136,7 +136,7 @@
 				<span class="text-sm font-semibold text-gray-700">Upcoming</span>
 			</div>
 			{#if data.upcoming.length}
-				<table class="w-full text-sm">
+				<table class="w-full text-sm list-table">
 					<thead>
 						<tr class="border-b border-gray-100">
 							<th class="px-4 py-2 text-left text-gray-600">PO #</th>
@@ -148,7 +148,7 @@
 					</thead>
 					<tbody>
 						{#each data.upcoming as po (po.id)}
-							<tr class="border-b border-gray-50 hover:bg-gray-50">
+							<tr class="border-b border-gray-100">
 								<td class="px-4 py-2">
 									<a
 										href="/po/{po.id}"

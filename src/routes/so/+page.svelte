@@ -50,7 +50,7 @@
 				</span>
 			</div>
 			{#if data.searchResults.length}
-				<table class="w-full text-sm">
+				<table class="w-full text-sm list-table">
 					<thead>
 						<tr class="border-b border-gray-100">
 							<th class="px-4 py-2 text-left text-gray-600">SO #</th>
@@ -63,7 +63,7 @@
 					</thead>
 					<tbody>
 						{#each data.searchResults as so (so.id)}
-							<tr class="border-b border-gray-50 hover:bg-gray-50">
+							<tr class="border-b border-gray-100">
 								<td class="px-4 py-2">
 									<a
 										href="/so/{so.id}"
@@ -88,7 +88,7 @@
 				<div class="card-body text-gray-400 text-sm">No sales orders found.</div>
 			{/if}
 		{:else if data.sos.length}
-			<table class="w-full text-sm">
+			<table class="w-full text-sm list-table">
 				<thead>
 					<tr class="border-b border-gray-100">
 						<th class="px-4 py-2 text-left text-gray-600">SO #</th>
@@ -101,7 +101,7 @@
 				</thead>
 				<tbody>
 					{#each data.sos as so (so.id)}
-						<tr class="border-b border-gray-50 hover:bg-gray-50">
+						<tr class="border-b border-gray-100">
 							<td class="px-4 py-2">
 								<a
 									href="/so/{so.id}"

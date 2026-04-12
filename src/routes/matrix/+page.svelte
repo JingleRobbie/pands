@@ -1,4 +1,5 @@
 <script>
+	import { goto } from '$app/navigation';
 	let { data } = $props();
 	const { matrix } = data;
 
@@ -107,28 +108,36 @@
 				<!-- Historical activity rows (past 2 days) -->
 				{#if showHistory}
 					{#each matrix.historyRows as row (`${row.subType}-${row.objectId}`)}
-						<tr class="row-historical">
+						{@const href =
+							row.subType === 'po'
+								? `/po/${row.objectId}`
+								: `/production/${row.objectId}/confirm`}
+						<tr class="row-historical cursor-pointer" onclick={() => goto(href)}>
 							<td class="text-sm">{row.partyName ?? ''}</td>
 							<td class="text-sm">
 								{#if row.subType === 'po'}
-									<a href="/po/{row.objectId}" class="hover:underline"
-										>{row.description}</a
-									>
+									<span class="badge-green">{row.status}</span>
 								{:else}
-									<a
-										href="/production/{row.objectId}/confirm"
-										class="hover:underline">{row.description}</a
-									>
+									{row.description}
 								{/if}
 							</td>
-							<td class="text-sm">{row.soNumber || row.poNumber}</td>
+							<td class="text-sm">
+								{#if row.subType === 'po'}
+									{row.poNumber}
+								{:else}
+									{row.soNumber || row.poNumber}
+								{/if}
+							</td>
 							<td class="text-sm">{fmtDate(row.eventDate)}</td>
 							<td class="text-sm"
 								>{#if row.shipDate}{fmtDate(row.shipDate)}{/if}</td
 							>
 							{#each visibleSkus as sku (sku.id)}
 								{@const cell = row.cells[sku.id]}
-								<td class="sku-col-start text-right font-mono text-sm">
+								<td
+									class="sku-col-start text-right font-mono text-sm"
+									onclick={(e) => e.stopPropagation()}
+								>
 									{#if cell?.delta != null}
 										{#if cell.delta > 0}
 											<span class="sqft-positive">+{fmtSqft(cell.delta)}</span
@@ -145,6 +154,7 @@
 									0
 										? 'sqft-negative'
 										: 'text-gray-400'}"
+									onclick={(e) => e.stopPropagation()}
 								>
 									{fmtSqft(cell?.runningTotal ?? 0)}
 								</td>
@@ -173,21 +183,27 @@
 
 				<!-- Dated + unscheduled rows -->
 				{#each matrix.rows as row (row.rowType + row.objectId)}
-					<tr class="row-{row.rowType}">
+					{@const href =
+						row.rowType === 'po'
+							? `/po/${row.objectId}`
+							: row.rowType === 'production'
+								? `/production/${row.objectId}/confirm`
+								: `/so/${row.objectId}`}
+					<tr class="row-{row.rowType} cursor-pointer" onclick={() => goto(href)}>
 						<td class="text-gray-600 text-sm">{row.partyName ?? ''}</td>
 						<td class="font-medium">
 							{#if row.rowType === 'po'}
-								<a href="/po/{row.objectId}" class="hover:underline text-blue-700"
-									>{row.description}</a
-								>
+								{@const sc =
+									row.status === 'RECEIVED'
+										? 'badge-green'
+										: row.status === 'CANCELLED'
+											? 'badge-red'
+											: 'badge-blue'}
+								<span class={sc}>{row.status}</span>
 							{:else if row.rowType === 'production'}
-								<a href="/production/{row.objectId}/confirm" class="hover:underline"
-									>{row.description}</a
-								>
+								{row.description}
 							{:else}
-								<a href="/so/{row.objectId}" class="hover:underline text-amber-700"
-									>{row.description}</a
-								>
+								<span class="text-amber-700">{row.description}</span>
 							{/if}
 						</td>
 						<td
@@ -195,8 +211,10 @@
 								? 'text-blue-700'
 								: row.rowType === 'unscheduled'
 									? 'text-amber-700'
-									: 'text-gray-600'}">{row.soNumber || row.poNumber}</td
+									: 'text-gray-600'}"
 						>
+							{row.soNumber || row.poNumber}
+						</td>
 						<td class="text-sm text-gray-600">
 							{#if row.eventDate}
 								{fmtDate(row.eventDate)}
@@ -209,7 +227,10 @@
 						</td>
 						{#each visibleSkus as sku (sku.id)}
 							{@const cell = row.cells[sku.id]}
-							<td class="sku-col-start text-right font-mono text-sm">
+							<td
+								class="sku-col-start text-right font-mono text-sm"
+								onclick={(e) => e.stopPropagation()}
+							>
 								{#if cell?.delta != null}
 									{#if cell.delta > 0}
 										<span class="sqft-positive">+{fmtSqft(cell.delta)}</span>
@@ -224,6 +245,7 @@
 								class="text-right font-mono text-sm {cell?.runningTotal < 0
 									? 'sqft-negative'
 									: 'text-gray-500'}"
+								onclick={(e) => e.stopPropagation()}
 							>
 								{fmtSqft(cell?.runningTotal ?? 0)}
 							</td>

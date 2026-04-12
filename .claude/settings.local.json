@@ -1,18 +1,26 @@
 {
-	"permissions": {
-		"allow": ["Bash(py -3 -m venv venv)"]
-	},
-	"hooks": {
-		"PostToolUse": [
-			{
-				"matcher": "Edit|Write",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const f=JSON.parse(d).tool_input.file_path;if(f){require('child_process').execSync('npx prettier --write \\\"'+f+'\\\"',{stdio:'inherit'});}}catch(e){process.exit(0);}});\""
-					}
-				]
-			}
-		]
-	}
+  "permissions": {
+    "allow": [
+      "Bash(py -3 -m venv venv)",
+      "WebFetch(domain:laking.com)",
+      "Bash(npm run:*)",
+      "Bash(grep -o '.\\\\{0,200\\\\}btn-primary.\\\\{0,200\\\\}' \"c:/Users/schel/Documents/Development/PandS/static/css/app.css\")",
+      "Bash(npm list:*)",
+      "Bash(npm uninstall:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const f=JSON.parse(d).tool_input.file_path;if(f){require('child_process').execSync('npx prettier --write \\\"'+f+'\\\"',{stdio:'inherit'});}}catch(e){process.exit(0);}});\""
+          }
+        ]
+      }
+    ]
+  },
+  "outputStyle": "Learning"
 }

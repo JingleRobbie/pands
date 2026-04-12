@@ -55,7 +55,7 @@
 				</span>
 			</div>
 			{#if data.searchResults.length}
-				<table class="w-full text-sm">
+				<table class="w-full text-sm list-table">
 					<thead>
 						<tr class="border-b border-gray-100">
 							<th class="px-4 py-2 text-left text-gray-600">Run #</th>
@@ -71,7 +71,7 @@
 					</thead>
 					<tbody>
 						{#each data.searchResults as run (run.id)}
-							<tr class="border-b border-gray-50 hover:bg-gray-50">
+							<tr class="border-b border-gray-100">
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
 								<td class="px-4 py-2 text-gray-600">{run.customer_name}</td>
 								<td class="px-4 py-2 font-medium">{run.job_name}</td>
@@ -162,7 +162,7 @@
 				>
 			</div>
 			{#if data.todayRuns.length}
-				<table class="w-full text-sm">
+				<table class="w-full text-sm list-table">
 					<thead>
 						<tr class="border-b border-gray-100">
 							<th class="px-4 py-2 text-left text-gray-600">Run #</th>
@@ -176,7 +176,7 @@
 					</thead>
 					<tbody>
 						{#each data.todayRuns as run (run.id)}
-							<tr class="border-b border-gray-50 hover:bg-gray-50">
+							<tr class="border-b border-gray-100">
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
 								<td class="px-4 py-2 text-gray-600">{run.customer_name}</td>
 								<td class="px-4 py-2 font-medium">{run.job_name}</td>
@@ -211,7 +211,7 @@
 				<span class="font-semibold text-sm text-gray-700">Upcoming</span>
 			</div>
 			{#if data.upcoming.length}
-				<table class="w-full text-sm">
+				<table class="w-full text-sm list-table">
 					<thead>
 						<tr class="border-b border-gray-100">
 							<th class="px-4 py-2 text-left text-gray-600">Date</th>
@@ -225,7 +225,7 @@
 					</thead>
 					<tbody>
 						{#each data.upcoming as run (run.id)}
-							<tr class="border-b border-gray-50 hover:bg-gray-50">
+							<tr class="border-b border-gray-100">
 								<td class="px-4 py-2 text-gray-600">{fmtDate(run.run_date)}</td>
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
 								<td class="px-4 py-2 text-gray-600">{run.customer_name}</td>

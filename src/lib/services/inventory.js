@@ -67,6 +67,7 @@ export async function getMatrixData(fromDate = null) {
 				description: `PO ${line.po_number}`,
 				poNumber: line.po_number,
 				soNumber: '',
+				status: line.po_status,
 				eventDate: line.expected_date,
 				shipDate: null,
 				objectId: line.po_id,
@@ -201,7 +202,7 @@ export async function getMatrixDataForSkus(skuIds) {
 	const [poLines] = await db.query(
 		`
 		SELECT pol.id, pol.po_id, pol.sku_id, pol.sqft_ordered,
-		       po.po_number, po.expected_date, po.vendor_name
+		       po.po_number, po.expected_date, po.status AS po_status, po.vendor_name
 		FROM purchase_order_lines pol
 		JOIN purchase_orders po ON po.id = pol.po_id
 		WHERE po.expected_date >= ? AND po.status = 'OPEN' AND pol.status = 'OPEN'
@@ -220,6 +221,7 @@ export async function getMatrixDataForSkus(skuIds) {
 				description: `PO ${line.po_number}`,
 				poNumber: line.po_number,
 				soNumber: '',
+				status: line.po_status,
 				eventDate: line.expected_date,
 				shipDate: null,
 				objectId: line.po_id,
@@ -381,6 +383,7 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 				description: `PO ${t.po_number}`,
 				poNumber: t.po_number,
 				soNumber: '',
+				status: 'RECEIVED',
 				eventDate: t.event_date,
 				shipDate: null,
 				objectId: t.po_id,

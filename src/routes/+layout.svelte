@@ -9,11 +9,11 @@
 	<link rel="stylesheet" href="/css/app.css" />
 </svelte:head>
 
-<div class="bg-gray-100 min-h-screen flex">
+<div class="bg-gray-50 min-h-screen flex">
 	<!-- Sidebar -->
 	<aside
 		class="min-h-screen flex-shrink-0 flex flex-col transition-[width] duration-200 overflow-hidden"
-		style="background-color:#1e2433; width:{collapsed ? '3.5rem' : '14rem'};"
+		style="background-color:#0F1E2E; width:{collapsed ? '3.5rem' : '14rem'};"
 	>
 		<div class="px-3 py-5 border-b border-white/10 flex items-center justify-between min-w-0">
 			{#if !collapsed}
@@ -54,7 +54,7 @@
 					class="flex items-center py-2 rounded-md text-sm font-medium transition-colors
 					          {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}
 					          {$page.url.pathname.startsWith(nav.href)
-						? 'bg-blue-600 text-white'
+						? 'bg-brand text-white'
 						: 'text-white/70 hover:bg-white/10 hover:text-white'}"
 				>
 					{#if nav.icon === 'grid'}
@@ -141,7 +141,7 @@
 				class="flex items-center py-2 rounded-md text-sm font-medium transition-colors
 				       {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}
 				       {$page.url.pathname === '/settings'
-					? 'bg-blue-600 text-white'
+					? 'bg-brand text-white'
 					: 'text-white/70 hover:bg-white/10 hover:text-white'}"
 			>
 				<svg
