@@ -104,8 +104,7 @@
 				<tr>
 					<th class="min-w-[120px]">Customer/Vendor</th>
 					<th class="min-w-[140px]">Description</th>
-					<th class="min-w-[90px]">SO #</th>
-					<th class="min-w-[90px]">PO #</th>
+					<th class="min-w-[90px]">Order #</th>
 					<th class="min-w-[70px]">Date</th>
 					<th class="min-w-[70px]">Ship</th>
 					{#each matrix.skus as sku (sku.id)}
@@ -135,7 +134,7 @@
 				<tr class="row-balance">
 					<td></td>
 					<td class="font-semibold text-gray-700">Current Inventory</td>
-					<td></td><td></td>
+					<td></td>
 					<td class="text-xs text-gray-500">today</td>
 					<td></td>
 					{#each matrix.skus as sku (sku.id)}
@@ -168,8 +167,13 @@
 								>
 							{/if}
 						</td>
-						<td class="text-gray-600 text-sm">{row.soNumber}</td>
-						<td class="text-gray-600 text-sm">{row.poNumber}</td>
+						<td
+							class="text-sm {row.rowType === 'po'
+								? 'text-blue-700'
+								: row.rowType === 'unscheduled'
+									? 'text-amber-700'
+									: 'text-gray-600'}">{row.soNumber || row.poNumber}</td
+						>
 						<td class="text-sm text-gray-600">
 							{#if row.eventDate}
 								{fmtDate(row.eventDate)}
@@ -184,9 +188,13 @@
 							{@const cell = row.cells[sku.id]}
 							<td class="sku-col-start text-right font-mono text-sm">
 								{#if cell?.delta != null}
-									<span class={cell.delta > 0 ? 'sqft-positive' : ''}>
-										{cell.delta > 0 ? '+' : ''}{fmtSqft(cell.delta)}
-									</span>
+									{#if cell.delta > 0}
+										<span class="sqft-positive">+{fmtSqft(cell.delta)}</span>
+									{:else}
+										<span class="sqft-negative"
+											>({fmtSqft(Math.abs(cell.delta))})</span
+										>
+									{/if}
 								{/if}
 							</td>
 							<td

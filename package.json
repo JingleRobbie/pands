@@ -9,6 +9,7 @@
 		"build:css": "tailwindcss -i src/app.css -o static/css/app.css --minify",
 		"watch:css": "tailwindcss -i src/app.css -o static/css/app.css --watch",
 		"seed": "node scripts/seed-skus.js",
+		"seed:history": "node scripts/seed-history.js",
 		"lint": "eslint .",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",

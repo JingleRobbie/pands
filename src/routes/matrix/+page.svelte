@@ -13,6 +13,27 @@
 		if (n == null) return '';
 		return Math.round(n).toLocaleString();
 	}
+
+	const thicknesses = $derived(
+		[...new Set(matrix.skus.map((s) => s.thickness_in))].sort((a, b) => a - b)
+	);
+
+	let selectedThicknesses = $state(new Set());
+
+	const visibleSkus = $derived(
+		selectedThicknesses.size === 0
+			? matrix.skus
+			: matrix.skus.filter((s) => selectedThicknesses.has(s.thickness_in))
+	);
+
+	function toggleThickness(t) {
+		const next = new Set(selectedThicknesses);
+		next.has(t) ? next.delete(t) : next.add(t);
+		selectedThicknesses = next;
+	}
+
+	// TODO: change to false once toggle UX is finalized
+	let showHistory = $state(true);
 </script>
 
 <svelte:head><title>Overview — PandS</title></svelte:head>
@@ -21,11 +42,33 @@
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Inventory Overview</h1>
 	<div class="flex items-center gap-2">
+		<button onclick={() => (showHistory = !showHistory)} class="btn-secondary btn-sm">
+			{showHistory ? 'Hide History' : 'Show History'}
+		</button>
 		<a href="/po/new" class="btn-secondary btn-sm">+ PO</a>
 		<a href="/so/new" class="btn-secondary btn-sm">+ SO</a>
 		<a href="/production/schedule" class="btn-primary btn-sm">Schedule Run</a>
 	</div>
 </header>
+
+<div class="px-6 pt-4 pb-2 flex items-center gap-2 flex-wrap">
+	{#each thicknesses as t (t)}
+		<button
+			onclick={() => toggleThickness(t)}
+			class="btn-sm {selectedThicknesses.has(t) ? 'btn-primary' : 'btn-secondary'}"
+		>
+			{t}"
+		</button>
+	{/each}
+	{#if selectedThicknesses.size > 0}
+		<button
+			onclick={() => (selectedThicknesses = new Set())}
+			class="btn-sm btn-secondary text-gray-500"
+		>
+			Clear
+		</button>
+	{/if}
+</div>
 
 <main class="p-6 overflow-auto">
 	<div class="card overflow-x-auto">
@@ -34,11 +77,10 @@
 				<tr>
 					<th class="min-w-[120px]">Name</th>
 					<th class="min-w-[140px]">Description</th>
-					<th class="min-w-[90px]">SO #</th>
-					<th class="min-w-[90px]">PO #</th>
+					<th class="min-w-[90px]">Order #</th>
 					<th class="min-w-[70px]">Run</th>
 					<th class="min-w-[70px]">Ship</th>
-					{#each matrix.skus as sku (sku.id)}
+					{#each visibleSkus as sku (sku.id)}
 						{@const trimmed = sku.display_label.trim()}
 						<th class="sku-col-start min-w-[50px] align-bottom">
 							<div class="h-16 relative overflow-visible">
@@ -62,14 +104,61 @@
 				</tr>
 			</thead>
 			<tbody>
+				<!-- Historical activity rows (past 2 days) -->
+				{#if showHistory}
+					{#each matrix.historyRows as row (`${row.subType}-${row.objectId}`)}
+						<tr class="row-historical">
+							<td class="text-sm">{row.partyName ?? ''}</td>
+							<td class="text-sm">
+								{#if row.subType === 'po'}
+									<a href="/po/{row.objectId}" class="hover:underline"
+										>{row.description}</a
+									>
+								{:else}
+									<a
+										href="/production/{row.objectId}/confirm"
+										class="hover:underline">{row.description}</a
+									>
+								{/if}
+							</td>
+							<td class="text-sm">{row.soNumber || row.poNumber}</td>
+							<td class="text-sm">{fmtDate(row.eventDate)}</td>
+							<td class="text-sm"
+								>{#if row.shipDate}{fmtDate(row.shipDate)}{/if}</td
+							>
+							{#each visibleSkus as sku (sku.id)}
+								{@const cell = row.cells[sku.id]}
+								<td class="sku-col-start text-right font-mono text-sm">
+									{#if cell?.delta != null}
+										{#if cell.delta > 0}
+											<span class="sqft-positive">+{fmtSqft(cell.delta)}</span
+											>
+										{:else}
+											<span class="sqft-negative"
+												>({fmtSqft(Math.abs(cell.delta))})</span
+											>
+										{/if}
+									{/if}
+								</td>
+								<td
+									class="text-right font-mono text-sm {(cell?.runningTotal ?? 0) <
+									0
+										? 'sqft-negative'
+										: 'text-gray-400'}"
+								>
+									{fmtSqft(cell?.runningTotal ?? 0)}
+								</td>
+							{/each}
+						</tr>
+					{/each}
+				{/if}
+
 				<!-- Current inventory balance row -->
 				<tr class="row-balance">
 					<td></td>
-					<td class="font-semibold text-gray-700">Current Inventory</td>
 					<td></td><td></td>
-					<td class="text-xs text-gray-500">today</td>
-					<td></td>
-					{#each matrix.skus as sku (sku.id)}
+					<td colspan="2" class="font-semibold text-gray-700">Current Inventory</td>
+					{#each visibleSkus as sku (sku.id)}
 						{@const cell = matrix.balanceRow.cells[sku.id]}
 						<td class="sku-col-start"></td>
 						<td
@@ -101,8 +190,13 @@
 								>
 							{/if}
 						</td>
-						<td class="text-gray-600 text-sm">{row.soNumber}</td>
-						<td class="text-gray-600 text-sm">{row.poNumber}</td>
+						<td
+							class="text-sm {row.rowType === 'po'
+								? 'text-blue-700'
+								: row.rowType === 'unscheduled'
+									? 'text-amber-700'
+									: 'text-gray-600'}">{row.soNumber || row.poNumber}</td
+						>
 						<td class="text-sm text-gray-600">
 							{#if row.eventDate}
 								{fmtDate(row.eventDate)}
@@ -113,13 +207,17 @@
 						<td class="text-sm text-gray-600">
 							{#if row.shipDate}{fmtDate(row.shipDate)}{/if}
 						</td>
-						{#each matrix.skus as sku (sku.id)}
+						{#each visibleSkus as sku (sku.id)}
 							{@const cell = row.cells[sku.id]}
 							<td class="sku-col-start text-right font-mono text-sm">
 								{#if cell?.delta != null}
-									<span class={cell.delta > 0 ? 'sqft-positive' : ''}>
-										{cell.delta > 0 ? '+' : ''}{fmtSqft(cell.delta)}
-									</span>
+									{#if cell.delta > 0}
+										<span class="sqft-positive">+{fmtSqft(cell.delta)}</span>
+									{:else}
+										<span class="sqft-negative"
+											>({fmtSqft(Math.abs(cell.delta))})</span
+										>
+									{/if}
 								{/if}
 							</td>
 							<td
@@ -143,16 +241,4 @@
 			</tbody>
 		</table>
 	</div>
-
-	<p class="mt-3 text-xs text-gray-400">
-		<span
-			class="inline-block w-3 h-3 rounded-sm bg-blue-100 border border-blue-200 mr-1 align-middle"
-		></span>PO arrival &nbsp;
-		<span
-			class="inline-block w-3 h-3 rounded-sm bg-white border border-gray-200 mr-1 align-middle"
-		></span>Scheduled production &nbsp;
-		<span
-			class="inline-block w-3 h-3 rounded-sm bg-amber-50 border border-amber-200 mr-1 align-middle"
-		></span>Unscheduled
-	</p>
 </main>
