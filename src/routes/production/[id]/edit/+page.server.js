@@ -12,13 +12,13 @@ export async function load({ params }) {
 		[params.id]
 	);
 	if (!run) error(404, 'Production run not found');
-	if (run.status === 'CONFIRMED') error(400, 'Confirmed runs cannot be edited');
+	if (run.status === 'COMPLETED') error(400, 'Completed runs cannot be edited');
 
 	// Max sqft = unscheduled sqft for the SO line + this run's current sqft_scheduled
 	const [[{ otherScheduled }]] = await db.query(
 		`SELECT COALESCE(SUM(sqft_scheduled), 0) AS otherScheduled
 		 FROM production_runs
-		 WHERE so_line_id = ? AND id != ? AND status != 'CONFIRMED'`,
+		 WHERE so_line_id = ? AND id != ? AND status != 'COMPLETED'`,
 		[run.so_line_id, params.id]
 	);
 	const maxSqft = Number(run.sqft_ordered) - Number(run.sqft_produced) - Number(otherScheduled);
@@ -44,8 +44,8 @@ export const actions = {
 				[params.id]
 			);
 			if (!run) return fail(404, { error: 'Run not found.' });
-			if (run.status === 'CONFIRMED')
-				return fail(400, { error: 'Confirmed runs cannot be edited.' });
+			if (run.status === 'COMPLETED')
+				return fail(400, { error: 'Completed runs cannot be edited.' });
 
 			// Re-validate sqft against current SO line totals
 			const [[sol]] = await conn.query('SELECT * FROM sales_order_lines WHERE id = ?', [
@@ -54,7 +54,7 @@ export const actions = {
 			const [[{ otherScheduled }]] = await conn.query(
 				`SELECT COALESCE(SUM(sqft_scheduled), 0) AS otherScheduled
 				 FROM production_runs
-				 WHERE so_line_id = ? AND id != ? AND status != 'CONFIRMED'`,
+				 WHERE so_line_id = ? AND id != ? AND status != 'COMPLETED'`,
 				[run.so_line_id, params.id]
 			);
 			const maxSqft =

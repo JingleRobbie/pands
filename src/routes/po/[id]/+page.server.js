@@ -1,5 +1,5 @@
 import { db } from '$lib/db.js';
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { getMatrixDataForSkus } from '$lib/services/inventory.js';
 
 export async function load({ params }) {
@@ -13,3 +13,14 @@ export async function load({ params }) {
 	const matrix = await getMatrixDataForSkus(skuIds);
 	return { po, lines, matrix };
 }
+
+export const actions = {
+	cancel: async ({ params }) => {
+		await db.query('UPDATE purchase_orders SET status = "CANCELLED" WHERE id = ?', [params.id]);
+		await db.query(
+			'UPDATE purchase_order_lines SET status = "CANCELLED" WHERE po_id = ? AND status = "OPEN"',
+			[params.id]
+		);
+		redirect(303, '/po');
+	},
+};

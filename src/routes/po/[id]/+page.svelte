@@ -1,5 +1,6 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { enhance } from '$app/forms';
 	let { data } = $props();
 	const { po, lines, matrix } = data;
 
@@ -30,7 +31,15 @@
 	<div class="flex gap-2">
 		{#if po.status === 'OPEN'}
 			<a href="/po/{po.id}/edit" class="btn-secondary btn-sm">Edit</a>
-			<a href="/po/{po.id}/receive" class="btn-primary btn-sm">Receive</a>
+			<form
+				method="POST"
+				action="?/cancel"
+				use:enhance={({ cancel }) => {
+					if (!confirm(`Cancel PO ${po.po_number}?`)) cancel();
+				}}
+			>
+				<button type="submit" class="btn-danger btn-sm">Cancel PO</button>
+			</form>
 		{/if}
 		<a href="/po" class="btn-secondary btn-sm">Back</a>
 	</div>
@@ -51,7 +60,7 @@
 					<span class="text-gray-500">Status</span>
 					<p class="mt-0.5">
 						{#if po.status === 'OPEN'}<span class="badge-blue">Open</span>
-						{:else if po.status === 'RECEIVED'}<span class="badge-green">Received</span>
+						{:else if po.status === 'CANCELLED'}<span class="badge-red">Cancelled</span>
 						{:else}<span class="badge-gray">{po.status}</span>{/if}
 					</p>
 				</div>
@@ -65,9 +74,7 @@
 				<thead
 					><tr class="border-b border-gray-100">
 						<th class="px-4 py-2 text-left text-gray-600">SKU</th>
-						<th class="px-4 py-2 text-right text-gray-600">Ordered</th>
-						<th class="px-4 py-2 text-right text-gray-600">Received</th>
-						<th class="px-4 py-2 text-left text-gray-600">Status</th>
+						<th class="px-4 py-2 text-right text-gray-600">Ordered (sqft)</th>
 					</tr></thead
 				>
 				<tbody>
@@ -77,18 +84,6 @@
 							<td class="px-4 py-2 text-right font-mono"
 								>{Math.round(line.sqft_ordered).toLocaleString()}</td
 							>
-							<td class="px-4 py-2 text-right font-mono"
-								>{line.sqft_received
-									? Math.round(line.sqft_received).toLocaleString()
-									: '—'}</td
-							>
-							<td class="px-4 py-2">
-								{#if line.status === 'OPEN'}<span class="badge-blue">Open</span>
-								{:else if line.status === 'RECEIVED'}<span class="badge-green"
-										>Received</span
-									>
-								{:else}<span class="badge-gray">{line.status}</span>{/if}
-							</td>
 						</tr>
 					{/each}
 				</tbody>
@@ -162,11 +157,7 @@
 						<td class="font-medium">
 							{#if row.rowType === 'po'}
 								{@const sc =
-									row.status === 'RECEIVED'
-										? 'badge-green'
-										: row.status === 'CANCELLED'
-											? 'badge-red'
-											: 'badge-blue'}
+									row.status === 'CANCELLED' ? 'badge-red' : 'badge-blue'}
 								<span class={sc}>{row.status}</span>
 							{:else if row.rowType === 'production'}
 								{row.description}

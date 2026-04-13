@@ -23,18 +23,18 @@
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Confirm Production Run</h1>
-	{#if data.run.status !== 'CONFIRMED'}
+	{#if data.run.status !== 'COMPLETED'}
 		<a href="/production/{data.run.id}/edit" class="btn-secondary btn-sm">Edit</a>
 	{/if}
 	<a href="/production" class="btn-secondary btn-sm">Back</a>
 </header>
 <main class="p-6">
 	<div class="max-w-lg">
-		{#if data.run.status === 'CONFIRMED'}
+		{#if data.run.status === 'COMPLETED'}
 			<div
 				class="mb-4 px-4 py-3 rounded-md text-sm bg-green-50 text-green-800 border border-green-200"
 			>
-				This run has already been confirmed.
+				This run has already been completed.
 			</div>
 		{/if}
 
@@ -78,7 +78,7 @@
 			</div>
 		</div>
 
-		{#if data.run.status !== 'CONFIRMED'}
+		{#if data.run.status !== 'COMPLETED'}
 			<form method="POST" use:enhance>
 				<div class="card mb-4">
 					<div class="card-header">

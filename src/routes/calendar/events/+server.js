@@ -32,7 +32,7 @@ export async function GET({ url }) {
 		 JOIN sales_order_lines sol ON sol.id = pr.so_line_id
 		 JOIN sales_orders so ON so.id = sol.so_id
 		 WHERE pr.run_date BETWEEN ? AND ?
-		   AND pr.status IN ('SCHEDULED','CONFIRMED')
+		   AND pr.status IN ('SCHEDULED','COMPLETED')
 		 ORDER BY pr.run_date, pr.run_number`,
 		[start, end]
 	);

@@ -31,7 +31,7 @@ export async function scheduleRun(soLineId, runDate, sqftScheduled, userId) {
 			`
 			SELECT COALESCE(SUM(sqft_scheduled), 0) AS sqftInRuns
 			FROM production_runs
-			WHERE so_line_id = ? AND status != 'CONFIRMED'
+			WHERE so_line_id = ? AND status != 'COMPLETED'
 		`,
 			[soLineId]
 		);
@@ -89,7 +89,7 @@ export async function confirmRun(runId, sqftActual, userId) {
 			runId,
 		]);
 		if (!run) throw new Error('Production run not found.');
-		if (run.status === 'CONFIRMED') throw new Error('This run is already confirmed.');
+		if (run.status === 'COMPLETED') throw new Error('This run is already completed.');
 
 		// Create CONSUMPTION transaction
 		const [[sol]] = await conn.query('SELECT * FROM sales_order_lines WHERE id = ?', [
@@ -115,7 +115,7 @@ export async function confirmRun(runId, sqftActual, userId) {
 		await conn.query(
 			`
 			UPDATE production_runs
-			SET sqft_actual = ?, status = 'CONFIRMED', confirmed_at = NOW(), confirmed_by = ?
+			SET sqft_actual = ?, status = 'COMPLETED', confirmed_at = NOW(), confirmed_by = ?
 			WHERE id = ?
 		`,
 			[sqftActual, userId ?? null, runId]

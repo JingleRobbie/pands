@@ -9,7 +9,7 @@ export async function load({ params }) {
 	const [lines] = await db.query(
 		`SELECT sol.*, ms.display_label,
 		        COALESCE((SELECT SUM(pr.sqft_scheduled) FROM production_runs pr
-		                  WHERE pr.so_line_id = sol.id AND pr.status != 'CONFIRMED'), 0) AS sqft_scheduled,
+		                  WHERE pr.so_line_id = sol.id AND pr.status != 'COMPLETED'), 0) AS sqft_scheduled,
 		        COALESCE((SELECT SUM(pr.sqft_scheduled) FROM production_runs pr
 		                  WHERE pr.so_line_id = sol.id AND pr.status = 'SCHEDULED'), 0) AS sqft_in_scheduled_runs
 		 FROM sales_order_lines sol
@@ -24,7 +24,7 @@ export async function load({ params }) {
 				`SELECT pr.*, ms.display_label AS sku_label
 			 FROM production_runs pr
 			 JOIN material_skus ms ON ms.id = pr.sku_id
-			 WHERE pr.so_line_id = ? AND pr.status != 'CONFIRMED'
+			 WHERE pr.so_line_id = ? AND pr.status != 'COMPLETED'
 			 ORDER BY pr.run_date`,
 				[line.id]
 			);

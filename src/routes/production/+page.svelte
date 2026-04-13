@@ -1,4 +1,5 @@
 <script>
+	import { goto } from '$app/navigation';
 	let { data } = $props();
 	function fmtDate(d) {
 		if (!d) return '?';
@@ -18,7 +19,7 @@
 	}
 	function statusBadge(s) {
 		if (s === 'SCHEDULED') return 'badge-blue';
-		if (s === 'CONFIRMED') return 'badge-green';
+		if (s === 'COMPLETED') return 'badge-green';
 		if (s === 'UNSCHEDULED') return 'badge-gray';
 		return 'badge-gray';
 	}
@@ -43,7 +44,7 @@
 		<a href="/production" class={tabClass('')}>Active</a>
 		<a href="/production?status=unscheduled" class={tabClass('unscheduled')}>Unscheduled</a>
 		<a href="/production?status=scheduled" class={tabClass('scheduled')}>Scheduled</a>
-		<a href="/production?status=confirmed" class={tabClass('confirmed')}>Confirmed</a>
+		<a href="/production?status=completed" class={tabClass('completed')}>Completed</a>
 		<a href="/production?status=all" class={tabClass('all')}>All</a>
 	</nav>
 
@@ -71,7 +72,10 @@
 					</thead>
 					<tbody>
 						{#each data.searchResults as run (run.id)}
-							<tr class="border-b border-gray-100">
+							<tr
+								class="border-b border-gray-100 cursor-pointer"
+								onclick={() => goto(`/production/${run.id}/confirm`)}
+							>
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
 								<td class="px-4 py-2 text-gray-600">{run.customer_name}</td>
 								<td class="px-4 py-2 font-medium">{run.job_name}</td>
@@ -86,8 +90,11 @@
 										>{statusLabel(run.status)}</span
 									>
 								</td>
-								<td class="px-4 py-2 text-right">
-									{#if run.status !== 'CONFIRMED'}
+								<td
+									class="px-4 py-2 text-right"
+									onclick={(e) => e.stopPropagation()}
+								>
+									{#if run.status !== 'COMPLETED'}
 										<div class="flex justify-end gap-2">
 											<a
 												href="/production/{run.id}/edit"
@@ -95,7 +102,7 @@
 											>
 											{#if run.status === 'SCHEDULED'}
 												<a
-													href="/production/{run.id}/confirm"
+													href="/so/{run.so_id}/confirm"
 													class="btn-primary btn-sm">Confirm</a
 												>
 											{/if}
@@ -128,12 +135,16 @@
 							<th class="px-4 py-2 text-left text-gray-600">SO #</th>
 							<th class="px-4 py-2 text-left text-gray-600">SKU</th>
 							<th class="px-4 py-2 text-right text-gray-600">Sqft</th>
+							<th class="px-4 py-2 text-left text-gray-600">Status</th>
 							<th class="px-4 py-2 text-right"></th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each data.overdueRuns as run (run.id)}
-							<tr class="border-b border-amber-50 hover:bg-amber-50">
+							<tr
+								class="border-b border-amber-50 hover:bg-amber-50 cursor-pointer"
+								onclick={() => goto(`/production/${run.id}/confirm`)}
+							>
 								<td class="px-4 py-2 text-amber-600">{fmtDate(run.run_date)}</td>
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
 								<td class="px-4 py-2 text-gray-600">{run.customer_name}</td>
@@ -143,7 +154,15 @@
 								<td class="px-4 py-2 text-right font-mono"
 									>{Math.round(run.sqft_scheduled).toLocaleString()}</td
 								>
-								<td class="px-4 py-2 text-right">
+								<td class="px-4 py-2">
+									<span class={statusBadge(run.status)}
+										>{statusLabel(run.status)}</span
+									>
+								</td>
+								<td
+									class="px-4 py-2 text-right"
+									onclick={(e) => e.stopPropagation()}
+								>
 									<a href="/production/{run.id}/edit" class="btn-secondary btn-sm"
 										>Edit</a
 									>
@@ -171,12 +190,16 @@
 							<th class="px-4 py-2 text-left text-gray-600">SO #</th>
 							<th class="px-4 py-2 text-left text-gray-600">SKU</th>
 							<th class="px-4 py-2 text-right text-gray-600">Sqft</th>
+							<th class="px-4 py-2 text-left text-gray-600">Status</th>
 							<th class="px-4 py-2 text-right"></th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each data.todayRuns as run (run.id)}
-							<tr class="border-b border-gray-100">
+							<tr
+								class="border-b border-gray-100 cursor-pointer"
+								onclick={() => goto(`/production/${run.id}/confirm`)}
+							>
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
 								<td class="px-4 py-2 text-gray-600">{run.customer_name}</td>
 								<td class="px-4 py-2 font-medium">{run.job_name}</td>
@@ -185,15 +208,22 @@
 								<td class="px-4 py-2 text-right font-mono"
 									>{Math.round(run.sqft_scheduled).toLocaleString()}</td
 								>
-								<td class="px-4 py-2 text-right">
+								<td class="px-4 py-2">
+									<span class={statusBadge(run.status)}
+										>{statusLabel(run.status)}</span
+									>
+								</td>
+								<td
+									class="px-4 py-2 text-right"
+									onclick={(e) => e.stopPropagation()}
+								>
 									<div class="flex justify-end gap-2">
 										<a
 											href="/production/{run.id}/edit"
 											class="btn-secondary btn-sm">Edit</a
 										>
-										<a
-											href="/production/{run.id}/confirm"
-											class="btn-primary btn-sm">Confirm</a
+										<a href="/so/{run.so_id}/confirm" class="btn-primary btn-sm"
+											>Confirm</a
 										>
 									</div>
 								</td>
@@ -218,27 +248,37 @@
 							<th class="px-4 py-2 text-left text-gray-600">Run #</th>
 							<th class="px-4 py-2 text-left text-gray-600">Company</th>
 							<th class="px-4 py-2 text-left text-gray-600">Job</th>
+							<th class="px-4 py-2 text-left text-gray-600">SO #</th>
 							<th class="px-4 py-2 text-left text-gray-600">SKU</th>
 							<th class="px-4 py-2 text-right text-gray-600">Sqft</th>
+							<th class="px-4 py-2 text-left text-gray-600">Status</th>
 							<th class="px-4 py-2 text-right"></th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each data.upcoming as run (run.id)}
-							<tr class="border-b border-gray-100">
+							<tr
+								class="border-b border-gray-100 cursor-pointer"
+								onclick={() => goto(`/production/${run.id}/confirm`)}
+							>
 								<td class="px-4 py-2 text-gray-600">{fmtDate(run.run_date)}</td>
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
 								<td class="px-4 py-2 text-gray-600">{run.customer_name}</td>
-								<td class="px-4 py-2">
-									<a href="/production/{run.id}/confirm" class="hover:underline"
-										>{run.job_name}</a
-									>
-								</td>
+								<td class="px-4 py-2 font-medium">{run.job_name}</td>
+								<td class="px-4 py-2 text-gray-600">{run.so_number}</td>
 								<td class="px-4 py-2">{run.display_label}</td>
 								<td class="px-4 py-2 text-right font-mono"
 									>{Math.round(run.sqft_scheduled).toLocaleString()}</td
 								>
-								<td class="px-4 py-2 text-right">
+								<td class="px-4 py-2">
+									<span class={statusBadge(run.status)}
+										>{statusLabel(run.status)}</span
+									>
+								</td>
+								<td
+									class="px-4 py-2 text-right"
+									onclick={(e) => e.stopPropagation()}
+								>
 									<a href="/production/{run.id}/edit" class="btn-secondary btn-sm"
 										>Edit</a
 									>

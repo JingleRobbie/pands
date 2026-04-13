@@ -17,7 +17,7 @@ export async function load({ url }) {
 			`SELECT sol.id, sol.sku_id, sol.sqft_ordered, sol.sqft_produced,
 			        ms.display_label,
 			        COALESCE((SELECT SUM(sqft_scheduled) FROM production_runs
-			                  WHERE so_line_id = sol.id AND status != 'CONFIRMED'), 0) AS sqft_scheduled
+			                  WHERE so_line_id = sol.id AND status != 'COMPLETED'), 0) AS sqft_scheduled
 			 FROM sales_order_lines sol
 			 JOIN material_skus ms ON ms.id = sol.sku_id
 			 WHERE sol.so_id = ?`,

@@ -33,8 +33,22 @@
 		selectedThicknesses = next;
 	}
 
-	// TODO: change to false once toggle UX is finalized
-	let showHistory = $state(true);
+	let historyRange = $state('current');
+	const today = new Date().toISOString().slice(0, 10);
+	const cutoffDays = { '7d': 7, '30d': 30, '365d': 365 };
+	const visibleHistoryRows = $derived(
+		historyRange === 'current'
+			? []
+			: matrix.historyRows.filter((r) => {
+					const cutoff = new Date(today);
+					cutoff.setDate(cutoff.getDate() - cutoffDays[historyRange]);
+					const rowDate =
+						typeof r.eventDate === 'string'
+							? r.eventDate
+							: r.eventDate.toISOString().slice(0, 10);
+					return rowDate >= cutoff.toISOString().slice(0, 10);
+				})
+	);
 </script>
 
 <svelte:head><title>Overview — PandS</title></svelte:head>
@@ -43,9 +57,12 @@
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Inventory Overview</h1>
 	<div class="flex items-center gap-2">
-		<button onclick={() => (showHistory = !showHistory)} class="btn-secondary btn-sm">
-			{showHistory ? 'Hide History' : 'Show History'}
-		</button>
+		<select bind:value={historyRange} class="form-select text-sm py-1 px-2 h-8">
+			<option value="current">Current</option>
+			<option value="7d">Last 7 days</option>
+			<option value="30d">Last 30 days</option>
+			<option value="365d">Last year</option>
+		</select>
 		<a href="/po/new" class="btn-secondary btn-sm">+ PO</a>
 		<a href="/so/new" class="btn-secondary btn-sm">+ SO</a>
 		<a href="/production/schedule" class="btn-primary btn-sm">Schedule Run</a>
@@ -105,63 +122,59 @@
 				</tr>
 			</thead>
 			<tbody>
-				<!-- Historical activity rows (past 2 days) -->
-				{#if showHistory}
-					{#each matrix.historyRows as row (`${row.subType}-${row.objectId}`)}
-						{@const href =
-							row.subType === 'po'
-								? `/po/${row.objectId}`
-								: `/production/${row.objectId}/confirm`}
-						<tr class="row-historical cursor-pointer" onclick={() => goto(href)}>
-							<td class="text-sm">{row.partyName ?? ''}</td>
-							<td class="text-sm">
-								{#if row.subType === 'po'}
-									<span class="badge-green">{row.status}</span>
-								{:else}
-									{row.description}
-								{/if}
-							</td>
-							<td class="text-sm">
-								{#if row.subType === 'po'}
-									{row.poNumber}
-								{:else}
-									{row.soNumber || row.poNumber}
-								{/if}
-							</td>
-							<td class="text-sm">{fmtDate(row.eventDate)}</td>
-							<td class="text-sm"
-								>{#if row.shipDate}{fmtDate(row.shipDate)}{/if}</td
+				<!-- Historical activity rows -->
+				{#each visibleHistoryRows as row (`${row.subType}-${row.objectId}`)}
+					{@const href =
+						row.subType === 'po'
+							? `/po/${row.objectId}`
+							: `/production/${row.objectId}/confirm`}
+					<tr class="row-historical cursor-pointer" onclick={() => goto(href)}>
+						<td class="text-sm">{row.partyName ?? ''}</td>
+						<td class="text-sm">
+							{#if row.subType === 'po'}
+								<span class="text-gray-400 text-xs">received</span>
+							{:else}
+								{row.description}
+							{/if}
+						</td>
+						<td class="text-sm">
+							{#if row.subType === 'po'}
+								{row.poNumber}
+							{:else}
+								{row.soNumber || row.poNumber}
+							{/if}
+						</td>
+						<td class="text-sm">{fmtDate(row.eventDate)}</td>
+						<td class="text-sm"
+							>{#if row.shipDate}{fmtDate(row.shipDate)}{/if}</td
+						>
+						{#each visibleSkus as sku (sku.id)}
+							{@const cell = row.cells[sku.id]}
+							<td
+								class="sku-col-start text-right font-mono text-sm"
+								onclick={(e) => e.stopPropagation()}
 							>
-							{#each visibleSkus as sku (sku.id)}
-								{@const cell = row.cells[sku.id]}
-								<td
-									class="sku-col-start text-right font-mono text-sm"
-									onclick={(e) => e.stopPropagation()}
-								>
-									{#if cell?.delta != null}
-										{#if cell.delta > 0}
-											<span class="sqft-positive">+{fmtSqft(cell.delta)}</span
-											>
-										{:else}
-											<span class="sqft-negative"
-												>({fmtSqft(Math.abs(cell.delta))})</span
-											>
-										{/if}
+								{#if cell?.delta != null}
+									{#if cell.delta > 0}
+										<span class="sqft-positive">+{fmtSqft(cell.delta)}</span>
+									{:else}
+										<span class="sqft-negative"
+											>({fmtSqft(Math.abs(cell.delta))})</span
+										>
 									{/if}
-								</td>
-								<td
-									class="text-right font-mono text-sm {(cell?.runningTotal ?? 0) <
-									0
-										? 'sqft-negative'
-										: 'text-gray-400'}"
-									onclick={(e) => e.stopPropagation()}
-								>
-									{fmtSqft(cell?.runningTotal ?? 0)}
-								</td>
-							{/each}
-						</tr>
-					{/each}
-				{/if}
+								{/if}
+							</td>
+							<td
+								class="text-right font-mono text-sm {(cell?.runningTotal ?? 0) < 0
+									? 'sqft-negative'
+									: 'text-gray-400'}"
+								onclick={(e) => e.stopPropagation()}
+							>
+								{fmtSqft(cell?.runningTotal ?? 0)}
+							</td>
+						{/each}
+					</tr>
+				{/each}
 
 				<!-- Current inventory balance row -->
 				<tr class="row-balance">

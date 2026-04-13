@@ -1,4 +1,5 @@
 <script>
+	import { goto } from '$app/navigation';
 	let { data } = $props();
 	function fmtDate(d) {
 		return new Date(d).toLocaleDateString('en-US', {
@@ -52,7 +53,10 @@
 			{#if data.searchResults.length}
 				<table class="w-full text-sm list-table">
 					<thead>
-						<tr class="border-b border-gray-100">
+						<tr
+							class="border-b border-gray-100 cursor-pointer"
+							onclick={() => goto(`/so/${so.id}`)}
+						>
 							<th class="px-4 py-2 text-left text-gray-600">SO #</th>
 							<th class="px-4 py-2 text-left text-gray-600">Customer</th>
 							<th class="px-4 py-2 text-left text-gray-600">Job Name</th>
@@ -63,7 +67,10 @@
 					</thead>
 					<tbody>
 						{#each data.searchResults as so (so.id)}
-							<tr class="border-b border-gray-100">
+							<tr
+								class="border-b border-gray-100 cursor-pointer"
+								onclick={() => goto(`/so/${so.id}`)}
+							>
 								<td class="px-4 py-2">
 									<a
 										href="/so/{so.id}"
@@ -90,7 +97,10 @@
 		{:else if data.sos.length}
 			<table class="w-full text-sm list-table">
 				<thead>
-					<tr class="border-b border-gray-100">
+					<tr
+						class="border-b border-gray-100 cursor-pointer"
+						onclick={() => goto(`/so/${so.id}`)}
+					>
 						<th class="px-4 py-2 text-left text-gray-600">SO #</th>
 						<th class="px-4 py-2 text-left text-gray-600">Customer</th>
 						<th class="px-4 py-2 text-left text-gray-600">Job Name</th>
@@ -101,7 +111,10 @@
 				</thead>
 				<tbody>
 					{#each data.sos as so (so.id)}
-						<tr class="border-b border-gray-100">
+						<tr
+							class="border-b border-gray-100 cursor-pointer"
+							onclick={() => goto(`/so/${so.id}`)}
+						>
 							<td class="px-4 py-2">
 								<a
 									href="/so/{so.id}"
