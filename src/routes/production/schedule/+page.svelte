@@ -73,7 +73,7 @@
 								<option value="">— select line —</option>
 								{#each availableLines as line (line.id)}
 									<option value={String(line.id)}
-										>{line.display_label} — {Math.round(
+										>{line.display_label} — {line.facing} — {Math.round(
 											line.sqftUnscheduled
 										).toLocaleString()} sqft unscheduled</option
 									>

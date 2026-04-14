@@ -9,7 +9,7 @@ export async function load({ url }) {
 
 	if (!isFiltered) {
 		const [overdueRuns] = await db.query(
-			`SELECT pr.*, ms.display_label, so.id AS so_id, so.so_number, so.job_name, so.customer_name
+			`SELECT pr.*, ms.display_label, sol.facing, so.id AS so_id, so.so_number, so.job_name, so.customer_name
 			 FROM production_runs pr
 			 JOIN material_skus ms ON ms.id = pr.sku_id
 			 JOIN sales_order_lines sol ON sol.id = pr.so_line_id
@@ -19,7 +19,7 @@ export async function load({ url }) {
 			[today]
 		);
 		const [todayRuns] = await db.query(
-			`SELECT pr.*, ms.display_label, so.id AS so_id, so.so_number, so.job_name, so.customer_name
+			`SELECT pr.*, ms.display_label, sol.facing, so.id AS so_id, so.so_number, so.job_name, so.customer_name
 			 FROM production_runs pr
 			 JOIN material_skus ms ON ms.id = pr.sku_id
 			 JOIN sales_order_lines sol ON sol.id = pr.so_line_id
@@ -29,7 +29,7 @@ export async function load({ url }) {
 			[today]
 		);
 		const [upcoming] = await db.query(
-			`SELECT pr.*, ms.display_label, so.id AS so_id, so.so_number, so.job_name, so.customer_name
+			`SELECT pr.*, ms.display_label, sol.facing, so.id AS so_id, so.so_number, so.job_name, so.customer_name
 			 FROM production_runs pr
 			 JOIN material_skus ms ON ms.id = pr.sku_id
 			 JOIN sales_order_lines sol ON sol.id = pr.so_line_id
@@ -53,7 +53,7 @@ export async function load({ url }) {
 	}
 	const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
 	const [searchResults] = await db.query(
-		`SELECT pr.*, ms.display_label, so.id AS so_id, so.so_number, so.job_name, so.customer_name
+		`SELECT pr.*, ms.display_label, sol.facing, so.id AS so_id, so.so_number, so.job_name, so.customer_name
 		 FROM production_runs pr
 		 JOIN material_skus ms ON ms.id = pr.sku_id
 		 JOIN sales_order_lines sol ON sol.id = pr.so_line_id

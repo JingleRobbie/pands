@@ -103,6 +103,7 @@
 					<th class="min-w-[90px]">Order #</th>
 					<th class="min-w-[70px]">Date</th>
 					<th class="min-w-[70px]">Ship</th>
+					<th class="min-w-[70px]">Facing</th>
 					{#each matrix.skus as sku (sku.id)}
 						{@const trimmed = sku.display_label.trim()}
 						<th class="sku-col-start min-w-[50px] align-bottom">
@@ -133,6 +134,7 @@
 					<td></td>
 					<td class="text-xs text-gray-500">today</td>
 					<td></td>
+					<td></td>
 					{#each matrix.skus as sku (sku.id)}
 						{@const cell = matrix.balanceRow.cells[sku.id]}
 						<td class="sku-col-start"></td>
@@ -145,7 +147,7 @@
 						</td>
 					{/each}
 				</tr>
-				{#each matrix.rows as row (row.rowType + row.objectId)}
+				{#each matrix.rows as row (row.rowType + (row.soLineId ?? row.objectId))}
 					{@const href =
 						row.rowType === 'po'
 							? `/po/${row.objectId}`
@@ -184,6 +186,7 @@
 						<td class="text-sm text-gray-600">
 							{#if row.shipDate}{fmtDate(row.shipDate)}{/if}
 						</td>
+						<td class="text-sm text-gray-600">{row.facing ?? ''}</td>
 						{#each matrix.skus as sku (sku.id)}
 							{@const cell = row.cells[sku.id]}
 							<td

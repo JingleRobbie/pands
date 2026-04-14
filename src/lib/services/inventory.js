@@ -91,6 +91,7 @@ export async function getMatrixData(fromDate = null) {
 	const [prodRuns] = await db.query(
 		`
 		SELECT pr.id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
+		       sol.facing,
 		       so.so_number, so.job_name, so.id AS so_id, so.ship_date, so.customer_name
 		FROM production_runs pr
 		JOIN sales_order_lines sol ON sol.id = pr.so_line_id
@@ -111,6 +112,7 @@ export async function getMatrixData(fromDate = null) {
 			poNumber: '',
 			eventDate: run.run_date,
 			shipDate: run.ship_date,
+			facing: run.facing,
 			objectId: run.id,
 			deltas: { [run.sku_id]: -Number(run.sqft_scheduled) },
 		};
@@ -142,7 +144,7 @@ export async function getMatrixData(fromDate = null) {
 
 	// 8. Unscheduled SO lines
 	const [unscheduledLines] = await db.query(`
-		SELECT sol.id, sol.sku_id, sol.sqft_ordered, sol.sqft_produced,
+		SELECT sol.id, sol.sku_id, sol.sqft_ordered, sol.sqft_produced, sol.facing,
 		       so.so_number, so.job_name, so.id AS so_id, so.customer_name,
 		       COALESCE(
 		         (SELECT SUM(pr.sqft_scheduled)
@@ -172,7 +174,9 @@ export async function getMatrixData(fromDate = null) {
 			poNumber: '',
 			eventDate: null,
 			shipDate: line.ship_date,
+			facing: line.facing,
 			objectId: line.so_id,
+			soLineId: line.id,
 			deltas: { [line.sku_id]: delta },
 			cells: buildCells(skuIds, { [line.sku_id]: delta }, running),
 		});
@@ -245,6 +249,7 @@ export async function getMatrixDataForSkus(skuIds) {
 	const [prodRuns] = await db.query(
 		`
 		SELECT pr.id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
+		       sol.facing,
 		       so.so_number, so.job_name, so.id AS so_id, so.ship_date, so.customer_name
 		FROM production_runs pr
 		JOIN sales_order_lines sol ON sol.id = pr.so_line_id
@@ -266,6 +271,7 @@ export async function getMatrixDataForSkus(skuIds) {
 			poNumber: '',
 			eventDate: run.run_date,
 			shipDate: run.ship_date,
+			facing: run.facing,
 			objectId: run.id,
 			deltas: { [run.sku_id]: -Number(run.sqft_scheduled) },
 		};
@@ -298,7 +304,7 @@ export async function getMatrixDataForSkus(skuIds) {
 	// 8. Unscheduled SO lines for these SKUs
 	const [unscheduledLines] = await db.query(
 		`
-		SELECT sol.id, sol.sku_id, sol.sqft_ordered, sol.sqft_produced,
+		SELECT sol.id, sol.sku_id, sol.sqft_ordered, sol.sqft_produced, sol.facing,
 		       so.so_number, so.job_name, so.id AS so_id, so.customer_name,
 		       COALESCE(
 		         (SELECT SUM(pr.sqft_scheduled)
@@ -331,7 +337,9 @@ export async function getMatrixDataForSkus(skuIds) {
 			poNumber: '',
 			eventDate: null,
 			shipDate: line.ship_date,
+			facing: line.facing,
 			objectId: line.so_id,
+			soLineId: line.id,
 			deltas: { [line.sku_id]: delta },
 			cells: buildCells(skuIds, { [line.sku_id]: delta }, running),
 		});
@@ -406,6 +414,7 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 		`
 		SELECT it.sku_id, it.sqft_quantity, it.reference_id AS pr_id,
 		       DATE(it.created_at) AS event_date,
+		       sol.facing,
 		       so.so_number, so.job_name, so.id AS so_id, so.ship_date, so.customer_name
 		FROM inventory_transactions it
 		JOIN production_runs pr ON pr.id = it.reference_id
@@ -430,6 +439,7 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 				poNumber: '',
 				eventDate: t.event_date,
 				shipDate: t.ship_date,
+				facing: t.facing,
 				objectId: t.pr_id,
 				deltas: {},
 			};

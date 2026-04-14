@@ -64,6 +64,7 @@
 							<th class="px-4 py-2 text-left text-gray-600">Job</th>
 							<th class="px-4 py-2 text-left text-gray-600">SO #</th>
 							<th class="px-4 py-2 text-left text-gray-600">SKU</th>
+							<th class="px-4 py-2 text-left text-gray-600">Facing</th>
 							<th class="px-4 py-2 text-left text-gray-600">Date</th>
 							<th class="px-4 py-2 text-right text-gray-600">Sqft</th>
 							<th class="px-4 py-2 text-left text-gray-600">Status</th>
@@ -81,6 +82,7 @@
 								<td class="px-4 py-2 font-medium">{run.job_name}</td>
 								<td class="px-4 py-2 text-gray-600">{run.so_number}</td>
 								<td class="px-4 py-2">{run.display_label}</td>
+								<td class="px-4 py-2 text-gray-600">{run.facing}</td>
 								<td class="px-4 py-2 text-gray-600">{fmtDate(run.run_date)}</td>
 								<td class="px-4 py-2 text-right font-mono"
 									>{Math.round(run.sqft_scheduled).toLocaleString()}</td
@@ -134,6 +136,7 @@
 							<th class="px-4 py-2 text-left text-gray-600">Job</th>
 							<th class="px-4 py-2 text-left text-gray-600">SO #</th>
 							<th class="px-4 py-2 text-left text-gray-600">SKU</th>
+							<th class="px-4 py-2 text-left text-gray-600">Facing</th>
 							<th class="px-4 py-2 text-right text-gray-600">Sqft</th>
 							<th class="px-4 py-2 text-left text-gray-600">Status</th>
 							<th class="px-4 py-2 text-right"></th>
@@ -151,6 +154,7 @@
 								<td class="px-4 py-2 font-medium">{run.job_name}</td>
 								<td class="px-4 py-2 text-gray-600">{run.so_number}</td>
 								<td class="px-4 py-2">{run.display_label}</td>
+								<td class="px-4 py-2 text-gray-600">{run.facing}</td>
 								<td class="px-4 py-2 text-right font-mono"
 									>{Math.round(run.sqft_scheduled).toLocaleString()}</td
 								>
@@ -189,6 +193,7 @@
 							<th class="px-4 py-2 text-left text-gray-600">Job</th>
 							<th class="px-4 py-2 text-left text-gray-600">SO #</th>
 							<th class="px-4 py-2 text-left text-gray-600">SKU</th>
+							<th class="px-4 py-2 text-left text-gray-600">Facing</th>
 							<th class="px-4 py-2 text-right text-gray-600">Sqft</th>
 							<th class="px-4 py-2 text-left text-gray-600">Status</th>
 							<th class="px-4 py-2 text-right"></th>
@@ -205,6 +210,7 @@
 								<td class="px-4 py-2 font-medium">{run.job_name}</td>
 								<td class="px-4 py-2 text-gray-600">{run.so_number}</td>
 								<td class="px-4 py-2">{run.display_label}</td>
+								<td class="px-4 py-2 text-gray-600">{run.facing}</td>
 								<td class="px-4 py-2 text-right font-mono"
 									>{Math.round(run.sqft_scheduled).toLocaleString()}</td
 								>
@@ -250,6 +256,7 @@
 							<th class="px-4 py-2 text-left text-gray-600">Job</th>
 							<th class="px-4 py-2 text-left text-gray-600">SO #</th>
 							<th class="px-4 py-2 text-left text-gray-600">SKU</th>
+							<th class="px-4 py-2 text-left text-gray-600">Facing</th>
 							<th class="px-4 py-2 text-right text-gray-600">Sqft</th>
 							<th class="px-4 py-2 text-left text-gray-600">Status</th>
 							<th class="px-4 py-2 text-right"></th>
@@ -267,6 +274,7 @@
 								<td class="px-4 py-2 font-medium">{run.job_name}</td>
 								<td class="px-4 py-2 text-gray-600">{run.so_number}</td>
 								<td class="px-4 py-2">{run.display_label}</td>
+								<td class="px-4 py-2 text-gray-600">{run.facing}</td>
 								<td class="px-4 py-2 text-right font-mono"
 									>{Math.round(run.sqft_scheduled).toLocaleString()}</td
 								>

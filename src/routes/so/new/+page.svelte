@@ -1,9 +1,9 @@
 <script>
 	import { enhance } from '$app/forms';
 	let { data, form } = $props();
-	let lines = $state([{ sku_id: '', sqft: '' }]);
+	let lines = $state([{ sku_id: '', sqft: '', facing: 'Faced' }]);
 	function addLine() {
-		lines = [...lines, { sku_id: '', sqft: '' }];
+		lines = [...lines, { sku_id: '', sqft: '', facing: 'Faced' }];
 	}
 	function removeLine(i) {
 		if (lines.length > 1) lines = lines.filter((_, idx) => idx !== i);
@@ -65,7 +65,13 @@
 					</div>
 					<div>
 						<label for="ship_date" class="form-label">Ship Date</label>
-						<input id="ship_date" type="date" name="ship_date" class="form-input" required />
+						<input
+							id="ship_date"
+							type="date"
+							name="ship_date"
+							class="form-input"
+							required
+						/>
 					</div>
 				</div>
 			</div>
@@ -95,8 +101,22 @@
 										>{/each}
 								</select>
 							</div>
+							<div class="w-28">
+								<label for="facing_{i}" class="form-label text-xs">Facing</label>
+								<select
+									id="facing_{i}"
+									name="facing"
+									class="form-select text-sm"
+									bind:value={line.facing}
+								>
+									<option value="Faced">Faced</option>
+									<option value="Raw">Raw</option>
+								</select>
+							</div>
 							<div class="w-36">
-								<label for="sqft_ordered_{i}" class="form-label text-xs">Sq Ft</label>
+								<label for="sqft_ordered_{i}" class="form-label text-xs"
+									>Sq Ft</label
+								>
 								<input
 									id="sqft_ordered_{i}"
 									type="number"

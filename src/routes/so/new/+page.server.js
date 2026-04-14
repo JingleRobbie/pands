@@ -17,6 +17,7 @@ export const actions = {
 		const shipDate = data.get('ship_date')?.trim();
 		const skuIds = data.getAll('sku_id');
 		const sqfts = data.getAll('sqft_ordered');
+		const facings = data.getAll('facing');
 
 		if (!soNumber || !customerName || !jobName || !shipDate)
 			return fail(400, {
@@ -29,7 +30,11 @@ export const actions = {
 		if (existing) return fail(400, { error: `SO number '${soNumber}' already exists.` });
 
 		const lines = skuIds
-			.map((sid, i) => ({ skuId: sid, sqft: Math.round(Number(sqfts[i])) }))
+			.map((sid, i) => ({
+				skuId: sid,
+				sqft: Math.round(Number(sqfts[i])),
+				facing: facings[i] || 'Faced',
+			}))
 			.filter((l) => l.skuId && l.sqft > 0);
 
 		if (!lines.length) return fail(400, { error: 'Add at least one line item.' });
@@ -42,8 +47,8 @@ export const actions = {
 
 		for (const l of lines) {
 			await db.query(
-				'INSERT INTO sales_order_lines (so_id, sku_id, sqft_ordered) VALUES (?, ?, ?)',
-				[soId, l.skuId, l.sqft]
+				'INSERT INTO sales_order_lines (so_id, sku_id, sqft_ordered, facing) VALUES (?, ?, ?, ?)',
+				[soId, l.skuId, l.sqft, l.facing]
 			);
 		}
 

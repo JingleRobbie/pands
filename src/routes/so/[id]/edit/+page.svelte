@@ -11,7 +11,7 @@
 
 	let newLines = $state([]);
 	function addLine() {
-		newLines = [...newLines, { sku_id: '', sqft: '' }];
+		newLines = [...newLines, { sku_id: '', sqft: '', facing: 'Faced' }];
 	}
 	function removeNewLine(i) {
 		newLines = newLines.filter((_, idx) => idx !== i);
@@ -105,9 +105,26 @@
 							<input type="hidden" name="line_id" value={line.id} />
 							<div class="flex-1">
 								<label for="sku-{line.id}" class="form-label text-xs">SKU</label>
-								<p id="sku-{line.id}" class="form-input text-sm bg-gray-50 text-gray-700">
+								<p
+									id="sku-{line.id}"
+									class="form-input text-sm bg-gray-50 text-gray-700"
+								>
 									{line.display_label}
 								</p>
+							</div>
+							<div class="w-28">
+								<label for="facing-{line.id}" class="form-label text-xs"
+									>Facing</label
+								>
+								<select
+									id="facing-{line.id}"
+									name="line_facing"
+									class="form-select text-sm"
+									bind:value={line.facing}
+								>
+									<option value="Faced">Faced</option>
+									<option value="Raw">Raw</option>
+								</select>
 							</div>
 							<div class="w-36">
 								<label for="sqft-{line.id}" class="form-label text-xs">Sq Ft</label>
@@ -135,13 +152,31 @@
 						{#each lockedLines as line (line.id)}
 							<div class="flex items-end gap-3 opacity-60">
 								<div class="flex-1">
-									<label for="locked-sku-{line.id}" class="form-label text-xs">SKU</label>
-									<p id="locked-sku-{line.id}" class="form-input text-sm bg-gray-50 text-gray-500">
+									<label for="locked-sku-{line.id}" class="form-label text-xs"
+										>SKU</label
+									>
+									<p
+										id="locked-sku-{line.id}"
+										class="form-input text-sm bg-gray-50 text-gray-500"
+									>
 										{line.display_label}
 									</p>
 								</div>
+								<div class="w-28">
+									<label for="locked-facing-{line.id}" class="form-label text-xs"
+										>Facing</label
+									>
+									<p
+										id="locked-facing-{line.id}"
+										class="form-input text-sm bg-gray-50 text-gray-500"
+									>
+										{line.facing}
+									</p>
+								</div>
 								<div class="w-36">
-									<label for="locked-sqft-{line.id}" class="form-label text-xs">Sq Ft</label>
+									<label for="locked-sqft-{line.id}" class="form-label text-xs"
+										>Sq Ft</label
+									>
 									<p
 										id="locked-sqft-{line.id}"
 										class="form-input text-sm text-right font-mono bg-gray-50 text-gray-500"
@@ -171,6 +206,18 @@
 									{#each skus as sku (sku.id)}<option value={sku.id}
 											>{sku.display_label}</option
 										>{/each}
+								</select>
+							</div>
+							<div class="w-28">
+								<label for="newfacing-{i}" class="form-label text-xs">Facing</label>
+								<select
+									id="newfacing-{i}"
+									name="new_facing"
+									class="form-select text-sm"
+									bind:value={line.facing}
+								>
+									<option value="Faced">Faced</option>
+									<option value="Raw">Raw</option>
 								</select>
 							</div>
 							<div class="w-36">

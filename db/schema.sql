@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS sales_order_lines (
   so_id         INT NOT NULL,
   sku_id        INT NOT NULL,
   sqft_ordered  INT NOT NULL,
+  facing        VARCHAR(50) NOT NULL DEFAULT 'Faced',
   sqft_produced INT DEFAULT 0,
   UNIQUE KEY uq_so_sku (so_id, sku_id),
   FOREIGN KEY (so_id) REFERENCES sales_orders(id) ON DELETE CASCADE,

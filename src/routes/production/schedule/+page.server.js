@@ -14,7 +14,7 @@ export async function load({ url }) {
 	const soLines = {};
 	for (const so of sos) {
 		const [lines] = await db.query(
-			`SELECT sol.id, sol.sku_id, sol.sqft_ordered, sol.sqft_produced,
+			`SELECT sol.id, sol.sku_id, sol.sqft_ordered, sol.sqft_produced, sol.facing,
 			        ms.display_label,
 			        COALESCE((SELECT SUM(sqft_scheduled) FROM production_runs
 			                  WHERE so_line_id = sol.id AND status != 'COMPLETED'), 0) AS sqft_scheduled

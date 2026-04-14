@@ -98,6 +98,7 @@
 					<th class="min-w-[90px]">Order #</th>
 					<th class="min-w-[70px]">Run</th>
 					<th class="min-w-[70px]">Ship</th>
+					<th class="min-w-[70px]">Facing</th>
 					{#each visibleSkus as sku (sku.id)}
 						{@const trimmed = sku.display_label.trim()}
 						<th class="sku-col-start min-w-[50px] align-bottom">
@@ -132,7 +133,7 @@
 						<td class="text-sm">{row.partyName ?? ''}</td>
 						<td class="text-sm">
 							{#if row.subType === 'po'}
-								<span class="text-gray-400 text-xs">received</span>
+								<span class="badge-green">RECEIVED</span>
 							{:else}
 								{row.description}
 							{/if}
@@ -148,6 +149,7 @@
 						<td class="text-sm"
 							>{#if row.shipDate}{fmtDate(row.shipDate)}{/if}</td
 						>
+						<td class="text-sm text-gray-600">{row.facing ?? ''}</td>
 						{#each visibleSkus as sku (sku.id)}
 							{@const cell = row.cells[sku.id]}
 							<td
@@ -180,7 +182,7 @@
 				<tr class="row-balance">
 					<td></td>
 					<td></td><td></td>
-					<td colspan="2" class="font-semibold text-gray-700">Current Inventory</td>
+					<td colspan="3" class="font-semibold text-gray-700">Current Inventory</td>
 					{#each visibleSkus as sku (sku.id)}
 						{@const cell = matrix.balanceRow.cells[sku.id]}
 						<td class="sku-col-start"></td>
@@ -195,7 +197,7 @@
 				</tr>
 
 				<!-- Dated + unscheduled rows -->
-				{#each matrix.rows as row (row.rowType + row.objectId)}
+				{#each matrix.rows as row (row.rowType + (row.soLineId ?? row.objectId))}
 					{@const href =
 						row.rowType === 'po'
 							? `/po/${row.objectId}`
@@ -238,6 +240,7 @@
 						<td class="text-sm text-gray-600">
 							{#if row.shipDate}{fmtDate(row.shipDate)}{/if}
 						</td>
+						<td class="text-sm text-gray-600">{row.facing ?? ''}</td>
 						{#each visibleSkus as sku (sku.id)}
 							{@const cell = row.cells[sku.id]}
 							<td

@@ -50,12 +50,18 @@ export const actions = {
 		// Editable kept lines (no runs)
 		const keptIds = data.getAll('line_id').map(Number);
 		const keptSqfts = data.getAll('line_sqft').map((v) => Math.round(Number(v)));
+		const keptFacings = data.getAll('line_facing');
 
 		// New lines
 		const newSkuIds = data.getAll('sku_id');
 		const newSqfts = data.getAll('sqft_ordered');
+		const newFacings = data.getAll('new_facing');
 		const newLines = newSkuIds
-			.map((sid, i) => ({ skuId: sid, sqft: Math.round(Number(newSqfts[i])) }))
+			.map((sid, i) => ({
+				skuId: sid,
+				sqft: Math.round(Number(newSqfts[i])),
+				facing: newFacings[i] || 'Faced',
+			}))
 			.filter((l) => l.skuId && l.sqft > 0);
 
 		// Load editable lines (no runs) to validate
@@ -99,18 +105,18 @@ export const actions = {
 			// Update sqft on kept editable lines
 			for (let i = 0; i < keptIds.length; i++) {
 				if (editableIds.includes(keptIds[i])) {
-					await conn.query('UPDATE sales_order_lines SET sqft_ordered = ? WHERE id = ?', [
-						keptSqfts[i],
-						keptIds[i],
-					]);
+					await conn.query(
+						'UPDATE sales_order_lines SET sqft_ordered = ?, facing = ? WHERE id = ?',
+						[keptSqfts[i], keptFacings[i] || 'Faced', keptIds[i]]
+					);
 				}
 			}
 
 			// Insert new lines
 			for (const l of newLines) {
 				await conn.query(
-					'INSERT INTO sales_order_lines (so_id, sku_id, sqft_ordered) VALUES (?, ?, ?)',
-					[params.id, l.skuId, l.sqft]
+					'INSERT INTO sales_order_lines (so_id, sku_id, sqft_ordered, facing) VALUES (?, ?, ?, ?)',
+					[params.id, l.skuId, l.sqft, l.facing]
 				);
 			}
 
