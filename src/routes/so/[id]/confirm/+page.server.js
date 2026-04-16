@@ -1,6 +1,6 @@
 import { db } from '$lib/db.js';
-import { error, fail, redirect } from '@sveltejs/kit';
-import { confirmRun } from '$lib/services/production.js';
+import { error, fail } from '@sveltejs/kit';
+import { confirmRun, deleteRun } from '$lib/services/production.js';
 import { getMatrixDataForSkus } from '$lib/services/inventory.js';
 
 export async function load({ params }) {
@@ -24,23 +24,43 @@ export async function load({ params }) {
 }
 
 export const actions = {
-	default: async ({ request, locals }) => {
+	confirm: async ({ request, locals }) => {
 		const data = await request.formData();
 		const runIds = data.getAll('run_id').map(Number);
 
 		if (runIds.length === 0) return fail(400, { error: 'No runs to confirm.' });
 
+		const shortfalls = [];
 		for (const runId of runIds) {
 			const sqft = Math.round(Number(data.get(`sqft_${runId}`)));
 			if (isNaN(sqft) || sqft <= 0)
 				return fail(400, { error: 'Enter a valid sq ft value for all runs.' });
+			const runDate = data.get(`date_${runId}`) || null;
 			try {
-				await confirmRun(runId, sqft, locals.appUser?.id);
+				const result = await confirmRun(runId, sqft, locals.appUser?.id, runDate);
+				if (result?.shortfallRunNumber) {
+					shortfalls.push({
+						runNumber: result.shortfallRunNumber,
+						sqft: result.shortfallSqft,
+					});
+				}
 			} catch (err) {
 				return fail(400, { error: err.message });
 			}
 		}
 
-		redirect(303, '/production');
+		return { success: true, confirmed: runIds.length, shortfalls };
+	},
+
+	remove: async ({ request }) => {
+		const data = await request.formData();
+		const runId = Number(data.get('run_id'));
+		if (!runId) return fail(400, { error: 'No run specified.' });
+		try {
+			await deleteRun(runId);
+		} catch (err) {
+			return fail(400, { error: err.message });
+		}
+		return { deleted: true };
 	},
 };

@@ -2,6 +2,7 @@
 	let today = new Date();
 	let year = $state(today.getFullYear());
 	let month = $state(today.getMonth() + 1); // 1-based
+	let status = $state('');
 
 	let events = $state({});
 
@@ -22,8 +23,19 @@
 	const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 	async function loadEvents() {
-		const res = await fetch(`/calendar/events?year=${year}&month=${month}`);
+		const res = await fetch(`/calendar/events?year=${year}&month=${month}&status=${status}`);
 		events = await res.json();
+	}
+
+	function setStatus(s) {
+		status = s;
+		loadEvents();
+	}
+
+	function tabClass(val) {
+		return status === val
+			? 'rounded-full px-3 py-1 text-sm font-medium bg-gray-800 text-white'
+			: 'rounded-full px-3 py-1 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900';
 	}
 
 	function prev() {
@@ -91,6 +103,16 @@
 	</div>
 </header>
 <main class="p-6">
+	<nav class="flex gap-1 mb-4">
+		<button class={tabClass('')} onclick={() => setStatus('')}>All</button>
+		<button class={tabClass('scheduled')} onclick={() => setStatus('scheduled')}
+			>Scheduled</button
+		>
+		<button class={tabClass('completed')} onclick={() => setStatus('completed')}
+			>Completed</button
+		>
+	</nav>
+
 	<div class="grid grid-cols-7 text-xs font-semibold text-gray-500 border-b border-gray-200 mb-1">
 		{#each DAY_NAMES as name (name)}
 			<div class="py-1 text-center">{name}</div>

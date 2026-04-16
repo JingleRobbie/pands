@@ -1,11 +1,9 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
-	import { fmtDate } from '$lib/utils.js';
+	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
 	const { so, runs, matrix } = data;
-
-	import { fmtSqft } from '$lib/utils.js';
 
 	const scheduledRuns = $derived(runs.filter((r) => r.status === 'SCHEDULED'));
 	const confirmedRuns = $derived(runs.filter((r) => r.status === 'COMPLETED'));
@@ -25,6 +23,19 @@
 		}
 		return groups;
 	});
+
+	let confirmDeleteId = $state(null);
+	let deleteDialog;
+
+	function requestDelete(runId) {
+		confirmDeleteId = runId;
+		deleteDialog.showModal();
+	}
+
+	function toDateInput(d) {
+		if (!d) return '';
+		return d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10);
+	}
 </script>
 
 <svelte:head><title>Confirm Job — {so.so_number} — PandS</title></svelte:head>
@@ -47,94 +58,144 @@
 			</div>
 		{/if}
 
-		{#if scheduledRuns.length === 0}
-			<div class="card">
-				<div class="card-body text-sm text-gray-500">
-					All production runs for this job are already completed.
+		{#if form?.success}
+			<div class="card mb-4">
+				<div class="card-body space-y-2">
+					<p class="text-sm font-medium text-gray-800">
+						{form.confirmed} run{form.confirmed === 1 ? '' : 's'} confirmed.
+					</p>
+					{#if form.shortfalls.length > 0}
+						<p class="text-sm text-amber-700">
+							{form.shortfalls.length} unscheduled run{form.shortfalls.length === 1
+								? ''
+								: 's'} created for shortfall:
+						</p>
+						<ul class="text-sm text-amber-700 list-disc list-inside">
+							{#each form.shortfalls as sf (sf.runNumber)}
+								<li>
+									<span class="font-mono">{sf.runNumber}</span> — {fmtSqft(
+										sf.sqft
+									)} sqft
+								</li>
+							{/each}
+						</ul>
+					{/if}
+					<a href="/production" class="btn-secondary btn-sm inline-block mt-2"
+						>Back to Production</a
+					>
 				</div>
 			</div>
-		{:else}
-			<form method="POST" use:enhance>
-				<div class="card mb-4">
-					<div class="card-header">
-						<span class="font-semibold text-sm text-gray-700">Runs to Confirm</span>
-						<span class="text-xs text-gray-400">{scheduledRuns.length} scheduled</span>
+		{/if}
+
+		{#if !form?.success}
+			{#if scheduledRuns.length === 0}
+				<div class="card">
+					<div class="card-body text-sm text-gray-500">
+						All production runs for this job are already completed.
 					</div>
-					<table class="w-full text-sm">
-						<thead>
-							<tr class="border-b border-gray-100">
-								<th class="px-4 py-2 w-8"></th>
-								<th class="px-4 py-2 text-left text-gray-600">Run #</th>
-								<th class="px-4 py-2 text-left text-gray-600">SKU</th>
-								<th class="px-4 py-2 text-left text-gray-600">Date</th>
-								<th class="px-4 py-2 text-right text-gray-600">Scheduled</th>
-								<th class="px-4 py-2 text-right text-gray-600">Actual Sqft</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each groupedScheduled() as group (group.key)}
-								{#if group.runs.length > 1}
-									<tr>
-										<td
-											colspan="6"
-											class="px-4 py-1 bg-gray-50 border-y border-gray-200"
-										>
-											<span
-												class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-												>Group · {group.runs.length} runs</span
+				</div>
+			{:else}
+				<form method="POST" action="?/confirm" use:enhance>
+					<div class="card mb-4">
+						<div class="card-header">
+							<span class="font-semibold text-sm text-gray-700">Runs to Confirm</span>
+							<span class="text-xs text-gray-400"
+								>{scheduledRuns.length} scheduled</span
+							>
+						</div>
+						<table class="w-full text-sm">
+							<thead>
+								<tr class="border-b border-gray-100">
+									<th class="px-4 py-2 w-8"></th>
+									<th class="px-4 py-2 text-left text-gray-600">Run #</th>
+									<th class="px-4 py-2 text-left text-gray-600">SKU</th>
+									<th class="px-4 py-2 text-left text-gray-600">Date</th>
+									<th class="px-4 py-2 text-right text-gray-600">Scheduled</th>
+									<th class="px-4 py-2 text-right text-gray-600">Actual Sqft</th>
+									<th class="px-4 py-2 w-8"></th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each groupedScheduled() as group (group.key)}
+									{#if group.runs.length > 1}
+										<tr>
+											<td
+												colspan="7"
+												class="px-4 py-1 bg-gray-50 border-y border-gray-200"
 											>
-										</td>
-									</tr>
-								{/if}
-								{#each group.runs as run (run.id)}
-									<tr
-										class="border-b border-gray-50 {group.runs.length > 1
-											? 'border-l-2 border-l-indigo-200'
-											: ''}"
-									>
-										<td class="px-4 py-2">
-											<input
-												type="checkbox"
-												name="run_id"
-												value={run.id}
-												id="confirm-{run.id}"
-												checked
-											/>
-										</td>
-										<td class="px-4 py-2 font-mono text-xs">
-											<label for="confirm-{run.id}" class="cursor-pointer"
-												>{run.run_number}</label
-											>
-										</td>
-										<td class="px-4 py-2">{run.sku_label}</td>
-										<td class="px-4 py-2 text-gray-600"
-											>{fmtDate(run.run_date)}</td
+												<span
+													class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+													>Group · {group.runs.length} runs</span
+												>
+											</td>
+										</tr>
+									{/if}
+									{#each group.runs as run (run.id)}
+										<tr
+											class="border-b border-gray-50 {group.runs.length > 1
+												? 'border-l-2 border-l-indigo-200'
+												: ''}"
 										>
-										<td class="px-4 py-2 text-right font-mono text-gray-500">
-											{fmtSqft(run.sqft_scheduled)}
-										</td>
-										<td class="px-4 py-2 text-right">
-											<input
-												type="number"
-												name="sqft_{run.id}"
-												value={run.sqft_scheduled}
-												min="1"
-												step="1"
-												class="form-input w-28 text-right font-mono"
-											/>
-										</td>
-									</tr>
+											<td class="px-4 py-2">
+												<input
+													type="checkbox"
+													name="run_id"
+													value={run.id}
+													id="confirm-{run.id}"
+													checked
+												/>
+											</td>
+											<td class="px-4 py-2 font-mono text-xs">
+												<label for="confirm-{run.id}" class="cursor-pointer"
+													>{run.run_number}</label
+												>
+											</td>
+											<td class="px-4 py-2">{run.sku_label}</td>
+											<td class="px-4 py-2">
+												<input
+													type="date"
+													name="date_{run.id}"
+													value={toDateInput(run.run_date)}
+													class="form-input text-sm"
+												/>
+											</td>
+											<td
+												class="px-4 py-2 text-right font-mono text-gray-500"
+											>
+												{fmtSqft(run.sqft_scheduled)}
+											</td>
+											<td class="px-4 py-2 text-right">
+												<input
+													type="number"
+													name="sqft_{run.id}"
+													value={run.sqft_scheduled}
+													min="1"
+													max={run.sqft_scheduled}
+													step="1"
+													class="form-input w-28 text-right font-mono"
+												/>
+											</td>
+											<td class="px-4 py-2 text-center">
+												<button
+													type="button"
+													class="text-gray-300 hover:text-red-500 font-bold leading-none text-lg"
+													onclick={() => requestDelete(run.id)}>×</button
+												>
+											</td>
+										</tr>
+									{/each}
 								{/each}
-							{/each}
-						</tbody>
-					</table>
-				</div>
-				<div class="flex gap-3">
-					<button type="submit" class="btn-primary">Confirm &amp; Deduct Inventory</button
-					>
-					<a href="/production" class="btn-secondary">Cancel</a>
-				</div>
-			</form>
+							</tbody>
+						</table>
+					</div>
+					<div class="flex gap-3">
+						<button type="submit" class="btn-primary"
+							>Confirm &amp; Deduct Inventory</button
+						>
+						<a href="/production" class="btn-secondary">Cancel</a>
+					</div>
+				</form>
+			{/if}
 		{/if}
 
 		{#if confirmedRuns.length > 0}
@@ -167,6 +228,32 @@
 			</div>
 		{/if}
 	</div>
+
+	<dialog bind:this={deleteDialog} class="rounded-lg shadow-xl p-6 w-80 backdrop:bg-black/30">
+		<p class="text-sm font-medium text-gray-900 mb-1">Delete production run?</p>
+		<p class="text-xs text-gray-500 mb-4">This cannot be undone.</p>
+		<form
+			method="POST"
+			action="?/remove"
+			use:enhance={() => () => {
+				deleteDialog.close();
+				confirmDeleteId = null;
+			}}
+		>
+			<input type="hidden" name="run_id" value={confirmDeleteId} />
+			<div class="flex gap-2 justify-end">
+				<button
+					type="button"
+					class="btn-secondary btn-sm"
+					onclick={() => {
+						deleteDialog.close();
+						confirmDeleteId = null;
+					}}>Cancel</button
+				>
+				<button type="submit" class="btn-danger btn-sm">Delete</button>
+			</div>
+		</form>
+	</dialog>
 
 	{#if matrix}
 		<div class="card overflow-x-auto mt-6">

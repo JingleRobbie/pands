@@ -5,6 +5,7 @@ import { localDate } from '$lib/utils.js';
 export async function GET({ url }) {
 	const year = Number(url.searchParams.get('year') || new Date().getFullYear());
 	const month = Number(url.searchParams.get('month') || new Date().getMonth() + 1);
+	const status = url.searchParams.get('status') ?? '';
 
 	const start = `${year}-${String(month).padStart(2, '0')}-01`;
 	const end = localDate(new Date(year, month, 0)); // last day of month
@@ -22,6 +23,16 @@ export async function GET({ url }) {
 		[start, end]
 	);
 
+	let runStatusFilter;
+	if (status === 'scheduled') {
+		runStatusFilter = "AND pr.status = 'SCHEDULED'";
+	} else if (status === 'completed') {
+		runStatusFilter = "AND pr.status = 'COMPLETED'";
+	} else {
+		// default / all: any run with a date (UNSCHEDULED have no date so excluded by BETWEEN)
+		runStatusFilter = "AND pr.status IN ('SCHEDULED','COMPLETED')";
+	}
+
 	const [runRows] = await db.query(
 		`SELECT pr.id, pr.run_number, pr.run_date AS event_date,
 		        ms.display_label, pr.sqft_scheduled,
@@ -32,7 +43,7 @@ export async function GET({ url }) {
 		 JOIN sales_order_lines sol ON sol.id = pr.so_line_id
 		 JOIN sales_orders so ON so.id = sol.so_id
 		 WHERE pr.run_date BETWEEN ? AND ?
-		   AND pr.status IN ('SCHEDULED','COMPLETED')
+		   ${runStatusFilter}
 		 ORDER BY pr.run_date, pr.run_number`,
 		[start, end]
 	);

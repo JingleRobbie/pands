@@ -150,7 +150,7 @@ export async function scheduleGroup(soId, items, runDate, userId) {
 	}
 }
 
-export async function confirmRun(runId, sqftActual, userId) {
+export async function confirmRun(runId, sqftActual, userId, runDate = null) {
 	const conn = await db.getConnection();
 	try {
 		await conn.beginTransaction();
@@ -160,6 +160,10 @@ export async function confirmRun(runId, sqftActual, userId) {
 		]);
 		if (!run) throw new Error('Production run not found.');
 		if (run.status === 'COMPLETED') throw new Error('This run is already completed.');
+		if (sqftActual > run.sqft_scheduled)
+			throw new Error(
+				`Cannot record ${sqftActual} sqft — only ${run.sqft_scheduled} sqft was scheduled.`
+			);
 
 		// Create CONSUMPTION transaction
 		const [[sol]] = await conn.query('SELECT * FROM sales_order_lines WHERE id = ?', [
@@ -181,14 +185,13 @@ export async function confirmRun(runId, sqftActual, userId) {
 			]
 		);
 
-		// Mark run confirmed
+		// Mark run confirmed (update date if provided)
 		await conn.query(
-			`
-			UPDATE production_runs
-			SET sqft_actual = ?, status = 'COMPLETED', confirmed_at = NOW(), confirmed_by = ?
-			WHERE id = ?
-		`,
-			[sqftActual, userId ?? null, runId]
+			`UPDATE production_runs
+			 SET sqft_actual = ?, run_date = COALESCE(?, run_date), status = 'COMPLETED',
+			     confirmed_at = NOW(), confirmed_by = ?
+			 WHERE id = ?`,
+			[sqftActual, runDate || null, userId ?? null, runId]
 		);
 
 		// Update SO line sqft_produced
@@ -213,6 +216,38 @@ export async function confirmRun(runId, sqftActual, userId) {
 			]);
 		}
 
+		// Auto-create unscheduled run for any shortfall
+		const shortfall = run.sqft_scheduled - sqftActual;
+		let shortfallRunNumber = null;
+		if (shortfall > 0) {
+			shortfallRunNumber = await nextRunNumber(conn);
+			await conn.query(
+				`INSERT INTO production_runs (run_number, so_line_id, sku_id, run_date, sqft_scheduled, status, created_by)
+				 VALUES (?, ?, ?, NULL, ?, 'UNSCHEDULED', ?)`,
+				[shortfallRunNumber, run.so_line_id, run.sku_id, shortfall, userId ?? null]
+			);
+		}
+
+		await conn.commit();
+		return { shortfallRunNumber, shortfallSqft: shortfall > 0 ? shortfall : null };
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+}
+
+export async function deleteRun(runId) {
+	const conn = await db.getConnection();
+	try {
+		await conn.beginTransaction();
+		const [[run]] = await conn.query('SELECT * FROM production_runs WHERE id = ? FOR UPDATE', [
+			runId,
+		]);
+		if (!run) throw new Error('Production run not found.');
+		if (run.status === 'COMPLETED') throw new Error('Cannot delete a completed run.');
+		await conn.query('DELETE FROM production_runs WHERE id = ?', [runId]);
 		await conn.commit();
 	} catch (err) {
 		await conn.rollback();

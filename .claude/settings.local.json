@@ -6,7 +6,9 @@
       "Bash(npm run:*)",
       "Bash(grep -o '.\\\\{0,200\\\\}btn-primary.\\\\{0,200\\\\}' \"c:/Users/schel/Documents/Development/PandS/static/css/app.css\")",
       "Bash(npm list:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   },
   "hooks": {
