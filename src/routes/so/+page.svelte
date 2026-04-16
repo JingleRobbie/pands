@@ -1,14 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { fmtDate } from '$lib/utils.js';
 	let { data } = $props();
-	function fmtDate(d) {
-		return new Date(d).toLocaleDateString('en-US', {
-			month: 'numeric',
-			day: 'numeric',
-			year: 'numeric',
-			timeZone: 'UTC',
-		});
-	}
 	function statusBadge(s) {
 		if (s === 'OPEN') return 'badge-blue';
 		if (s === 'IN_PROGRESS') return 'badge-amber';

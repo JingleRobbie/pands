@@ -1,7 +1,8 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { run, maxSqft } = data;
+	const { run, maxSqft, peers } = data;
 
 	let runDate = $state(
 		run.run_date instanceof Date
@@ -60,11 +61,11 @@
 				</div>
 				<div class="card-body space-y-4">
 					<div>
-						<label for="run_date" class="form-label"
-							>Run Date <span class="text-gray-400 font-normal"
+						<label for="run_date" class="form-label">
+							Run Date <span class="text-gray-400 font-normal"
 								>(leave blank to unschedule)</span
-							></label
-						>
+							>
+						</label>
 						<input
 							id="run_date"
 							type="date"
@@ -87,11 +88,70 @@
 							required
 						/>
 						<p class="text-xs text-gray-400 mt-1">
-							Max available: {maxSqft.toLocaleString()} sqft
+							Max available: {fmtSqft(maxSqft)} sqft
 						</p>
 					</div>
 				</div>
 			</div>
+
+			{#if peers.length > 0}
+				<div class="card mb-4">
+					<div class="card-header">
+						<span class="font-semibold text-sm text-gray-700"
+							>Apply to other runs in this group</span
+						>
+						<span class="text-xs text-gray-400"
+							>Date change applies to all checked runs</span
+						>
+					</div>
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-100">
+								<th class="px-4 py-2 text-left text-gray-400 font-normal w-8"></th>
+								<th class="px-4 py-2 text-left text-gray-600">Run #</th>
+								<th class="px-4 py-2 text-left text-gray-600">SKU</th>
+								<th class="px-4 py-2 text-left text-gray-600">Current Date</th>
+								<th class="px-4 py-2 text-right text-gray-600">Sq Ft</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each peers as peer (peer.id)}
+								<tr class="border-b border-gray-50">
+									<td class="px-4 py-2">
+										<input
+											type="checkbox"
+											name="peer_id"
+											value={peer.id}
+											id="peer-{peer.id}"
+											checked
+										/>
+									</td>
+									<td class="px-4 py-2 font-mono text-xs">
+										<label for="peer-{peer.id}" class="cursor-pointer"
+											>{peer.run_number}</label
+										>
+									</td>
+									<td class="px-4 py-2">{peer.display_label}</td>
+									<td class="px-4 py-2 text-gray-500">
+										{peer.run_date ? fmtDate(peer.run_date) : '—'}
+									</td>
+									<td class="px-4 py-2 text-right">
+										<input
+											type="number"
+											name="peer_sqft_{peer.id}"
+											step="1"
+											min="1"
+											max={peer.maxSqft}
+											class="form-input text-sm text-right font-mono w-28"
+											value={peer.sqft_scheduled}
+										/>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{/if}
 
 			<div class="flex gap-3">
 				<button type="submit" class="btn-primary">Save Changes</button>

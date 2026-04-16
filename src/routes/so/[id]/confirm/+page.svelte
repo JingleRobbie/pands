@@ -1,27 +1,30 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
+	import { fmtDate } from '$lib/utils.js';
 	let { data, form } = $props();
 	const { so, runs, matrix } = data;
+
+	import { fmtSqft } from '$lib/utils.js';
 
 	const scheduledRuns = $derived(runs.filter((r) => r.status === 'SCHEDULED'));
 	const confirmedRuns = $derived(runs.filter((r) => r.status === 'COMPLETED'));
 
-	function fmtDate(d) {
-		if (!d) return '?';
-		const s = typeof d === 'string' ? d : d.toISOString();
-		const [year, m, day] = s.slice(0, 10).split('-');
-		return new Date(+year, +m - 1, +day).toLocaleDateString('en-US', {
-			month: 'short',
-			day: 'numeric',
-			year: 'numeric',
-		});
-	}
-
-	function fmtSqft(n) {
-		if (n == null) return '';
-		return Math.round(n).toLocaleString();
-	}
+	// Group scheduled runs by group_id; null-grouped runs each form a singleton
+	const groupedScheduled = $derived(() => {
+		const groups = [];
+		const seen = new Map();
+		for (const run of scheduledRuns) {
+			const key = run.group_id ?? `solo-${run.id}`;
+			if (!seen.has(key)) {
+				const group = { key, runs: [] };
+				seen.set(key, group);
+				groups.push(group);
+			}
+			seen.get(key).runs.push(run);
+		}
+		return groups;
+	});
 </script>
 
 <svelte:head><title>Confirm Job — {so.so_number} — PandS</title></svelte:head>
@@ -60,6 +63,7 @@
 					<table class="w-full text-sm">
 						<thead>
 							<tr class="border-b border-gray-100">
+								<th class="px-4 py-2 w-8"></th>
 								<th class="px-4 py-2 text-left text-gray-600">Run #</th>
 								<th class="px-4 py-2 text-left text-gray-600">SKU</th>
 								<th class="px-4 py-2 text-left text-gray-600">Date</th>
@@ -68,27 +72,59 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each scheduledRuns as run (run.id)}
-								<tr class="border-b border-gray-50">
-									<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
-									<td class="px-4 py-2">{run.sku_label}</td>
-									<td class="px-4 py-2 text-gray-600">{fmtDate(run.run_date)}</td>
-									<td class="px-4 py-2 text-right font-mono text-gray-500">
-										{fmtSqft(run.sqft_scheduled)}
-									</td>
-									<td class="px-4 py-2 text-right">
-										<input type="hidden" name="run_id" value={run.id} />
-										<input
-											type="number"
-											name="sqft_{run.id}"
-											value={run.sqft_scheduled}
-											min="1"
-											step="1"
-											required
-											class="form-input w-28 text-right font-mono"
-										/>
-									</td>
-								</tr>
+							{#each groupedScheduled() as group (group.key)}
+								{#if group.runs.length > 1}
+									<tr>
+										<td
+											colspan="6"
+											class="px-4 py-1 bg-gray-50 border-y border-gray-200"
+										>
+											<span
+												class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+												>Group · {group.runs.length} runs</span
+											>
+										</td>
+									</tr>
+								{/if}
+								{#each group.runs as run (run.id)}
+									<tr
+										class="border-b border-gray-50 {group.runs.length > 1
+											? 'border-l-2 border-l-indigo-200'
+											: ''}"
+									>
+										<td class="px-4 py-2">
+											<input
+												type="checkbox"
+												name="run_id"
+												value={run.id}
+												id="confirm-{run.id}"
+												checked
+											/>
+										</td>
+										<td class="px-4 py-2 font-mono text-xs">
+											<label for="confirm-{run.id}" class="cursor-pointer"
+												>{run.run_number}</label
+											>
+										</td>
+										<td class="px-4 py-2">{run.sku_label}</td>
+										<td class="px-4 py-2 text-gray-600"
+											>{fmtDate(run.run_date)}</td
+										>
+										<td class="px-4 py-2 text-right font-mono text-gray-500">
+											{fmtSqft(run.sqft_scheduled)}
+										</td>
+										<td class="px-4 py-2 text-right">
+											<input
+												type="number"
+												name="sqft_{run.id}"
+												value={run.sqft_scheduled}
+												min="1"
+												step="1"
+												class="form-input w-28 text-right font-mono"
+											/>
+										</td>
+									</tr>
+								{/each}
 							{/each}
 						</tbody>
 					</table>

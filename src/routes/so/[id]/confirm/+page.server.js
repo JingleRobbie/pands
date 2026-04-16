@@ -13,7 +13,7 @@ export async function load({ params }) {
 		 JOIN material_skus ms ON ms.id = pr.sku_id
 		 JOIN sales_order_lines sol ON sol.id = pr.so_line_id
 		 WHERE sol.so_id = ?
-		 ORDER BY pr.run_date, pr.run_number`,
+		 ORDER BY pr.group_id IS NULL, pr.group_id, pr.run_date, pr.run_number`,
 		[params.id]
 	);
 

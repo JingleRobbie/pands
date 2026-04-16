@@ -36,7 +36,7 @@
 			</div>
 		{/if}
 
-		<form method="POST" use:enhance>
+		<form id="edit-form" method="POST" use:enhance>
 			<div class="card mb-4">
 				<div class="card-header">
 					<span class="font-semibold text-sm text-gray-700">PO Details</span>
@@ -91,13 +91,17 @@
 						<div class="flex items-end gap-3">
 							<input type="hidden" name="line_id" value={line.id} />
 							<div class="flex-1">
-								<label class="form-label text-xs" for="line-sku-{line.id}">SKU</label>
+								<label class="form-label text-xs" for="line-sku-{line.id}"
+									>SKU</label
+								>
 								<p class="form-input text-sm bg-gray-50 text-gray-700">
 									{line.display_label}
 								</p>
 							</div>
 							<div class="w-36">
-								<label class="form-label text-xs" for="line-sqft-{line.id}">Sq Ft</label>
+								<label class="form-label text-xs" for="line-sqft-{line.id}"
+									>Sq Ft</label
+								>
 								<input
 									id="line-sqft-{line.id}"
 									type="number"
@@ -122,13 +126,20 @@
 						{#each receivedLines as line (line.id)}
 							<div class="flex items-end gap-3 opacity-60">
 								<div class="flex-1">
-									<label class="form-label text-xs" for="received-sku-{line.id}">SKU</label>
-									<p id="received-sku-{line.id}" class="form-input text-sm bg-gray-50 text-gray-500">
+									<label class="form-label text-xs" for="received-sku-{line.id}"
+										>SKU</label
+									>
+									<p
+										id="received-sku-{line.id}"
+										class="form-input text-sm bg-gray-50 text-gray-500"
+									>
 										{line.display_label}
 									</p>
 								</div>
 								<div class="w-36">
-									<label class="form-label text-xs" for="received-sqft-{line.id}">Sq Ft</label>
+									<label class="form-label text-xs" for="received-sqft-{line.id}"
+										>Sq Ft</label
+									>
 									<p
 										id="received-sqft-{line.id}"
 										class="form-input text-sm text-right font-mono bg-gray-50 text-gray-500"
@@ -188,11 +199,26 @@
 					{/if}
 				</div>
 			</div>
+		</form>
 
+		<div class="flex items-center justify-between">
 			<div class="flex gap-3">
-				<button type="submit" class="btn-primary">Save Changes</button>
+				<button type="submit" form="edit-form" class="btn-primary">Save Changes</button>
 				<a href="/po/{po.id}" class="btn-secondary">Cancel</a>
 			</div>
-		</form>
+			<form
+				method="POST"
+				action="/po/{po.id}?/cancel"
+				use:enhance={({ cancel }) => {
+					if (!confirm(`Cancel PO ${po.po_number}?`)) cancel();
+				}}
+			>
+				<button
+					type="submit"
+					class="rounded-md px-3 py-1.5 text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 border border-red-200 transition-colors"
+					>Cancel PO</button
+				>
+			</form>
+		</div>
 	</div>
 </main>

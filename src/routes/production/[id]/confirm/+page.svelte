@@ -1,18 +1,9 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
+	import { fmtDate } from '$lib/utils.js';
 	let { data, form } = $props();
 	const { matrix } = data;
-	function fmtDate(d) {
-		if (!d) return null;
-		const s = typeof d === 'string' ? d : d.toISOString();
-		const [year, m, day] = s.slice(0, 10).split('-');
-		return new Date(+year, +m - 1, +day).toLocaleDateString('en-US', {
-			month: 'short',
-			day: 'numeric',
-			year: 'numeric',
-		});
-	}
 	function fmtSqft(n) {
 		if (n == null) return '';
 		return Math.round(n).toLocaleString();

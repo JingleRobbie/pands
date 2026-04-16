@@ -82,9 +82,17 @@ CREATE TABLE IF NOT EXISTS sales_order_lines (
   FOREIGN KEY (sku_id) REFERENCES material_skus(id)
 );
 
+CREATE TABLE IF NOT EXISTS production_run_groups (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  created_by INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES app_users(id)
+);
+
 CREATE TABLE IF NOT EXISTS production_runs (
   id             INT AUTO_INCREMENT PRIMARY KEY,
   run_number     VARCHAR(30) UNIQUE NOT NULL,
+  group_id       INT NULL,
   so_line_id     INT NOT NULL,
   sku_id         INT NOT NULL,
   run_date       DATE,
@@ -95,6 +103,7 @@ CREATE TABLE IF NOT EXISTS production_runs (
   confirmed_by   INT,
   created_by     INT,
   created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (group_id) REFERENCES production_run_groups(id),
   FOREIGN KEY (so_line_id) REFERENCES sales_order_lines(id),
   FOREIGN KEY (sku_id) REFERENCES material_skus(id),
   FOREIGN KEY (confirmed_by) REFERENCES app_users(id),

@@ -5,9 +5,9 @@ function todayStr() {
 	return localDate();
 }
 
-async function nextRunNumber() {
+async function nextRunNumber(conn = db) {
 	const prefix = `PR-${todayStr().replace(/-/g, '')}-`;
-	const [[{ last }]] = await db.query(
+	const [[{ last }]] = await conn.query(
 		'SELECT MAX(run_number) AS last FROM production_runs WHERE run_number LIKE ?',
 		[`${prefix}%`]
 	);
@@ -45,7 +45,7 @@ export async function scheduleRun(soLineId, runDate, sqftScheduled, userId) {
 			);
 		}
 
-		const runNumber = await nextRunNumber();
+		const runNumber = await nextRunNumber(conn);
 		const status = runDate ? 'SCHEDULED' : 'UNSCHEDULED';
 
 		await conn.query(
@@ -72,6 +72,76 @@ export async function scheduleRun(soLineId, runDate, sqftScheduled, userId) {
 
 		await conn.commit();
 		return runNumber;
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+}
+
+export async function scheduleGroup(soId, items, runDate, userId) {
+	const conn = await db.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		// Create the group record
+		const [{ insertId: groupId }] = await conn.query(
+			'INSERT INTO production_run_groups (created_by) VALUES (?)',
+			[userId ?? null]
+		);
+
+		for (const { soLineId, sqftScheduled } of items) {
+			const [[line]] = await conn.query(
+				'SELECT * FROM sales_order_lines WHERE id = ? FOR UPDATE',
+				[soLineId]
+			);
+			if (!line) throw new Error(`SO line ${soLineId} not found.`);
+
+			const [[{ sqftInRuns }]] = await conn.query(
+				`SELECT COALESCE(SUM(sqft_scheduled), 0) AS sqftInRuns
+				 FROM production_runs
+				 WHERE so_line_id = ? AND status != 'COMPLETED'`,
+				[soLineId]
+			);
+
+			const unscheduled =
+				Number(line.sqft_ordered) - Number(line.sqft_produced) - Number(sqftInRuns);
+			if (sqftScheduled <= 0) throw new Error('Scheduled sq ft must be greater than zero.');
+			if (sqftScheduled > unscheduled) {
+				throw new Error(
+					`Cannot schedule ${sqftScheduled} sqft — only ${Math.round(unscheduled)} sqft unscheduled.`
+				);
+			}
+
+			const runNumber = await nextRunNumber(conn);
+			const status = runDate ? 'SCHEDULED' : 'UNSCHEDULED';
+
+			await conn.query(
+				`INSERT INTO production_runs
+				 (run_number, group_id, so_line_id, sku_id, run_date, sqft_scheduled, status, created_by)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				[
+					runNumber,
+					groupId,
+					soLineId,
+					line.sku_id,
+					runDate || null,
+					sqftScheduled,
+					status,
+					userId ?? null,
+				]
+			);
+		}
+
+		// Advance SO status to IN_PROGRESS if still OPEN
+		await conn.query(
+			'UPDATE sales_orders SET status = "IN_PROGRESS" WHERE id = ? AND status = "OPEN"',
+			[soId]
+		);
+
+		await conn.commit();
+		return groupId;
 	} catch (err) {
 		await conn.rollback();
 		throw err;
