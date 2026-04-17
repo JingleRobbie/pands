@@ -88,6 +88,7 @@
 	$effect(() => {
 		loadEvents();
 	});
+	$inspect('events', events);
 </script>
 
 <svelte:head><title>Calendar — PandS</title></svelte:head>
@@ -129,14 +130,30 @@
 					: ''}"
 			>
 				{#if cell}
-					<div
-						class="text-xs font-semibold mb-1 {isToday(cell)
-							? 'text-blue-600'
-							: 'text-gray-500'}"
-					>
-						{cell}
+					<div class="flex items-center justify-between mb-1">
+						<span
+							class="text-xs font-semibold {isToday(cell)
+								? 'text-blue-600'
+								: 'text-gray-500'}">{cell}</span
+						>
+						<a
+							href="/calendar/{dateKey(cell)}"
+							class="text-gray-300 hover:text-gray-500 leading-none"
+							title="Edit day schedule"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="w-3 h-3"
+								viewBox="0 0 20 20"
+								fill="currentColor"
+							>
+								<path
+									d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"
+								/>
+							</svg>
+						</a>
 					</div>
-					{#each events[dateKey(cell)] ?? [] as ev (ev.id)}
+					{#each Object.entries(events[dateKey(cell)] ?? {}) as [id, ev] (id)}
 						<div
 							class="text-xs rounded px-1 py-0.5 mb-0.5 leading-tight truncate
 				{ev.type === 'po' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}"
