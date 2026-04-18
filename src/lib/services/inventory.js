@@ -19,7 +19,7 @@ export async function getAllBalances() {
 		SELECT pol.sku_id, SUM(pol.sqft_ordered) AS received
 		FROM purchase_order_lines pol
 		JOIN purchase_orders po ON po.id = pol.po_id
-		WHERE po.expected_date <= CURDATE()
+		WHERE (po.expected_date <= CURDATE() OR po.status = 'RECEIVED')
 		  AND po.status != 'CANCELLED'
 		  AND pol.status != 'CANCELLED'
 		  AND pol.sku_id IN (SELECT id FROM material_skus WHERE is_active = TRUE)
@@ -378,13 +378,14 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 	const [poLines] = await db.query(
 		`
 		SELECT pol.sku_id, pol.sqft_ordered AS sqft_quantity,
-		       po.expected_date AS event_date,
+		       LEAST(po.expected_date, CURDATE()) AS event_date,
 		       po.id AS po_id, po.po_number, po.vendor_name
 		FROM purchase_order_lines pol
 		JOIN purchase_orders po ON po.id = pol.po_id
-		WHERE po.expected_date >= ? AND po.expected_date <= CURDATE()
+		WHERE (po.expected_date <= CURDATE() OR po.status = 'RECEIVED')
+		  AND po.expected_date >= ?
 		  AND po.status != 'CANCELLED' AND pol.status != 'CANCELLED'
-		ORDER BY po.expected_date, po.po_number
+		ORDER BY event_date, po.po_number
 	`,
 		[fromDate]
 	);
@@ -490,7 +491,7 @@ async function getBalancesAsOf(skuIds, dateStr) {
 		SELECT pol.sku_id, SUM(pol.sqft_ordered) AS received
 		FROM purchase_order_lines pol
 		JOIN purchase_orders po ON po.id = pol.po_id
-		WHERE po.expected_date <= ?
+		WHERE (po.expected_date <= ? OR po.status = 'RECEIVED')
 		  AND po.status != 'CANCELLED'
 		  AND pol.status != 'CANCELLED'
 		  AND pol.sku_id IN (?)

@@ -11,7 +11,21 @@ export async function load({ params }) {
 	);
 	const skuIds = [...new Set(lines.map((l) => l.sku_id))];
 	const matrix = await getMatrixDataForSkus(skuIds);
-	return { po, lines, matrix };
+
+	let receivedAt = null;
+	if (po.status === 'RECEIVED') {
+		const [[row]] = await db.query(
+			`SELECT DATE(MIN(it.created_at)) AS received_at
+			 FROM inventory_transactions it
+			 WHERE it.reference_type = 'PO_LINE'
+			   AND it.transaction_type = 'RECEIPT'
+			   AND it.reference_id IN (SELECT id FROM purchase_order_lines WHERE po_id = ?)`,
+			[params.id]
+		);
+		receivedAt = row?.received_at ?? null;
+	}
+
+	return { po, lines, matrix, receivedAt };
 }
 
 export const actions = {

@@ -7,6 +7,22 @@
 		SCHEDULED: 'badge-blue',
 		COMPLETED: 'badge-green',
 	};
+
+	function scheduleEnhance({ formElement }) {
+		return async ({ update }) => {
+			await update();
+			formElement.reset();
+		};
+	}
+
+	let pendingDelete = $state(null); // run object awaiting confirmation
+
+	function deleteEnhance() {
+		return async ({ update }) => {
+			await update();
+			pendingDelete = null;
+		};
+	}
 </script>
 
 <svelte:head><title>{fmtDate(data.date)} Schedule — PandS</title></svelte:head>
@@ -35,7 +51,8 @@
 						<th class="pb-2 pr-4 font-medium">SO</th>
 						<th class="pb-2 pr-4 font-medium">SKU</th>
 						<th class="pb-2 pr-4 font-medium text-right">Sqft</th>
-						<th class="pb-2 font-medium">Status</th>
+						<th class="pb-2 pr-4 font-medium">Status</th>
+						<th class="pb-2 font-medium"></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -52,10 +69,21 @@
 									{fmtSqft(run.sqft_scheduled)}
 								{/if}
 							</td>
-							<td class="py-2">
+							<td class="py-2 pr-4">
 								<span class="badge {STATUS_BADGE[run.status] ?? 'badge-gray'}"
 									>{run.status}</span
 								>
+							</td>
+							<td class="py-2">
+								{#if run.status === 'SCHEDULED'}
+									<button
+										type="button"
+										class="btn-danger btn-sm"
+										onclick={() => (pendingDelete = run)}
+									>
+										Delete
+									</button>
+								{/if}
 							</td>
 						</tr>
 					{/each}
@@ -91,16 +119,31 @@
 							<td class="py-2 pr-4 text-gray-600">{sol.job_name}</td>
 							<td class="py-2 pr-4 text-gray-600">{sol.sku_label}</td>
 							<td class="py-2 pr-4 text-right tabular-nums">
-								{#if sol.status === 'COMPLETED'}
-									{fmtSqft(sol.sqft_actual)}
-								{:else}
-									{fmtSqft(sol.sqft_scheduled)}
-								{/if}
+								{fmtSqft(sol.sqft_ordered - sol.sqft_produced - sol.sqft_in_runs)}
 							</td>
 							<td class="py-2">
-								<span class="badge {STATUS_BADGE[sol.status] ?? 'badge-gray'}"
-									>{sol.status}</span
+								<form
+									method="POST"
+									action="?/schedule"
+									use:enhance={scheduleEnhance}
+									class="flex items-center gap-2"
 								>
+									<input type="hidden" name="so_line_id" value={sol.id} />
+									<input
+										type="number"
+										name="sqft"
+										required
+										min="1"
+										max={sol.sqft_ordered -
+											sol.sqft_produced -
+											sol.sqft_in_runs}
+										placeholder="sqft"
+										class="form-input w-24 py-1 text-sm"
+									/>
+									<button type="submit" class="btn-primary btn-sm"
+										>Schedule</button
+									>
+								</form>
 							</td>
 						</tr>
 					{/each}
@@ -109,3 +152,30 @@
 		{/if}
 	</section>
 </main>
+
+{#if pendingDelete}
+	<div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+		<div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
+			<h3 class="text-base font-semibold text-gray-900 mb-1">Delete run?</h3>
+			<p class="text-sm text-gray-600 mb-1">
+				{pendingDelete.so_number} — {pendingDelete.customer_name}
+			</p>
+			<p class="text-sm text-gray-500 mb-6">
+				{pendingDelete.sku_label} · {fmtSqft(pendingDelete.sqft_scheduled)} sqft will be unscheduled.
+			</p>
+			<div class="flex justify-end gap-3">
+				<button
+					type="button"
+					class="btn-secondary btn-sm"
+					onclick={() => (pendingDelete = null)}
+				>
+					Cancel
+				</button>
+				<form method="POST" action="?/delete" use:enhance={deleteEnhance}>
+					<input type="hidden" name="run_id" value={pendingDelete.id} />
+					<button type="submit" class="btn-danger btn-sm">Delete</button>
+				</form>
+			</div>
+		</div>
+	</div>
+{/if}

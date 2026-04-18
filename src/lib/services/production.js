@@ -80,6 +80,66 @@ export async function scheduleRun(soLineId, runDate, sqftScheduled, userId) {
 	}
 }
 
+export async function upsertScheduledRun(soLineId, runDate, sqftToAdd, userId) {
+	const conn = await db.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		const [[line]] = await conn.query(
+			'SELECT * FROM sales_order_lines WHERE id = ? FOR UPDATE',
+			[soLineId]
+		);
+		if (!line) throw new Error('SO line not found.');
+
+		const [[{ sqftInRuns }]] = await conn.query(
+			`SELECT COALESCE(SUM(sqft_scheduled), 0) AS sqftInRuns
+			 FROM production_runs WHERE so_line_id = ? AND status != 'COMPLETED'`,
+			[soLineId]
+		);
+
+		const unscheduled =
+			Number(line.sqft_ordered) - Number(line.sqft_produced) - Number(sqftInRuns);
+		if (sqftToAdd <= 0) throw new Error('Scheduled sq ft must be greater than zero.');
+		if (sqftToAdd > unscheduled) {
+			throw new Error(
+				`Cannot schedule ${sqftToAdd} sqft — only ${Math.round(unscheduled)} sqft unscheduled.`
+			);
+		}
+
+		const [[existing]] = await conn.query(
+			`SELECT id FROM production_runs
+			 WHERE so_line_id = ? AND run_date = ? AND status = 'SCHEDULED'
+			 LIMIT 1`,
+			[soLineId, runDate]
+		);
+
+		if (existing) {
+			await conn.query(
+				'UPDATE production_runs SET sqft_scheduled = sqft_scheduled + ? WHERE id = ?',
+				[sqftToAdd, existing.id]
+			);
+		} else {
+			const runNumber = await nextRunNumber(conn);
+			await conn.query(
+				`INSERT INTO production_runs (run_number, so_line_id, sku_id, run_date, sqft_scheduled, status, created_by)
+				 VALUES (?, ?, ?, ?, ?, 'SCHEDULED', ?)`,
+				[runNumber, soLineId, line.sku_id, runDate, sqftToAdd, userId ?? null]
+			);
+			await conn.query(
+				'UPDATE sales_orders SET status = "IN_PROGRESS" WHERE id = ? AND status = "OPEN"',
+				[line.so_id]
+			);
+		}
+
+		await conn.commit();
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+}
+
 export async function scheduleGroup(soId, items, runDate, userId) {
 	const conn = await db.getConnection();
 	try {

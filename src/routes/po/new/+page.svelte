@@ -45,13 +45,19 @@
 						<label for="vendor_name" class="form-label">Vendor</label>
 						<select id="vendor_name" name="vendor_name" class="form-select" required>
 							<option value="">— select —</option>
-							<option value="JM">JM</option>
+							<option value="Johns Manville">Johns Manville</option>
 							<option value="Certainteed">Certainteed</option>
 						</select>
 					</div>
 					<div>
 						<label for="expected_date" class="form-label">Expected Date</label>
-						<input id="expected_date" type="date" name="expected_date" class="form-input" required />
+						<input
+							id="expected_date"
+							type="date"
+							name="expected_date"
+							class="form-input"
+							required
+						/>
 					</div>
 				</div>
 			</div>

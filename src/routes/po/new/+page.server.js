@@ -19,7 +19,7 @@ export const actions = {
 
 		if (!poNumber || !expectedDate)
 			return fail(400, { error: 'PO number and expected date are required.' });
-		if (!['JM', 'Certainteed'].includes(vendorName))
+		if (!['Johns Manville', 'Certainteed'].includes(vendorName))
 			return fail(400, { error: 'Invalid vendor.' });
 
 		const [[existing]] = await db.query('SELECT id FROM purchase_orders WHERE po_number = ?', [

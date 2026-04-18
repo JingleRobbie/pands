@@ -3,7 +3,7 @@
 	import MatrixDrawer from '$lib/components/MatrixDrawer.svelte';
 	import { fmtDate } from '$lib/utils.js';
 	let { data } = $props();
-	const { po, lines, matrix } = data;
+	const { po, lines, matrix, receivedAt } = data;
 	let outlookOpen = $state(false);
 
 	function fmtSqft(n) {
@@ -46,9 +46,23 @@
 					<p class="mt-0.5">
 						{#if po.status === 'OPEN'}<span class="badge-blue">Open</span>
 						{:else if po.status === 'CANCELLED'}<span class="badge-red">Cancelled</span>
-						{:else}<span class="badge-gray">{po.status}</span>{/if}
+						{:else}<span class="badge-green">Received</span>{/if}
 					</p>
 				</div>
+				{#if receivedAt}
+					{@const expectedStr = fmtDate(po.expected_date)}
+					{@const receivedStr = fmtDate(receivedAt)}
+					{@const differs = expectedStr !== receivedStr}
+					<div class="col-span-3 border-t border-gray-100 pt-3 flex items-center gap-3">
+						<span class="text-gray-500">Received</span>
+						<span class="font-medium">{receivedStr}</span>
+						{#if differs}
+							<span class="badge-amber">
+								{receivedAt < po.expected_date ? 'Early' : 'Late'}
+							</span>
+						{/if}
+					</div>
+				{/if}
 			</div>
 		</div>
 		<div class="card">

@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS inventory_transactions (
 CREATE TABLE IF NOT EXISTS purchase_orders (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   po_number     VARCHAR(50) UNIQUE NOT NULL,
-  vendor_name   ENUM('JM','Certainteed') NOT NULL,
+  vendor_name   ENUM('Johns Manville','Certainteed') NOT NULL,
   expected_date DATE NOT NULL,
   status        ENUM('OPEN','RECEIVED','CANCELLED') DEFAULT 'OPEN',
   created_by    INT,

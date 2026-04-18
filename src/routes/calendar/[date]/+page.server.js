@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/db.js';
-import { scheduleRun } from '$lib/services/production.js';
+import { upsertScheduledRun, deleteRun } from '$lib/services/production.js';
 
 export async function load({ params }) {
 	const { date } = params;
@@ -33,7 +33,7 @@ export async function load({ params }) {
 		 ORDER BY so.so_number, ms.sort_order`,
 		[]
 	);
-console.log('Available SO Lines:', available);
+
 	return { date, runs, available };
 }
 
@@ -45,7 +45,19 @@ export const actions = {
 		const sqft = parseInt(data.get('sqft'));
 		if (!sqft || sqft < 1) return fail(400, { error: 'Enter a valid sqft amount.' });
 		try {
-			await scheduleRun(soLineId, date, sqft, locals.appUser.id);
+			await upsertScheduledRun(soLineId, date, sqft, locals.appUser.id);
+		} catch (err) {
+			return fail(500, { error: err.message });
+		}
+		redirect(303, `/calendar/${date}`);
+	},
+
+	delete: async ({ params, request }) => {
+		const { date } = params;
+		const data = await request.formData();
+		const runId = parseInt(data.get('run_id'));
+		try {
+			await deleteRun(runId);
 		} catch (err) {
 			return fail(500, { error: err.message });
 		}

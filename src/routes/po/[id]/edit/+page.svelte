@@ -57,7 +57,11 @@
 						<label class="form-label" for="vendor_name">Vendor</label>
 						<select id="vendor_name" name="vendor_name" class="form-select" required>
 							<option value="">— select —</option>
-							<option value="JM" selected={po.vendor_name === 'JM'}>JM</option>
+							<option
+								value="Johns Manville"
+								selected={po.vendor_name === 'Johns Manville'}
+								>Johns Manville</option
+							>
 							<option value="Certainteed" selected={po.vendor_name === 'Certainteed'}
 								>Certainteed</option
 							>

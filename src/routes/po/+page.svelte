@@ -23,7 +23,10 @@
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Purchase Orders</h1>
-	<a href="/po/new" class="btn-primary btn-sm">+ New PO</a>
+	<div class="flex gap-2">
+		<a href="/po/import" class="btn-secondary btn-sm">Import CSV</a>
+		<a href="/po/new" class="btn-primary btn-sm">+ New PO</a>
+	</div>
 </header>
 <main class="p-6 space-y-4">
 	<nav class="flex gap-1">
@@ -49,7 +52,7 @@
 						>
 							<th class="px-4 py-2 text-left text-gray-600">PO #</th>
 							<th class="px-4 py-2 text-left text-gray-600">Vendor</th>
-							<th class="px-4 py-2 text-left text-gray-600">Expected</th>
+							<th class="px-4 py-2 text-left text-gray-600">Expected / Received</th>
 							<th class="px-4 py-2 text-left text-gray-600">Status</th>
 							<th class="px-4 py-2 text-left text-gray-600">Lines</th>
 							<th class="px-4 py-2 text-right"></th>
@@ -67,7 +70,20 @@
 									>
 								</td>
 								<td class="px-4 py-2 text-gray-700">{po.vendor_name}</td>
-								<td class="px-4 py-2 text-gray-600">{fmtDate(po.expected_date)}</td>
+								<td class="px-4 py-2">
+									{#if po.received_at}
+										<span class="text-gray-700">{fmtDate(po.received_at)}</span>
+										{#if fmtDate(po.received_at) !== fmtDate(po.expected_date)}
+											<br /><span class="text-xs text-gray-400"
+												>exp. {fmtDate(po.expected_date)}</span
+											>
+										{/if}
+									{:else}
+										<span class="text-gray-600"
+											>{fmtDate(po.expected_date)}</span
+										>
+									{/if}
+								</td>
 								<td class="px-4 py-2">
 									<span class={statusBadge(po.status)}
 										>{statusLabel(po.status)}</span
@@ -93,7 +109,7 @@
 						<tr class="border-b border-gray-100">
 							<th class="px-4 py-2 text-left text-gray-600">PO #</th>
 							<th class="px-4 py-2 text-left text-gray-600">Vendor</th>
-							<th class="px-4 py-2 text-left text-gray-600">Expected</th>
+							<th class="px-4 py-2 text-left text-gray-600">Expected / Received</th>
 							<th class="px-4 py-2 text-left text-gray-600">Status</th>
 							<th class="px-4 py-2 text-left text-gray-600">Lines</th>
 						</tr>
@@ -149,7 +165,20 @@
 									>
 								</td>
 								<td class="px-4 py-2 text-gray-700">{po.vendor_name}</td>
-								<td class="px-4 py-2 text-gray-600">{fmtDate(po.expected_date)}</td>
+								<td class="px-4 py-2">
+									{#if po.received_at}
+										<span class="text-gray-700">{fmtDate(po.received_at)}</span>
+										{#if fmtDate(po.received_at) !== fmtDate(po.expected_date)}
+											<br /><span class="text-xs text-gray-400"
+												>exp. {fmtDate(po.expected_date)}</span
+											>
+										{/if}
+									{:else}
+										<span class="text-gray-600"
+											>{fmtDate(po.expected_date)}</span
+										>
+									{/if}
+								</td>
 								<td class="px-4 py-2">
 									<span class={statusBadge(po.status)}
 										>{statusLabel(po.status)}</span
