@@ -10,7 +10,7 @@ const RECV_JOIN = `
 		GROUP BY pol.po_id
 	) recv ON recv.po_id = po.id`;
 
-export async function load({ url }) {
+export async function load({ url, locals }) {
 	const q = url.searchParams.get('q')?.trim() ?? '';
 	const status = url.searchParams.get('status') ?? '';
 	const isFiltered = q || status;
@@ -35,7 +35,7 @@ export async function load({ url }) {
 			 GROUP BY po.id ORDER BY po.expected_date, po.po_number`,
 			[today]
 		);
-		return { overdue, upcoming, searchResults: null, q: '', status: '' };
+		return { overdue, upcoming, searchResults: null, q: '', status: '', user: locals.appUser };
 	}
 
 	const params = [];
@@ -58,5 +58,5 @@ export async function load({ url }) {
 		 GROUP BY po.id ORDER BY po.expected_date DESC, po.po_number`,
 		params
 	);
-	return { upcoming: [], searchResults, q, status };
+	return { upcoming: [], searchResults, q, status, user: locals.appUser };
 }

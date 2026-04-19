@@ -90,7 +90,6 @@
 	$effect(() => {
 		loadEvents();
 	});
-	$inspect('events', events);
 </script>
 
 <svelte:head><title>Calendar — PandS</title></svelte:head>

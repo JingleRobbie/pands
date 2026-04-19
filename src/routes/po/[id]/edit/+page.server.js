@@ -1,7 +1,7 @@
 import { db } from '$lib/db.js';
 import { error, fail, redirect } from '@sveltejs/kit';
 
-export async function load({ params }) {
+export async function load({ params, locals }) {
 	const [[po]] = await db.query('SELECT * FROM purchase_orders WHERE id = ?', [params.id]);
 	if (!po) error(404, 'PO not found');
 	if (po.status !== 'OPEN') error(400, 'Only open POs can be edited');
@@ -17,7 +17,7 @@ export async function load({ params }) {
 	const [skus] = await db.query(
 		'SELECT * FROM material_skus WHERE is_active = TRUE ORDER BY sort_order'
 	);
-	return { po, lines, skus };
+	return { po, lines, skus, user: locals.appUser };
 }
 
 export const actions = {

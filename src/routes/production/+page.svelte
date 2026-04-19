@@ -117,7 +117,7 @@
 											class="btn-secondary btn-sm">Edit</a
 										>
 									{/if}
-									{#if hasScheduled}
+									{#if hasScheduled && data.user?.role === 'admin'}
 										<a href="/so/{so.so_id}/confirm" class="btn-primary btn-sm"
 											>Confirm</a
 										>

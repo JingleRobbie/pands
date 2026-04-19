@@ -210,19 +210,21 @@
 				<button type="submit" form="edit-form" class="btn-primary">Save Changes</button>
 				<a href="/po/{po.id}" class="btn-secondary">Cancel</a>
 			</div>
-			<form
-				method="POST"
-				action="/po/{po.id}?/cancel"
-				use:enhance={({ cancel }) => {
-					if (!confirm(`Cancel PO ${po.po_number}?`)) cancel();
-				}}
-			>
-				<button
-					type="submit"
-					class="rounded-md px-3 py-1.5 text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 border border-red-200 transition-colors"
-					>Cancel PO</button
+			{#if data.user?.role === 'admin'}
+				<form
+					method="POST"
+					action="/po/{po.id}?/cancel"
+					use:enhance={({ cancel }) => {
+						if (!confirm(`Cancel PO ${po.po_number}?`)) cancel();
+					}}
 				>
-			</form>
+					<button
+						type="submit"
+						class="rounded-md px-3 py-1.5 text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 border border-red-200 transition-colors"
+						>Cancel PO</button
+					>
+				</form>
+			{/if}
 		</div>
 	</div>
 </main>

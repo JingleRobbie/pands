@@ -48,7 +48,7 @@ function groupRunsBySo(runRows, today) {
 		});
 }
 
-export async function load({ url }) {
+export async function load({ url, locals }) {
 	const q = url.searchParams.get('q')?.trim() ?? '';
 	const status = url.searchParams.get('status') ?? '';
 
@@ -96,7 +96,7 @@ export async function load({ url }) {
 				status: 'UNSCHEDULED',
 			});
 		}
-		return { soGroups: [...soMap.values()], today, q, status };
+		return { soGroups: [...soMap.values()], today, q, status, user: locals.appUser };
 	}
 
 	const where = [];
@@ -132,5 +132,5 @@ export async function load({ url }) {
 	);
 
 	const soGroups = groupRunsBySo(runRows, today);
-	return { soGroups, today, q, status };
+	return { soGroups, today, q, status, user: locals.appUser };
 }

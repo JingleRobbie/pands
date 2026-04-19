@@ -24,7 +24,9 @@
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Purchase Orders</h1>
 	<div class="flex gap-2">
-		<a href="/po/import" class="btn-secondary btn-sm">Import CSV</a>
+		{#if data.user?.role === 'admin'}
+			<a href="/po/import" class="btn-secondary btn-sm">Import CSV</a>
+		{/if}
 		<a href="/po/new" class="btn-primary btn-sm">+ New PO</a>
 	</div>
 </header>
