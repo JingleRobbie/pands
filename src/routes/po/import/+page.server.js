@@ -1,7 +1,12 @@
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/db.js';
+import { requireAdmin } from '$lib/auth.js';
 
 const VENDORS = ['Johns Manville', 'Certainteed'];
+
+export async function load({ locals }) {
+	return { user: locals.appUser };
+}
 
 function parseCSVLine(line) {
 	const fields = [];
@@ -151,7 +156,9 @@ export const actions = {
 		return { preview };
 	},
 
-	import: async ({ request }) => {
+	import: async ({ request, locals }) => {
+		const denied = requireAdmin(locals);
+		if (denied) return denied;
 		const data = await request.formData();
 		const accepted = new Set(data.getAll('accepted'));
 		let preview;

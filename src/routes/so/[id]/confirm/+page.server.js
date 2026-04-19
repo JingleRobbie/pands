@@ -2,8 +2,9 @@ import { db } from '$lib/db.js';
 import { error, fail } from '@sveltejs/kit';
 import { confirmRun, deleteRun } from '$lib/services/production.js';
 import { getMatrixDataForSkus } from '$lib/services/inventory.js';
+import { requireAdmin } from '$lib/auth.js';
 
-export async function load({ params }) {
+export async function load({ params, locals }) {
 	const [[so]] = await db.query('SELECT * FROM sales_orders WHERE id = ?', [params.id]);
 	if (!so) error(404, 'SO not found');
 
@@ -20,11 +21,13 @@ export async function load({ params }) {
 	const skuIds = [...new Set(runs.map((r) => r.sku_id))];
 	const matrix = skuIds.length ? await getMatrixDataForSkus(skuIds) : null;
 
-	return { so, runs, matrix };
+	return { so, runs, matrix, user: locals.appUser };
 }
 
 export const actions = {
 	confirm: async ({ request, locals }) => {
+		const denied = requireAdmin(locals);
+		if (denied) return denied;
 		const data = await request.formData();
 		const runIds = data.getAll('run_id').map(Number);
 
@@ -52,7 +55,9 @@ export const actions = {
 		return { success: true, confirmed: runIds.length, shortfalls };
 	},
 
-	remove: async ({ request }) => {
+	remove: async ({ request, locals }) => {
+		const denied = requireAdmin(locals);
+		if (denied) return denied;
 		const data = await request.formData();
 		const runId = Number(data.get('run_id'));
 		if (!runId) return fail(400, { error: 'No run specified.' });

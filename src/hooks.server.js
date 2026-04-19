@@ -6,7 +6,7 @@ export async function handle({ event, resolve }) {
 	if (userId) {
 		try {
 			const [[user]] = await db.query(
-				'SELECT id, display_name, sidebar_collapsed FROM app_users WHERE id = ? AND is_active = TRUE',
+				'SELECT id, display_name, role, sidebar_collapsed FROM app_users WHERE id = ? AND is_active = TRUE',
 				[userId]
 			);
 			event.locals.appUser = user ?? null;
@@ -17,10 +17,16 @@ export async function handle({ event, resolve }) {
 		event.locals.appUser = null;
 	}
 
-	// Redirect to who-are-you if no user selected (except on root page)
 	const path = event.url.pathname;
-	if (!event.locals.appUser && path !== '/' && !path.startsWith('/static')) {
-		return Response.redirect(new URL('/', event.url), 302);
+	if (
+		!event.locals.appUser &&
+		path !== '/' &&
+		path !== '/login' &&
+		path !== '/calendar' &&
+		path !== '/calendar/events' &&
+		!path.startsWith('/static')
+	) {
+		return Response.redirect(new URL('/login', event.url), 302);
 	}
 
 	return resolve(event);

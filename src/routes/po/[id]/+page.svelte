@@ -1,9 +1,10 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { enhance } from '$app/forms';
 	import MatrixDrawer from '$lib/components/MatrixDrawer.svelte';
 	import { fmtDate } from '$lib/utils.js';
 	let { data } = $props();
-	const { po, lines, matrix, receivedAt } = data;
+	const { po, lines, matrix, receivedAt, user } = data;
 	let outlookOpen = $state(false);
 
 	function fmtSqft(n) {
@@ -22,6 +23,11 @@
 	<div class="flex gap-2">
 		{#if po.status === 'OPEN'}
 			<a href="/po/{po.id}/edit" class="btn-secondary btn-sm">Edit</a>
+			{#if user?.role === 'admin'}
+				<form method="POST" action="?/cancel" use:enhance>
+					<button type="submit" class="btn-danger btn-sm">Cancel PO</button>
+				</form>
+			{/if}
 		{/if}
 		<button onclick={() => (outlookOpen = !outlookOpen)} class="btn-secondary btn-sm"
 			>Inventory Outlook</button

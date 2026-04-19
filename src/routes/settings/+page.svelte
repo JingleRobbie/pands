@@ -29,5 +29,13 @@
 			</div>
 			<button type="submit" class="btn-primary">Save</button>
 		</form>
+		{#if data.appUser?.role === 'admin'}
+			<div class="card mt-4">
+				<div class="card-body flex items-center justify-between">
+					<span class="text-sm text-gray-700">User accounts and passwords</span>
+					<a href="/settings/users" class="btn-secondary btn-sm">Manage Users →</a>
+				</div>
+			</div>
+		{/if}
 	</div>
 </main>

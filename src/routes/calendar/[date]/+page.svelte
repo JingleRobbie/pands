@@ -75,7 +75,7 @@
 								>
 							</td>
 							<td class="py-2">
-								{#if run.status === 'SCHEDULED'}
+								{#if run.status === 'SCHEDULED' && data.user?.role === 'admin'}
 									<button
 										type="button"
 										class="btn-danger btn-sm"

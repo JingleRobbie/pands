@@ -1,8 +1,9 @@
 import { db } from '$lib/db.js';
 import { error, redirect } from '@sveltejs/kit';
 import { getMatrixDataForSkus } from '$lib/services/inventory.js';
+import { requireAdmin } from '$lib/auth.js';
 
-export async function load({ params }) {
+export async function load({ params, locals }) {
 	const [[po]] = await db.query('SELECT * FROM purchase_orders WHERE id = ?', [params.id]);
 	if (!po) error(404, 'PO not found');
 	const [lines] = await db.query(
@@ -25,11 +26,13 @@ export async function load({ params }) {
 		receivedAt = row?.received_at ?? null;
 	}
 
-	return { po, lines, matrix, receivedAt };
+	return { po, lines, matrix, receivedAt, user: locals.appUser };
 }
 
 export const actions = {
-	cancel: async ({ params }) => {
+	cancel: async ({ params, locals }) => {
+		const denied = requireAdmin(locals);
+		if (denied) return denied;
 		await db.query('UPDATE purchase_orders SET status = "CANCELLED" WHERE id = ?', [params.id]);
 		await db.query(
 			'UPDATE purchase_order_lines SET status = "CANCELLED" WHERE po_id = ? AND status = "OPEN"',

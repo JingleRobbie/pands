@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { so, runs, matrix } = data;
+	const { so, runs, matrix, user } = data;
 
 	const scheduledRuns = $derived(runs.filter((r) => r.status === 'SCHEDULED'));
 	const confirmedRuns = $derived(runs.filter((r) => r.status === 'COMPLETED'));
@@ -176,11 +176,14 @@
 												/>
 											</td>
 											<td class="px-4 py-2 text-center">
-												<button
-													type="button"
-													class="text-gray-300 hover:text-red-500 font-bold leading-none text-lg"
-													onclick={() => requestDelete(run.id)}>×</button
-												>
+												{#if user?.role === 'admin'}
+													<button
+														type="button"
+														class="text-gray-300 hover:text-red-500 font-bold leading-none text-lg"
+														onclick={() => requestDelete(run.id)}
+														>×</button
+													>
+												{/if}
 											</td>
 										</tr>
 									{/each}
@@ -189,9 +192,15 @@
 						</table>
 					</div>
 					<div class="flex gap-3">
-						<button type="submit" class="btn-primary"
-							>Confirm &amp; Deduct Inventory</button
-						>
+						{#if user?.role === 'admin'}
+							<button type="submit" class="btn-primary"
+								>Confirm &amp; Deduct Inventory</button
+							>
+						{:else}
+							<p class="text-sm text-amber-700">
+								Admin access required to confirm runs.
+							</p>
+						{/if}
 						<a href="/production" class="btn-secondary">Cancel</a>
 					</div>
 				</form>

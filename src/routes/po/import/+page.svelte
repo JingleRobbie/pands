@@ -1,7 +1,7 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
-	let { form } = $props();
+	let { data, form } = $props();
 
 	const STATUS = {
 		new: { label: 'New', badge: 'badge-green', defaultAccepted: true },
@@ -115,9 +115,13 @@
 			{/each}
 
 			<div class="flex items-center gap-4 mt-6">
-				<button type="submit" class="btn-primary">
-					Import {[...accepted].length} PO{accepted.size !== 1 ? 's' : ''}
-				</button>
+				{#if data.user?.role === 'admin'}
+					<button type="submit" class="btn-primary">
+						Import {[...accepted].length} PO{accepted.size !== 1 ? 's' : ''}
+					</button>
+				{:else}
+					<p class="text-sm text-amber-700">Admin access required to import.</p>
+				{/if}
 				<a href="/po/import" class="text-sm text-gray-500 hover:text-gray-700"
 					>Upload different file</a
 				>

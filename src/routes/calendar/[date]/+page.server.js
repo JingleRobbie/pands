@@ -1,8 +1,9 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/db.js';
 import { upsertScheduledRun, deleteRun } from '$lib/services/production.js';
+import { requireAdmin } from '$lib/auth.js';
 
-export async function load({ params }) {
+export async function load({ params, locals }) {
 	const { date } = params;
 
 	const [runs] = await db.query(
@@ -34,7 +35,7 @@ export async function load({ params }) {
 		[]
 	);
 
-	return { date, runs, available };
+	return { date, runs, available, user: locals.appUser };
 }
 
 export const actions = {
@@ -52,7 +53,9 @@ export const actions = {
 		redirect(303, `/calendar/${date}`);
 	},
 
-	delete: async ({ params, request }) => {
+	delete: async ({ params, request, locals }) => {
+		const denied = requireAdmin(locals);
+		if (denied) return denied;
 		const { date } = params;
 		const data = await request.formData();
 		const runId = parseInt(data.get('run_id'));

@@ -8,8 +8,14 @@ CREATE TABLE IF NOT EXISTS app_users (
   id                INT AUTO_INCREMENT PRIMARY KEY,
   display_name      VARCHAR(100) NOT NULL,
   is_active         BOOLEAN DEFAULT TRUE,
-  sidebar_collapsed BOOLEAN NOT NULL DEFAULT FALSE
+  sidebar_collapsed BOOLEAN NOT NULL DEFAULT FALSE,
+  role              ENUM('admin', 'operator') NOT NULL DEFAULT 'operator',
+  password_hash     VARCHAR(255) NULL
 );
+-- Migration for existing installs:
+-- ALTER TABLE app_users ADD COLUMN role ENUM('admin','operator') NOT NULL DEFAULT 'operator';
+-- ALTER TABLE app_users ADD COLUMN password_hash VARCHAR(255) NULL;
+-- UPDATE app_users SET role = 'admin' WHERE id = 1;
 
 CREATE TABLE IF NOT EXISTS material_skus (
   id            INT AUTO_INCREMENT PRIMARY KEY,
@@ -111,4 +117,4 @@ CREATE TABLE IF NOT EXISTS production_runs (
 );
 
 -- Seed a default user (add more via MySQL directly or a future admin screen)
-INSERT IGNORE INTO app_users (id, display_name) VALUES (1, 'Admin');
+INSERT IGNORE INTO app_users (id, display_name, role) VALUES (1, 'Admin', 'admin');

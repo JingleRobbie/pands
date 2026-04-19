@@ -1,4 +1,6 @@
 <script>
+	let { data } = $props();
+	const { user } = data;
 	let today = new Date();
 	let year = $state(today.getFullYear());
 	let month = $state(today.getMonth() + 1); // 1-based
@@ -96,6 +98,12 @@
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Calendar</h1>
 	<div class="flex items-center gap-3">
+		{#if user}
+			<span class="text-sm text-gray-500">{user.display_name}</span>
+			<a href="/logout" class="btn-secondary btn-sm">Sign out</a>
+		{:else}
+			<a href="/login" class="btn-primary btn-sm">Sign in</a>
+		{/if}
 		<button onclick={prev} class="btn-secondary btn-sm">&#8592;</button>
 		<span class="font-medium text-gray-700 w-36 text-center"
 			>{MONTH_NAMES[month - 1]} {year}</span

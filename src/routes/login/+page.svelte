@@ -2,13 +2,13 @@
 	let { data, form } = $props();
 </script>
 
-<svelte:head><title>PandS — Who are you?</title></svelte:head>
+<svelte:head><title>PandS — Sign in</title></svelte:head>
 
 <div class="min-h-screen bg-gray-100 flex items-center justify-center">
 	<div class="bg-white rounded-xl shadow-sm border border-gray-200 w-full max-w-sm p-8">
 		<div class="mb-7 text-center">
 			<p class="text-2xl font-bold text-gray-900">PandS Inventory</p>
-			<p class="text-gray-500 text-sm mt-1">Who are you?</p>
+			<p class="text-gray-500 text-sm mt-1">Sign in to continue</p>
 		</div>
 		<form method="POST">
 			{#if form?.error}
