@@ -15,59 +15,49 @@ async function nextRunNumber(conn = db) {
 	return `${prefix}${String(seq).padStart(3, '0')}`;
 }
 
-export async function scheduleRun(soLineId, runDate, sqftScheduled, userId) {
+export async function scheduleRun(woLineId, runDate, rollsScheduled, userId) {
 	const conn = await db.getConnection();
 	try {
 		await conn.beginTransaction();
 
-		const [[line]] = await conn.query(
-			'SELECT * FROM sales_order_lines WHERE id = ? FOR UPDATE',
-			[soLineId]
-		);
-		if (!line) throw new Error('SO line not found.');
+		const [[wol]] = await conn.query('SELECT * FROM work_order_lines WHERE id = ? FOR UPDATE', [
+			woLineId,
+		]);
+		if (!wol) throw new Error('WO line not found.');
 
-		// Calc unscheduled sqft
-		const [[{ sqftInRuns }]] = await conn.query(
-			`
-			SELECT COALESCE(SUM(sqft_scheduled), 0) AS sqftInRuns
-			FROM production_runs
-			WHERE so_line_id = ? AND status != 'COMPLETED'
-		`,
-			[soLineId]
+		const [[{ rollsInRuns }]] = await conn.query(
+			`SELECT COALESCE(SUM(rolls_scheduled), 0) AS rollsInRuns
+			 FROM production_runs WHERE wo_line_id = ? AND status != 'COMPLETED'`,
+			[woLineId]
 		);
 
-		const unscheduled =
-			Number(line.sqft_ordered) - Number(line.sqft_produced) - Number(sqftInRuns);
-		if (sqftScheduled <= 0) throw new Error('Scheduled sq ft must be greater than zero.');
-		if (sqftScheduled > unscheduled) {
+		const remaining = Number(wol.qty) - Number(wol.rolls_produced) - Number(rollsInRuns);
+		if (rollsScheduled <= 0) throw new Error('Rolls scheduled must be greater than zero.');
+		if (rollsScheduled > remaining) {
 			throw new Error(
-				`Cannot schedule ${sqftScheduled} sqft — only ${unscheduled.toFixed(0)} sqft unscheduled.`
+				`Cannot schedule ${rollsScheduled} rolls — only ${remaining} rolls remaining.`
 			);
 		}
 
+		const sqftScheduled = Math.round(
+			rollsScheduled * (Number(wol.width_in) / 12) * Number(wol.length_ft)
+		);
 		const runNumber = await nextRunNumber(conn);
 		const status = runDate ? 'SCHEDULED' : 'UNSCHEDULED';
 
 		await conn.query(
-			`
-			INSERT INTO production_runs (run_number, so_line_id, sku_id, run_date, sqft_scheduled, status, created_by)
-			VALUES (?, ?, ?, ?, ?, ?, ?)
-		`,
+			`INSERT INTO production_runs (run_number, wo_line_id, sku_id, run_date, rolls_scheduled, sqft_scheduled, status, created_by)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			[
 				runNumber,
-				soLineId,
-				line.sku_id,
+				woLineId,
+				wol.sku_id,
 				runDate || null,
+				rollsScheduled,
 				sqftScheduled,
 				status,
 				userId ?? null,
 			]
-		);
-
-		// Advance SO status to IN_PROGRESS if still OPEN
-		await conn.query(
-			'UPDATE sales_orders SET status = "IN_PROGRESS" WHERE id = ? AND status = "OPEN"',
-			[line.so_id]
 		);
 
 		await conn.commit();
@@ -80,125 +70,60 @@ export async function scheduleRun(soLineId, runDate, sqftScheduled, userId) {
 	}
 }
 
-export async function upsertScheduledRun(soLineId, runDate, sqftToAdd, userId) {
+export async function scheduleGroup(woId, items, runDate, userId) {
 	const conn = await db.getConnection();
 	try {
 		await conn.beginTransaction();
 
-		const [[line]] = await conn.query(
-			'SELECT * FROM sales_order_lines WHERE id = ? FOR UPDATE',
-			[soLineId]
-		);
-		if (!line) throw new Error('SO line not found.');
-
-		const [[{ sqftInRuns }]] = await conn.query(
-			`SELECT COALESCE(SUM(sqft_scheduled), 0) AS sqftInRuns
-			 FROM production_runs WHERE so_line_id = ? AND status != 'COMPLETED'`,
-			[soLineId]
-		);
-
-		const unscheduled =
-			Number(line.sqft_ordered) - Number(line.sqft_produced) - Number(sqftInRuns);
-		if (sqftToAdd <= 0) throw new Error('Scheduled sq ft must be greater than zero.');
-		if (sqftToAdd > unscheduled) {
-			throw new Error(
-				`Cannot schedule ${sqftToAdd} sqft — only ${Math.round(unscheduled)} sqft unscheduled.`
-			);
-		}
-
-		const [[existing]] = await conn.query(
-			`SELECT id FROM production_runs
-			 WHERE so_line_id = ? AND run_date = ? AND status = 'SCHEDULED'
-			 LIMIT 1`,
-			[soLineId, runDate]
-		);
-
-		if (existing) {
-			await conn.query(
-				'UPDATE production_runs SET sqft_scheduled = sqft_scheduled + ? WHERE id = ?',
-				[sqftToAdd, existing.id]
-			);
-		} else {
-			const runNumber = await nextRunNumber(conn);
-			await conn.query(
-				`INSERT INTO production_runs (run_number, so_line_id, sku_id, run_date, sqft_scheduled, status, created_by)
-				 VALUES (?, ?, ?, ?, ?, 'SCHEDULED', ?)`,
-				[runNumber, soLineId, line.sku_id, runDate, sqftToAdd, userId ?? null]
-			);
-			await conn.query(
-				'UPDATE sales_orders SET status = "IN_PROGRESS" WHERE id = ? AND status = "OPEN"',
-				[line.so_id]
-			);
-		}
-
-		await conn.commit();
-	} catch (err) {
-		await conn.rollback();
-		throw err;
-	} finally {
-		conn.release();
-	}
-}
-
-export async function scheduleGroup(soId, items, runDate, userId) {
-	const conn = await db.getConnection();
-	try {
-		await conn.beginTransaction();
-
-		// Create the group record
 		const [{ insertId: groupId }] = await conn.query(
 			'INSERT INTO production_run_groups (created_by) VALUES (?)',
 			[userId ?? null]
 		);
 
-		for (const { soLineId, sqftScheduled } of items) {
-			const [[line]] = await conn.query(
-				'SELECT * FROM sales_order_lines WHERE id = ? FOR UPDATE',
-				[soLineId]
+		for (const { woLineId, rollsScheduled } of items) {
+			const [[wol]] = await conn.query(
+				'SELECT * FROM work_order_lines WHERE id = ? FOR UPDATE',
+				[woLineId]
 			);
-			if (!line) throw new Error(`SO line ${soLineId} not found.`);
+			if (!wol) throw new Error(`WO line ${woLineId} not found.`);
 
-			const [[{ sqftInRuns }]] = await conn.query(
-				`SELECT COALESCE(SUM(sqft_scheduled), 0) AS sqftInRuns
-				 FROM production_runs
-				 WHERE so_line_id = ? AND status != 'COMPLETED'`,
-				[soLineId]
+			const [[{ rollsInRuns }]] = await conn.query(
+				`SELECT COALESCE(SUM(rolls_scheduled), 0) AS rollsInRuns
+				 FROM production_runs WHERE wo_line_id = ? AND status != 'COMPLETED'`,
+				[woLineId]
 			);
 
-			const unscheduled =
-				Number(line.sqft_ordered) - Number(line.sqft_produced) - Number(sqftInRuns);
-			if (sqftScheduled <= 0) throw new Error('Scheduled sq ft must be greater than zero.');
-			if (sqftScheduled > unscheduled) {
+			const remaining = Number(wol.qty) - Number(wol.rolls_produced) - Number(rollsInRuns);
+			if (rollsScheduled <= 0) throw new Error('Rolls scheduled must be greater than zero.');
+			if (rollsScheduled > remaining) {
 				throw new Error(
-					`Cannot schedule ${sqftScheduled} sqft — only ${Math.round(unscheduled)} sqft unscheduled.`
+					`Cannot schedule ${rollsScheduled} rolls for line ${woLineId} — only ${remaining} remaining.`
 				);
 			}
 
+			const sqftScheduled = Math.round(
+				rollsScheduled * (Number(wol.width_in) / 12) * Number(wol.length_ft)
+			);
 			const runNumber = await nextRunNumber(conn);
 			const status = runDate ? 'SCHEDULED' : 'UNSCHEDULED';
 
 			await conn.query(
 				`INSERT INTO production_runs
-				 (run_number, group_id, so_line_id, sku_id, run_date, sqft_scheduled, status, created_by)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				 (run_number, group_id, wo_line_id, sku_id, run_date, rolls_scheduled, sqft_scheduled, status, created_by)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 				[
 					runNumber,
 					groupId,
-					soLineId,
-					line.sku_id,
+					woLineId,
+					wol.sku_id,
 					runDate || null,
+					rollsScheduled,
 					sqftScheduled,
 					status,
 					userId ?? null,
 				]
 			);
 		}
-
-		// Advance SO status to IN_PROGRESS if still OPEN
-		await conn.query(
-			'UPDATE sales_orders SET status = "IN_PROGRESS" WHERE id = ? AND status = "OPEN"',
-			[soId]
-		);
 
 		await conn.commit();
 		return groupId;
@@ -210,7 +135,7 @@ export async function scheduleGroup(soId, items, runDate, userId) {
 	}
 }
 
-export async function confirmRun(runId, sqftActual, userId, runDate = null) {
+export async function confirmRun(runId, rollsActual, userId, runDate = null) {
 	const conn = await db.getConnection();
 	try {
 		await conn.beginTransaction();
@@ -220,76 +145,79 @@ export async function confirmRun(runId, sqftActual, userId, runDate = null) {
 		]);
 		if (!run) throw new Error('Production run not found.');
 		if (run.status === 'COMPLETED') throw new Error('This run is already completed.');
-		if (sqftActual > run.sqft_scheduled)
+		if (rollsActual > run.rolls_scheduled)
 			throw new Error(
-				`Cannot record ${sqftActual} sqft — only ${run.sqft_scheduled} sqft was scheduled.`
+				`Cannot record ${rollsActual} rolls — only ${run.rolls_scheduled} rolls were scheduled.`
 			);
 
-		// Create CONSUMPTION transaction
-		const [[sol]] = await conn.query('SELECT * FROM sales_order_lines WHERE id = ?', [
-			run.so_line_id,
-		]);
-		const [[so]] = await conn.query('SELECT * FROM sales_orders WHERE id = ?', [sol.so_id]);
+		const [[wol]] = await conn.query(
+			'SELECT wol.*, wo.id AS wo_id, wo.so_number, wo.job_name FROM work_order_lines wol JOIN work_orders wo ON wo.id = wol.wo_id WHERE wol.id = ?',
+			[run.wo_line_id]
+		);
+
+		const sqftActual = Math.round(
+			rollsActual * (Number(wol.width_in) / 12) * Number(wol.length_ft)
+		);
 
 		await conn.query(
-			`
-			INSERT INTO inventory_transactions (sku_id, transaction_type, sqft_quantity, reference_type, reference_id, memo, created_by)
-			VALUES (?, 'CONSUMPTION', ?, 'PRODUCTION_RUN', ?, ?, ?)
-		`,
+			`INSERT INTO inventory_transactions (sku_id, transaction_type, sqft_quantity, reference_type, reference_id, memo, created_by)
+			 VALUES (?, 'CONSUMPTION', ?, 'PRODUCTION_RUN', ?, ?, ?)`,
 			[
 				run.sku_id,
 				sqftActual,
 				runId,
-				`Run ${run.run_number} — ${so.so_number} ${so.job_name}`,
+				`Run ${run.run_number} — ${wol.so_number} ${wol.job_name}`,
 				userId ?? null,
 			]
 		);
 
-		// Mark run confirmed (update date if provided)
 		await conn.query(
 			`UPDATE production_runs
-			 SET sqft_actual = ?, run_date = COALESCE(?, run_date), status = 'COMPLETED',
-			     confirmed_at = NOW(), confirmed_by = ?
+			 SET rolls_actual = ?, sqft_actual = ?, run_date = COALESCE(?, run_date),
+			     status = 'COMPLETED', confirmed_at = NOW(), confirmed_by = ?
 			 WHERE id = ?`,
-			[sqftActual, runDate || null, userId ?? null, runId]
+			[rollsActual, sqftActual, runDate || null, userId ?? null, runId]
 		);
 
-		// Update SO line sqft_produced
 		await conn.query(
-			'UPDATE sales_order_lines SET sqft_produced = sqft_produced + ? WHERE id = ?',
-			[sqftActual, run.so_line_id]
+			'UPDATE work_order_lines SET rolls_produced = rolls_produced + ? WHERE id = ?',
+			[rollsActual, run.wo_line_id]
 		);
 
-		// Check if SO is fully complete
 		const [[{ incomplete }]] = await conn.query(
-			`
-			SELECT COUNT(*) AS incomplete
-			FROM sales_order_lines
-			WHERE so_id = ? AND sqft_produced < sqft_ordered
-		`,
-			[sol.so_id]
+			`SELECT COUNT(*) AS incomplete FROM work_order_lines WHERE wo_id = ? AND rolls_produced < qty`,
+			[wol.wo_id]
 		);
 
 		if (incomplete === 0) {
-			await conn.query('UPDATE sales_orders SET status = "COMPLETE" WHERE id = ?', [
-				sol.so_id,
+			await conn.query('UPDATE work_orders SET status = "COMPLETE" WHERE id = ?', [
+				wol.wo_id,
 			]);
 		}
 
-		// Auto-create unscheduled run for any shortfall
-		const shortfall = run.sqft_scheduled - sqftActual;
+		const shortfallRolls = run.rolls_scheduled - rollsActual;
 		let shortfallRunNumber = null;
-		if (shortfall > 0) {
+		if (shortfallRolls > 0) {
 			shortfallRunNumber = await nextRunNumber(conn);
+			const shortfallSqft = Math.round(
+				shortfallRolls * (Number(wol.width_in) / 12) * Number(wol.length_ft)
+			);
 			await conn.query(
-				`INSERT INTO production_runs (run_number, so_line_id, sku_id, run_date, sqft_scheduled, status, created_by)
-				 VALUES (?, ?, ?, NULL, ?, 'UNSCHEDULED', ?)`,
-				[shortfallRunNumber, run.so_line_id, run.sku_id, shortfall, userId ?? null]
+				`INSERT INTO production_runs (run_number, wo_line_id, sku_id, run_date, rolls_scheduled, sqft_scheduled, status, created_by)
+				 VALUES (?, ?, ?, NULL, ?, ?, 'UNSCHEDULED', ?)`,
+				[
+					shortfallRunNumber,
+					run.wo_line_id,
+					run.sku_id,
+					shortfallRolls,
+					shortfallSqft,
+					userId ?? null,
+				]
 			);
 		}
 
 		await conn.commit();
-		return { shortfallRunNumber, shortfallSqft: shortfall > 0 ? shortfall : null };
+		return { shortfallRunNumber, shortfallRolls: shortfallRolls > 0 ? shortfallRolls : null };
 	} catch (err) {
 		await conn.rollback();
 		throw err;

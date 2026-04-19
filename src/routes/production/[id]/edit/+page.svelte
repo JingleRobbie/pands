@@ -1,8 +1,8 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { run, maxSqft, peers } = data;
+	const { run, maxRolls, peers } = data;
 
 	let runDate = $state(
 		run.run_date instanceof Date
@@ -11,7 +11,7 @@
 				? String(run.run_date).slice(0, 10)
 				: ''
 	);
-	let sqftScheduled = $state(run.sqft_scheduled);
+	let rollsScheduled = $state(run.rolls_scheduled);
 </script>
 
 <svelte:head><title>Edit Run {run.run_number} — PandS</title></svelte:head>
@@ -44,7 +44,7 @@
 					<span class="font-medium">{run.job_name}</span>
 				</div>
 				<div class="flex justify-between">
-					<span class="text-gray-500">SO #</span>
+					<span class="text-gray-500">WO #</span>
 					<span>{run.so_number}</span>
 				</div>
 				<div class="flex justify-between">
@@ -75,21 +75,19 @@
 						/>
 					</div>
 					<div>
-						<label for="sqft_scheduled" class="form-label">Sq Ft Scheduled</label>
+						<label for="rolls_scheduled" class="form-label">Rolls Scheduled</label>
 						<input
-							id="sqft_scheduled"
+							id="rolls_scheduled"
 							type="number"
-							name="sqft_scheduled"
+							name="rolls_scheduled"
 							step="1"
 							min="1"
-							max={maxSqft}
-							class="form-input font-mono"
-							bind:value={sqftScheduled}
+							max={maxRolls}
+							class="form-input tabular-nums"
+							bind:value={rollsScheduled}
 							required
 						/>
-						<p class="text-xs text-gray-400 mt-1">
-							Max available: {fmtSqft(maxSqft)} sqft
-						</p>
+						<p class="text-xs text-gray-400 mt-1">Max available: {maxRolls} rolls</p>
 					</div>
 				</div>
 			</div>
@@ -111,7 +109,7 @@
 								<th class="px-4 py-2 text-left text-gray-600">Run #</th>
 								<th class="px-4 py-2 text-left text-gray-600">SKU</th>
 								<th class="px-4 py-2 text-left text-gray-600">Current Date</th>
-								<th class="px-4 py-2 text-right text-gray-600">Sq Ft</th>
+								<th class="px-4 py-2 text-right text-gray-600">Rolls</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -138,12 +136,12 @@
 									<td class="px-4 py-2 text-right">
 										<input
 											type="number"
-											name="peer_sqft_{peer.id}"
+											name="peer_rolls_{peer.id}"
 											step="1"
 											min="1"
-											max={peer.maxSqft}
-											class="form-input text-sm text-right font-mono w-28"
-											value={peer.sqft_scheduled}
+											max={peer.maxRolls}
+											class="form-input text-sm text-right tabular-nums w-20"
+											value={peer.rolls_scheduled}
 										/>
 									</td>
 								</tr>

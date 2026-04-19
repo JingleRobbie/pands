@@ -31,18 +31,18 @@ export async function GET({ url }) {
 	}
 
 	const [runRows] = await db.query(
-		`SELECT so.id AS so_id, pr.run_date AS event_date,
-		        so.so_number, so.job_name, so.customer_name
+		`SELECT wo.id AS wo_id, pr.run_date AS event_date,
+		        wo.so_number, wo.job_name, wo.customer_name
 		 FROM production_runs pr
-		 JOIN sales_order_lines sol ON sol.id = pr.so_line_id
-		 JOIN sales_orders so ON so.id = sol.so_id
+		 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
+		 JOIN work_orders wo ON wo.id = wol.wo_id
 		 WHERE pr.run_date BETWEEN ? AND ?
 		   ${runStatusFilter}
 		 ORDER BY pr.run_date`,
 		[start, end]
 	);
 
-	// Group by date, keyed by entity id (po.id or so.id)
+	// Group by date, keyed by entity id (po.id or wo.id)
 	const byDate = {};
 	for (const row of poRows) {
 		const d =
@@ -55,7 +55,7 @@ export async function GET({ url }) {
 	for (const row of runRows) {
 		const d =
 			row.event_date.toISOString?.().slice(0, 10) ?? String(row.event_date).slice(0, 10);
-		(byDate[d] ??= {})[row.so_id] = {
+		(byDate[d] ??= {})[row.wo_id] = {
 			type: 'production',
 			label: `${row.so_number} ${row.customer_name} - ${row.job_name}`,
 		};

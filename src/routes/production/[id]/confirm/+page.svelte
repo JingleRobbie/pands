@@ -49,7 +49,7 @@
 					<span class="font-medium">{data.run.job_name}</span>
 				</div>
 				<div class="flex justify-between">
-					<span class="text-gray-500">SO #</span>
+					<span class="text-gray-500">WO #</span>
 					<span>{data.run.so_number}</span>
 				</div>
 				<div class="flex justify-between">
@@ -65,10 +65,8 @@
 					<span>{fmtDate(data.run.run_date)}</span>
 				</div>
 				<div class="flex justify-between">
-					<span class="text-gray-500">Scheduled Sqft</span>
-					<span class="font-mono"
-						>{Math.round(data.run.sqft_scheduled).toLocaleString()}</span
-					>
+					<span class="text-gray-500">Scheduled Rolls</span>
+					<span class="tabular-nums">{data.run.rolls_scheduled}</span>
 				</div>
 			</div>
 		</div>
@@ -80,15 +78,16 @@
 						<span class="font-semibold text-sm text-gray-700">Actual Production</span>
 					</div>
 					<div class="card-body">
-						<label for="sqft_actual" class="form-label">Actual Sq Ft Produced</label>
+						<label for="rolls_actual" class="form-label">Actual Rolls Produced</label>
 						<input
-							id="sqft_actual"
+							id="rolls_actual"
 							type="number"
-							name="sqft_actual"
+							name="rolls_actual"
 							step="1"
 							min="1"
-							class="form-input font-mono"
-							value={data.run.sqft_scheduled}
+							max={data.run.rolls_scheduled}
+							class="form-input tabular-nums"
+							value={data.run.rolls_scheduled}
 							required
 						/>
 						<p class="text-xs text-gray-400 mt-1">
@@ -161,13 +160,11 @@
 						</td>
 					{/each}
 				</tr>
-				{#each matrix.rows as row (row.rowType + (row.soLineId ?? row.objectId))}
+				{#each matrix.rows as row (row.rowType + (row.woLineId ?? row.objectId))}
 					{@const href =
 						row.rowType === 'po'
 							? `/po/${row.objectId}`
-							: row.rowType === 'production'
-								? `/production/${row.objectId}/confirm`
-								: `/so/${row.objectId}`}
+							: `/wo/${row.objectId}/${row.rowType === 'unscheduled' ? 'schedule' : 'confirm'}`}
 					<tr class="row-{row.rowType} cursor-pointer" onclick={() => goto(href)}>
 						<td class="text-gray-600 text-sm">{row.partyName ?? ''}</td>
 						<td class="font-medium">

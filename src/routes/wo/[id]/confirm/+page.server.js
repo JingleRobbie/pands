@@ -5,15 +5,15 @@ import { getMatrixDataForSkus } from '$lib/services/inventory.js';
 import { requireAdmin } from '$lib/auth.js';
 
 export async function load({ params, locals }) {
-	const [[so]] = await db.query('SELECT * FROM sales_orders WHERE id = ?', [params.id]);
-	if (!so) error(404, 'SO not found');
+	const [[wo]] = await db.query('SELECT * FROM work_orders WHERE id = ?', [params.id]);
+	if (!wo) error(404, 'Work order not found');
 
 	const [runs] = await db.query(
-		`SELECT pr.*, ms.display_label AS sku_label
+		`SELECT pr.*, ms.display_label AS sku_label, wol.facing, wol.length_ft, wol.width_in
 		 FROM production_runs pr
 		 JOIN material_skus ms ON ms.id = pr.sku_id
-		 JOIN sales_order_lines sol ON sol.id = pr.so_line_id
-		 WHERE sol.so_id = ?
+		 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
+		 WHERE wol.wo_id = ?
 		 ORDER BY pr.group_id IS NULL, pr.group_id, pr.run_date, pr.run_number`,
 		[params.id]
 	);
@@ -21,7 +21,7 @@ export async function load({ params, locals }) {
 	const skuIds = [...new Set(runs.map((r) => r.sku_id))];
 	const matrix = skuIds.length ? await getMatrixDataForSkus(skuIds) : null;
 
-	return { so, runs, matrix, user: locals.appUser };
+	return { wo, runs, matrix, user: locals.appUser };
 }
 
 export const actions = {
@@ -35,16 +35,16 @@ export const actions = {
 
 		const shortfalls = [];
 		for (const runId of runIds) {
-			const sqft = Math.round(Number(data.get(`sqft_${runId}`)));
-			if (isNaN(sqft) || sqft <= 0)
-				return fail(400, { error: 'Enter a valid sq ft value for all runs.' });
+			const rolls = parseInt(data.get(`rolls_${runId}`));
+			if (isNaN(rolls) || rolls <= 0)
+				return fail(400, { error: 'Enter a valid roll count for all runs.' });
 			const runDate = data.get(`date_${runId}`) || null;
 			try {
-				const result = await confirmRun(runId, sqft, locals.appUser?.id, runDate);
+				const result = await confirmRun(runId, rolls, locals.appUser?.id, runDate);
 				if (result?.shortfallRunNumber) {
 					shortfalls.push({
 						runNumber: result.shortfallRunNumber,
-						sqft: result.shortfallSqft,
+						rolls: result.shortfallRolls,
 					});
 				}
 			} catch (err) {

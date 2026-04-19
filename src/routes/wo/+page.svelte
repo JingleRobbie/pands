@@ -40,6 +40,7 @@
 						<th class="px-4 py-2 text-left text-gray-600">Ship Date</th>
 						<th class="px-4 py-2 text-right text-gray-600">Lines</th>
 						<th class="px-4 py-2 text-right text-gray-600">Sq Ft</th>
+						<th class="px-4 py-2 text-right text-gray-600">Rolls</th>
 						<th class="px-4 py-2 text-left text-gray-600">Status</th>
 					</tr>
 				</thead>
@@ -58,6 +59,17 @@
 							<td class="px-4 py-2 text-right font-mono text-gray-600"
 								>{fmtSqft(wo.total_sqft)}</td
 							>
+							<td class="px-4 py-2 text-right tabular-nums text-gray-600">
+								{#if wo.rolls_produced > 0 || wo.rolls_scheduled > 0}
+									<span class="text-green-600">{wo.rolls_produced}</span>
+									{#if wo.rolls_scheduled > 0}<span class="text-blue-500"
+											>+{wo.rolls_scheduled}</span
+										>{/if}
+									<span class="text-gray-400">/{wo.total_rolls}</span>
+								{:else}
+									<span class="text-gray-400">{wo.total_rolls}</span>
+								{/if}
+							</td>
 							<td class="px-4 py-2">
 								<span class={statusBadge(wo.status)}>{statusLabel(wo.status)}</span>
 							</td>

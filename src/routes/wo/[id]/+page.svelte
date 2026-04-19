@@ -11,7 +11,13 @@
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<div class="flex items-center gap-4">
 		<a href="/wo" class="text-gray-400 hover:text-gray-600 text-sm">← Work Orders</a>
-		<h1 class="text-lg font-semibold text-gray-900">SO #{wo.so_number}</h1>
+		<h1 class="text-lg font-semibold text-gray-900">WO #{wo.so_number}</h1>
+	</div>
+	<div class="flex items-center gap-2">
+		{#if wo.status !== 'COMPLETE' && wo.status !== 'CANCELLED'}
+			<a href="/wo/{wo.id}/schedule" class="btn-primary btn-sm">Schedule Production</a>
+		{/if}
+		<a href="/wo/{wo.id}/confirm" class="btn-secondary btn-sm">View Runs</a>
 	</div>
 </header>
 

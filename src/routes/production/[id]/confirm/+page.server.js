@@ -5,11 +5,11 @@ import { redirect, error, fail } from '@sveltejs/kit';
 
 export async function load({ params }) {
 	const [[run]] = await db.query(
-		`SELECT pr.*, ms.display_label, sol.facing, so.so_number, so.job_name
+		`SELECT pr.*, ms.display_label, wol.facing, wo.so_number, wo.job_name
 		 FROM production_runs pr
 		 JOIN material_skus ms ON ms.id = pr.sku_id
-		 JOIN sales_order_lines sol ON sol.id = pr.so_line_id
-		 JOIN sales_orders so ON so.id = sol.so_id
+		 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
+		 JOIN work_orders wo ON wo.id = wol.wo_id
 		 WHERE pr.id = ?`,
 		[params.id]
 	);
@@ -21,12 +21,12 @@ export async function load({ params }) {
 export const actions = {
 	default: async ({ request, params, locals }) => {
 		const data = await request.formData();
-		const sqftActual = Math.round(Number(data.get('sqft_actual')));
-		if (isNaN(sqftActual) || sqftActual <= 0)
-			return fail(400, { error: 'Enter a valid sq ft value.' });
+		const rollsActual = parseInt(data.get('rolls_actual'));
+		if (isNaN(rollsActual) || rollsActual <= 0)
+			return fail(400, { error: 'Enter a valid roll count.' });
 
 		try {
-			await confirmRun(Number(params.id), sqftActual, locals.appUser?.id);
+			await confirmRun(Number(params.id), rollsActual, locals.appUser?.id);
 			redirect(303, '/production');
 		} catch (err) {
 			return fail(400, { error: err.message });

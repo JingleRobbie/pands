@@ -3,12 +3,11 @@
 	import { goto } from '$app/navigation';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { so, runs, matrix, user } = data;
+	const { wo, runs, matrix, user } = data;
 
-	const scheduledRuns = $derived(runs.filter((r) => r.status === 'SCHEDULED'));
+	const scheduledRuns = $derived(runs.filter((r) => r.status !== 'COMPLETED'));
 	const confirmedRuns = $derived(runs.filter((r) => r.status === 'COMPLETED'));
 
-	// Group scheduled runs by group_id; null-grouped runs each form a singleton
 	const groupedScheduled = $derived(() => {
 		const groups = [];
 		const seen = new Map();
@@ -36,20 +35,28 @@
 		if (!d) return '';
 		return d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10);
 	}
+
+	let dates = $state(Object.fromEntries(runs.map((r) => [r.id, toDateInput(r.run_date)])));
+	let fillDate = $state('');
+
+	function applyDateToAll() {
+		if (!fillDate) return;
+		for (const key in dates) dates[key] = fillDate;
+	}
 </script>
 
-<svelte:head><title>Confirm Job — {so.so_number} — PandS</title></svelte:head>
+<svelte:head><title>Confirm WO {wo.so_number} — PandS</title></svelte:head>
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<div>
-		<h1 class="text-lg font-semibold text-gray-900">Confirm Job — {so.so_number}</h1>
-		<p class="text-sm text-gray-500 mt-0.5">{so.customer_name} · {so.job_name}</p>
+		<h1 class="text-lg font-semibold text-gray-900">Confirm Production — {wo.so_number}</h1>
+		<p class="text-sm text-gray-500 mt-0.5">{wo.customer_name} · {wo.job_name}</p>
 	</div>
 	<a href="/production" class="btn-secondary btn-sm">Back</a>
 </header>
 
 <main class="p-6">
-	<div class="max-w-2xl">
+	<div class="max-w-4xl">
 		{#if form?.error}
 			<div
 				class="mb-4 px-4 py-3 rounded-md text-sm bg-red-50 text-red-800 border border-red-200"
@@ -66,16 +73,17 @@
 					</p>
 					{#if form.shortfalls.length > 0}
 						<p class="text-sm text-amber-700">
-							{form.shortfalls.length} unscheduled run{form.shortfalls.length === 1
+							{form.shortfalls.length} shortfall run{form.shortfalls.length === 1
 								? ''
-								: 's'} created for shortfall:
+								: 's'} created:
 						</p>
 						<ul class="text-sm text-amber-700 list-disc list-inside">
 							{#each form.shortfalls as sf (sf.runNumber)}
 								<li>
-									<span class="font-mono">{sf.runNumber}</span> — {fmtSqft(
-										sf.sqft
-									)} sqft
+									<span class="font-mono">{sf.runNumber}</span> — {sf.rolls} roll{sf.rolls ===
+									1
+										? ''
+										: 's'}
 								</li>
 							{/each}
 						</ul>
@@ -91,7 +99,7 @@
 			{#if scheduledRuns.length === 0}
 				<div class="card">
 					<div class="card-body text-sm text-gray-500">
-						All production runs for this job are already completed.
+						All production runs for this work order are already completed.
 					</div>
 				</div>
 			{:else}
@@ -99,9 +107,20 @@
 					<div class="card mb-4">
 						<div class="card-header">
 							<span class="font-semibold text-sm text-gray-700">Runs to Confirm</span>
-							<span class="text-xs text-gray-400"
-								>{scheduledRuns.length} scheduled</span
+							<span class="text-xs text-gray-400">{scheduledRuns.length} pending</span
 							>
+							<div class="flex items-center gap-2 ml-auto">
+								<label for="fill_date" class="form-label mb-0 text-xs text-gray-500"
+									>Apply date to all</label
+								>
+								<input
+									id="fill_date"
+									type="date"
+									class="form-input py-1 text-sm"
+									bind:value={fillDate}
+									oninput={applyDateToAll}
+								/>
+							</div>
 						</div>
 						<table class="w-full text-sm">
 							<thead>
@@ -109,9 +128,10 @@
 									<th class="px-4 py-2 w-8"></th>
 									<th class="px-4 py-2 text-left text-gray-600">Run #</th>
 									<th class="px-4 py-2 text-left text-gray-600">SKU</th>
+									<th class="px-4 py-2 text-left text-gray-600">Facing</th>
 									<th class="px-4 py-2 text-left text-gray-600">Date</th>
 									<th class="px-4 py-2 text-right text-gray-600">Scheduled</th>
-									<th class="px-4 py-2 text-right text-gray-600">Actual Sqft</th>
+									<th class="px-4 py-2 text-right text-gray-600">Actual Rolls</th>
 									<th class="px-4 py-2 w-8"></th>
 								</tr>
 							</thead>
@@ -120,7 +140,7 @@
 									{#if group.runs.length > 1}
 										<tr>
 											<td
-												colspan="7"
+												colspan="8"
 												class="px-4 py-1 bg-gray-50 border-y border-gray-200"
 											>
 												<span
@@ -151,28 +171,31 @@
 												>
 											</td>
 											<td class="px-4 py-2">{run.sku_label}</td>
+											<td class="px-4 py-2 text-gray-500">{run.facing}</td>
 											<td class="px-4 py-2">
 												<input
 													type="date"
 													name="date_{run.id}"
-													value={toDateInput(run.run_date)}
+													bind:value={dates[run.id]}
 													class="form-input text-sm"
 												/>
 											</td>
 											<td
-												class="px-4 py-2 text-right font-mono text-gray-500"
+												class="px-4 py-2 text-right tabular-nums text-gray-500"
 											>
-												{fmtSqft(run.sqft_scheduled)}
+												{run.rolls_scheduled} roll{run.rolls_scheduled === 1
+													? ''
+													: 's'}
 											</td>
 											<td class="px-4 py-2 text-right">
 												<input
 													type="number"
-													name="sqft_{run.id}"
-													value={run.sqft_scheduled}
+													name="rolls_{run.id}"
+													value={run.rolls_scheduled}
 													min="1"
-													max={run.sqft_scheduled}
+													max={run.rolls_scheduled}
 													step="1"
-													class="form-input w-28 text-right font-mono"
+													class="form-input w-20 text-right tabular-nums"
 												/>
 											</td>
 											<td class="px-4 py-2 text-center">
@@ -218,7 +241,8 @@
 							<th class="px-4 py-2 text-left text-gray-600">Run #</th>
 							<th class="px-4 py-2 text-left text-gray-600">SKU</th>
 							<th class="px-4 py-2 text-left text-gray-600">Date</th>
-							<th class="px-4 py-2 text-right text-gray-600">Actual Sqft</th>
+							<th class="px-4 py-2 text-right text-gray-600">Rolls</th>
+							<th class="px-4 py-2 text-right text-gray-600">Sq Ft</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -227,6 +251,8 @@
 								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
 								<td class="px-4 py-2">{run.sku_label}</td>
 								<td class="px-4 py-2">{fmtDate(run.run_date)}</td>
+								<td class="px-4 py-2 text-right tabular-nums">{run.rolls_actual}</td
+								>
 								<td class="px-4 py-2 text-right font-mono"
 									>{fmtSqft(run.sqft_actual)}</td
 								>
@@ -274,7 +300,7 @@
 					<tr>
 						<th class="min-w-[120px]">Customer/Vendor</th>
 						<th class="min-w-[140px]">Description</th>
-						<th class="min-w-[90px]">Order #</th>
+						<th class="min-w-[90px]">WO #</th>
 						<th class="min-w-[70px]">Date</th>
 						<th class="min-w-[70px]">Ship</th>
 						<th class="min-w-[70px]">Facing</th>
@@ -321,13 +347,11 @@
 							</td>
 						{/each}
 					</tr>
-					{#each matrix.rows as row (row.rowType + (row.soLineId ?? row.objectId))}
+					{#each matrix.rows as row (row.rowType + (row.runId ?? row.woLineId ?? row.objectId))}
 						{@const href =
 							row.rowType === 'po'
 								? `/po/${row.objectId}`
-								: row.rowType === 'production'
-									? `/production/${row.objectId}/confirm`
-									: `/so/${row.objectId}`}
+								: `/wo/${row.objectId}/${row.rowType === 'unscheduled' ? 'schedule' : 'confirm'}`}
 						<tr class="row-{row.rowType} cursor-pointer" onclick={() => goto(href)}>
 							<td class="text-gray-600 text-sm">{row.partyName ?? ''}</td>
 							<td class="font-medium">

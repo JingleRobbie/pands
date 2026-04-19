@@ -91,11 +91,11 @@ export async function getMatrixData(fromDate = null) {
 	const [prodRuns] = await db.query(
 		`
 		SELECT pr.id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
-		       sol.facing,
-		       so.so_number, so.job_name, so.id AS so_id, so.ship_date, so.customer_name
+		       wol.facing,
+		       wo.so_number, wo.job_name, wo.id AS wo_id, wo.ship_date, wo.customer_name
 		FROM production_runs pr
-		JOIN sales_order_lines sol ON sol.id = pr.so_line_id
-		JOIN sales_orders so ON so.id = sol.so_id
+		JOIN work_order_lines wol ON wol.id = pr.wo_line_id
+		JOIN work_orders wo ON wo.id = wol.wo_id
 		WHERE pr.run_date >= ? AND pr.status = 'SCHEDULED'
 		ORDER BY pr.run_date, pr.run_number
 	`,
@@ -113,7 +113,8 @@ export async function getMatrixData(fromDate = null) {
 			eventDate: run.run_date,
 			shipDate: run.ship_date,
 			facing: run.facing,
-			objectId: run.id,
+			runId: run.id,
+			objectId: run.wo_id,
 			deltas: { [run.sku_id]: -Number(run.sqft_scheduled) },
 		};
 	}
@@ -142,28 +143,30 @@ export async function getMatrixData(fromDate = null) {
 		row.cells = buildCells(skuIds, row.deltas, running);
 	}
 
-	// 8. Unscheduled SO lines
+	// 8. Unscheduled WO lines
 	const [unscheduledLines] = await db.query(`
-		SELECT sol.id, sol.sku_id, sol.sqft_ordered, sol.sqft_produced, sol.facing,
-		       so.so_number, so.job_name, so.id AS so_id, so.customer_name,
+		SELECT wol.id, wol.sku_id, wol.qty, wol.rolls_produced, wol.length_ft, wol.width_in, wol.facing,
+		       wo.so_number, wo.job_name, wo.id AS wo_id, wo.customer_name, wo.ship_date,
 		       COALESCE(
-		         (SELECT SUM(pr.sqft_scheduled)
+		         (SELECT SUM(pr.rolls_scheduled)
 		          FROM production_runs pr
-		          WHERE pr.so_line_id = sol.id AND pr.status != 'COMPLETED'), 0
-		       ) AS sqft_scheduled
-		FROM sales_order_lines sol
-		JOIN sales_orders so ON so.id = sol.so_id
-		WHERE so.status IN ('OPEN','IN_PROGRESS')
-		ORDER BY so.ship_date, so.so_number
+		          WHERE pr.wo_line_id = wol.id AND pr.status != 'COMPLETED'), 0
+		       ) AS rolls_scheduled
+		FROM work_order_lines wol
+		JOIN work_orders wo ON wo.id = wol.wo_id
+		WHERE wo.status NOT IN ('COMPLETE','CANCELLED')
+		ORDER BY wo.ship_date, wo.so_number
 	`);
 
 	const unscheduledRows = [];
 	for (const line of unscheduledLines) {
-		const unscheduled =
-			Number(line.sqft_ordered) - Number(line.sqft_produced) - Number(line.sqft_scheduled);
-		if (unscheduled <= 0) continue;
+		const remainingRolls =
+			Number(line.qty) - Number(line.rolls_produced) - Number(line.rolls_scheduled);
+		if (remainingRolls <= 0) continue;
 
-		const delta = -unscheduled;
+		const delta = -Math.round(
+			remainingRolls * (Number(line.width_in) / 12) * Number(line.length_ft)
+		);
 		running[line.sku_id] = (running[line.sku_id] ?? 0) + delta;
 
 		unscheduledRows.push({
@@ -175,8 +178,8 @@ export async function getMatrixData(fromDate = null) {
 			eventDate: null,
 			shipDate: line.ship_date,
 			facing: line.facing,
-			objectId: line.so_id,
-			soLineId: line.id,
+			objectId: line.wo_id,
+			woLineId: line.id,
 			deltas: { [line.sku_id]: delta },
 			cells: buildCells(skuIds, { [line.sku_id]: delta }, running),
 		});
@@ -249,11 +252,11 @@ export async function getMatrixDataForSkus(skuIds) {
 	const [prodRuns] = await db.query(
 		`
 		SELECT pr.id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
-		       sol.facing,
-		       so.so_number, so.job_name, so.id AS so_id, so.ship_date, so.customer_name
+		       wol.facing,
+		       wo.so_number, wo.job_name, wo.id AS wo_id, wo.ship_date, wo.customer_name
 		FROM production_runs pr
-		JOIN sales_order_lines sol ON sol.id = pr.so_line_id
-		JOIN sales_orders so ON so.id = sol.so_id
+		JOIN work_order_lines wol ON wol.id = pr.wo_line_id
+		JOIN work_orders wo ON wo.id = wol.wo_id
 		WHERE pr.run_date >= ? AND pr.status = 'SCHEDULED'
 		  AND pr.sku_id IN (?)
 		ORDER BY pr.run_date, pr.run_number
@@ -272,7 +275,8 @@ export async function getMatrixDataForSkus(skuIds) {
 			eventDate: run.run_date,
 			shipDate: run.ship_date,
 			facing: run.facing,
-			objectId: run.id,
+			runId: run.id,
+			objectId: run.wo_id,
 			deltas: { [run.sku_id]: -Number(run.sqft_scheduled) },
 		};
 	}
@@ -301,32 +305,34 @@ export async function getMatrixDataForSkus(skuIds) {
 		row.cells = buildCells(skuIds, row.deltas, running);
 	}
 
-	// 8. Unscheduled SO lines for these SKUs
+	// 8. Unscheduled WO lines for these SKUs
 	const [unscheduledLines] = await db.query(
 		`
-		SELECT sol.id, sol.sku_id, sol.sqft_ordered, sol.sqft_produced, sol.facing,
-		       so.so_number, so.job_name, so.id AS so_id, so.customer_name,
+		SELECT wol.id, wol.sku_id, wol.qty, wol.rolls_produced, wol.length_ft, wol.width_in, wol.facing,
+		       wo.so_number, wo.job_name, wo.id AS wo_id, wo.customer_name, wo.ship_date,
 		       COALESCE(
-		         (SELECT SUM(pr.sqft_scheduled)
+		         (SELECT SUM(pr.rolls_scheduled)
 		          FROM production_runs pr
-		          WHERE pr.so_line_id = sol.id AND pr.status != 'COMPLETED'), 0
-		       ) AS sqft_scheduled
-		FROM sales_order_lines sol
-		JOIN sales_orders so ON so.id = sol.so_id
-		WHERE so.status IN ('OPEN','IN_PROGRESS')
-		  AND sol.sku_id IN (?)
-		ORDER BY so.ship_date, so.so_number
+		          WHERE pr.wo_line_id = wol.id AND pr.status != 'COMPLETED'), 0
+		       ) AS rolls_scheduled
+		FROM work_order_lines wol
+		JOIN work_orders wo ON wo.id = wol.wo_id
+		WHERE wo.status NOT IN ('COMPLETE','CANCELLED')
+		  AND wol.sku_id IN (?)
+		ORDER BY wo.ship_date, wo.so_number
 	`,
 		[skuIds]
 	);
 
 	const unscheduledRows = [];
 	for (const line of unscheduledLines) {
-		const unscheduled =
-			Number(line.sqft_ordered) - Number(line.sqft_produced) - Number(line.sqft_scheduled);
-		if (unscheduled <= 0) continue;
+		const remainingRolls =
+			Number(line.qty) - Number(line.rolls_produced) - Number(line.rolls_scheduled);
+		if (remainingRolls <= 0) continue;
 
-		const delta = -unscheduled;
+		const delta = -Math.round(
+			remainingRolls * (Number(line.width_in) / 12) * Number(line.length_ft)
+		);
 		running[line.sku_id] = (running[line.sku_id] ?? 0) + delta;
 
 		unscheduledRows.push({
@@ -338,8 +344,8 @@ export async function getMatrixDataForSkus(skuIds) {
 			eventDate: null,
 			shipDate: line.ship_date,
 			facing: line.facing,
-			objectId: line.so_id,
-			soLineId: line.id,
+			objectId: line.wo_id,
+			woLineId: line.id,
 			deltas: { [line.sku_id]: delta },
 			cells: buildCells(skuIds, { [line.sku_id]: delta }, running),
 		});
@@ -415,12 +421,12 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 		`
 		SELECT it.sku_id, it.sqft_quantity, it.reference_id AS pr_id,
 		       DATE(it.created_at) AS event_date,
-		       sol.facing,
-		       so.so_number, so.job_name, so.id AS so_id, so.ship_date, so.customer_name
+		       wol.facing,
+		       wo.so_number, wo.job_name, wo.id AS wo_id, wo.ship_date, wo.customer_name
 		FROM inventory_transactions it
 		JOIN production_runs pr ON pr.id = it.reference_id
-		JOIN sales_order_lines sol ON sol.id = pr.so_line_id
-		JOIN sales_orders so ON so.id = sol.so_id
+		JOIN work_order_lines wol ON wol.id = pr.wo_line_id
+		JOIN work_orders wo ON wo.id = wol.wo_id
 		WHERE it.reference_type = 'PRODUCTION_RUN' AND it.transaction_type = 'CONSUMPTION'
 		  AND DATE(it.created_at) >= ?
 		ORDER BY it.created_at
@@ -441,7 +447,7 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 				eventDate: t.event_date,
 				shipDate: t.ship_date,
 				facing: t.facing,
-				objectId: t.pr_id,
+				objectId: t.wo_id,
 				deltas: {},
 			};
 		}

@@ -197,13 +197,11 @@
 				</tr>
 
 				<!-- Dated + unscheduled rows -->
-				{#each matrix.rows as row (row.rowType + (row.soLineId ?? row.objectId))}
+				{#each matrix.rows as row (row.rowType + (row.runId ?? row.woLineId ?? row.objectId))}
 					{@const href =
 						row.rowType === 'po'
 							? `/po/${row.objectId}`
-							: row.rowType === 'production'
-								? `/production/${row.objectId}/confirm`
-								: `/so/${row.objectId}`}
+							: `/wo/${row.objectId}/${row.rowType === 'unscheduled' ? 'schedule' : 'confirm'}`}
 					<tr class="row-{row.rowType} cursor-pointer" onclick={() => goto(href)}>
 						<td class="text-gray-600 text-sm">{row.partyName ?? ''}</td>
 						<td class="font-medium">
