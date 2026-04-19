@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import mysql from 'mysql2/promise';
+import bcrypt from 'bcryptjs';
 
 const db = await mysql.createConnection({
 	host: process.env.DB_HOST || 'localhost',
@@ -104,4 +105,15 @@ for (const sku of SKUS) {
 	}
 }
 console.log(`\nDone. ${inserted} SKU(s) inserted.`);
+
+// Seed Admin user with default password
+const adminHash = await bcrypt.hash('12345', 10);
+await db.query(
+	`INSERT INTO app_users (id, display_name, role, password_hash)
+	 VALUES (1, 'Admin', 'admin', ?)
+	 ON DUPLICATE KEY UPDATE password_hash = IF(password_hash IS NULL, VALUES(password_hash), password_hash)`,
+	[adminHash]
+);
+console.log('\nAdmin user ready (password unchanged if already set).');
+
 await db.end();
