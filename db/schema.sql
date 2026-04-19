@@ -123,7 +123,6 @@ CREATE TABLE IF NOT EXISTS work_orders (
   job_name      VARCHAR(200) NOT NULL,
   branch        VARCHAR(50)  NOT NULL DEFAULT '',
   ship_date     DATE NOT NULL,
-  facing        VARCHAR(50)  NOT NULL DEFAULT '',
   status        ENUM('OPEN','COMPLETE','CANCELLED') DEFAULT 'OPEN',
   created_by    INT,
   created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -134,14 +133,22 @@ CREATE TABLE IF NOT EXISTS work_order_lines (
   id           INT AUTO_INCREMENT PRIMARY KEY,
   wo_id        INT NOT NULL,
   sku_id       INT NOT NULL,
+  thickness_in DECIMAL(4,1) NOT NULL,
+  width_in     INT NOT NULL,
   qty          INT NOT NULL,
   length_ft    DECIMAL(8,2) NOT NULL,
   sqft         INT NOT NULL,
   rollfor      VARCHAR(50) NOT NULL DEFAULT '',
+  facing       VARCHAR(50) NOT NULL DEFAULT '',
   instructions TEXT,
   FOREIGN KEY (wo_id) REFERENCES work_orders(id) ON DELETE CASCADE,
   FOREIGN KEY (sku_id) REFERENCES material_skus(id)
 );
+-- Migration for existing installs:
+-- ALTER TABLE work_order_lines ADD COLUMN thickness_in DECIMAL(4,1) NOT NULL DEFAULT 0 AFTER sku_id;
+-- ALTER TABLE work_order_lines ADD COLUMN width_in INT NOT NULL DEFAULT 0 AFTER thickness_in;
+-- ALTER TABLE work_order_lines ADD COLUMN facing VARCHAR(50) NOT NULL DEFAULT '' AFTER rollfor;
+-- ALTER TABLE work_orders DROP COLUMN facing;
 
 -- Seed a default user (add more via MySQL directly or a future admin screen)
 INSERT IGNORE INTO app_users (id, display_name, role) VALUES (1, 'Admin', 'admin');

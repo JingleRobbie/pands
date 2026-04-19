@@ -91,17 +91,19 @@ export const actions = {
 					job_name: jobname,
 					branch,
 					ship_date: csvDate(shipdate),
-					facing,
 					lines: [],
 				});
 			}
 			woMap.get(soNum).lines.push({
 				sku_id: sku.id,
+				thickness_in: sku.thickness_in,
+				width_in: sku.width_in,
 				display_label: sku.display_label,
 				qty,
 				length_ft: lengthFt,
 				sqft,
 				rollfor: rollfor || '',
+				facing: facing || '',
 				instructions: instructions || '',
 			});
 		}
@@ -113,7 +115,7 @@ export const actions = {
 		const soNumbers = [...woMap.keys()];
 		const ph = soNumbers.map(() => '?').join(',');
 		const [existingRows] = await db.query(
-			`SELECT wo.id, wo.so_number, wo.customer_name, wo.job_name, wo.branch, wo.ship_date, wo.facing,
+			`SELECT wo.id, wo.so_number, wo.customer_name, wo.job_name, wo.branch, wo.ship_date,
 			        wol.id AS line_id, wol.sku_id, wol.sqft
 			 FROM work_orders wo
 			 LEFT JOIN work_order_lines wol ON wol.wo_id = wo.id
@@ -130,7 +132,6 @@ export const actions = {
 					job_name: row.job_name,
 					branch: row.branch,
 					ship_date: dbDate(row.ship_date),
-					facing: row.facing,
 					lineCount: 0,
 					totalSqft: 0,
 				};
@@ -155,7 +156,6 @@ export const actions = {
 				csvWo.job_name !== existing.job_name ||
 				csvWo.branch !== existing.branch ||
 				csvWo.ship_date !== existing.ship_date ||
-				csvWo.facing !== existing.facing ||
 				csvWo.lines.length !== existing.lineCount ||
 				csvTotal !== existing.totalSqft;
 
@@ -193,26 +193,28 @@ export const actions = {
 
 				if (wo.status === 'new') {
 					const [result] = await conn.query(
-						'INSERT INTO work_orders (so_number, customer_name, job_name, branch, ship_date, facing) VALUES (?, ?, ?, ?, ?, ?)',
+						'INSERT INTO work_orders (so_number, customer_name, job_name, branch, ship_date) VALUES (?, ?, ?, ?, ?)',
 						[
 							wo.so_number,
 							wo.customer_name,
 							wo.job_name,
 							wo.branch,
 							wo.ship_date,
-							wo.facing,
 						]
 					);
 					for (const line of wo.lines) {
 						await conn.query(
-							'INSERT INTO work_order_lines (wo_id, sku_id, qty, length_ft, sqft, rollfor, instructions) VALUES (?, ?, ?, ?, ?, ?, ?)',
+							'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 							[
 								result.insertId,
 								line.sku_id,
+								line.thickness_in,
+								line.width_in,
 								line.qty,
 								line.length_ft,
 								line.sqft,
 								line.rollfor,
+								line.facing,
 								line.instructions,
 							]
 						);
@@ -220,13 +222,12 @@ export const actions = {
 					created++;
 				} else if (wo.status === 'changed') {
 					await conn.query(
-						'UPDATE work_orders SET customer_name=?, job_name=?, branch=?, ship_date=?, facing=? WHERE id=?',
+						'UPDATE work_orders SET customer_name=?, job_name=?, branch=?, ship_date=? WHERE id=?',
 						[
 							wo.customer_name,
 							wo.job_name,
 							wo.branch,
 							wo.ship_date,
-							wo.facing,
 							wo.existing_id,
 						]
 					);
@@ -235,14 +236,17 @@ export const actions = {
 					]);
 					for (const line of wo.lines) {
 						await conn.query(
-							'INSERT INTO work_order_lines (wo_id, sku_id, qty, length_ft, sqft, rollfor, instructions) VALUES (?, ?, ?, ?, ?, ?, ?)',
+							'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 							[
 								wo.existing_id,
 								line.sku_id,
+								line.thickness_in,
+								line.width_in,
 								line.qty,
 								line.length_ft,
 								line.sqft,
 								line.rollfor,
+								line.facing,
 								line.instructions,
 							]
 						);

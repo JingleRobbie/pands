@@ -47,7 +47,7 @@
 		</div>
 
 		<nav class="flex-1 py-4 space-y-0.5 px-2">
-			{#each [{ href: '/matrix', label: 'Overview', icon: 'grid' }, { href: '/po', label: 'Purchase Orders', icon: 'box' }, { href: '/receiving', label: 'Receiving', icon: 'truck' }, { href: '/so', label: 'Sales Orders', icon: 'doc' }, { href: '/wo', label: 'Work Orders', icon: 'clipboard' }, { href: '/production', label: 'Production', icon: 'check' }, { href: '/calendar', label: 'Calendar', icon: 'cal' }] as nav (nav.href)}
+			{#each [{ href: '/matrix', label: 'Overview', icon: 'grid' }, { href: '/po', label: 'Purchase Orders', icon: 'box' }, { href: '/receiving', label: 'Receiving', icon: 'truck' }, { href: '/wo', label: 'Work Orders', icon: 'clipboard' }, { href: '/so', label: 'Sales Orders', icon: 'doc' }, { href: '/production', label: 'Production', icon: 'check' }, { href: '/calendar', label: 'Calendar', icon: 'cal' }] as nav (nav.href)}
 				<a
 					href={nav.href}
 					title={collapsed ? nav.label : ''}

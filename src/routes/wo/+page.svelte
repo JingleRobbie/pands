@@ -38,7 +38,6 @@
 						<th class="px-4 py-2 text-left text-gray-600">Job</th>
 						<th class="px-4 py-2 text-left text-gray-600">Branch</th>
 						<th class="px-4 py-2 text-left text-gray-600">Ship Date</th>
-						<th class="px-4 py-2 text-left text-gray-600">Facing</th>
 						<th class="px-4 py-2 text-right text-gray-600">Lines</th>
 						<th class="px-4 py-2 text-right text-gray-600">Sq Ft</th>
 						<th class="px-4 py-2 text-left text-gray-600">Status</th>
@@ -55,7 +54,6 @@
 							<td class="px-4 py-2 text-gray-700">{wo.job_name}</td>
 							<td class="px-4 py-2 text-gray-500">{wo.branch}</td>
 							<td class="px-4 py-2 text-gray-600">{fmtDate(wo.ship_date)}</td>
-							<td class="px-4 py-2 text-gray-500">{wo.facing}</td>
 							<td class="px-4 py-2 text-right text-gray-500">{wo.line_count}</td>
 							<td class="px-4 py-2 text-right font-mono text-gray-600"
 								>{fmtSqft(wo.total_sqft)}</td

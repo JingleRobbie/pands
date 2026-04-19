@@ -77,7 +77,7 @@
 								<span class="badge {s.badge}">{s.label}</span>
 							</div>
 							<span class="text-sm text-gray-500">
-								{wo.customer_name} · {wo.branch} · {fmtDate(wo.ship_date)} · {wo.facing}
+								{wo.customer_name} · {wo.branch} · {fmtDate(wo.ship_date)}
 							</span>
 						</div>
 						<div class="card-body p-0">
@@ -88,8 +88,17 @@
 										<th class="px-4 py-1.5 text-left text-gray-500 font-medium"
 											>SKU</th
 										>
+										<th class="px-4 py-1.5 text-left text-gray-500 font-medium"
+											>Facing</th
+										>
 										<th class="px-4 py-1.5 text-right text-gray-500 font-medium"
 											>Qty</th
+										>
+										<th class="px-4 py-1.5 text-right text-gray-500 font-medium"
+											>Thickness</th
+										>
+										<th class="px-4 py-1.5 text-right text-gray-500 font-medium"
+											>Width</th
 										>
 										<th class="px-4 py-1.5 text-right text-gray-500 font-medium"
 											>Length</th
@@ -111,9 +120,19 @@
 											<td class="px-4 py-1.5 text-gray-700 font-medium"
 												>{line.display_label}</td
 											>
+											<td class="px-4 py-1.5 text-gray-500">{line.facing}</td
+											>
 											<td
 												class="px-4 py-1.5 text-right text-gray-600 tabular-nums"
 												>{line.qty}</td
+											>
+											<td
+												class="px-4 py-1.5 text-right text-gray-600 tabular-nums font-mono"
+												>{line.thickness_in}"</td
+											>
+											<td
+												class="px-4 py-1.5 text-right text-gray-600 tabular-nums font-mono"
+												>{line.width_in}"</td
 											>
 											<td
 												class="px-4 py-1.5 text-right text-gray-600 tabular-nums font-mono"
@@ -132,7 +151,7 @@
 									{/each}
 									<tr class="border-t border-gray-200 bg-gray-50">
 										<td
-											colspan="3"
+											colspan="5"
 											class="px-4 py-1.5 text-xs text-gray-500 font-medium"
 											>Total</td
 										>
