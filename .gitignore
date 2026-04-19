@@ -12,6 +12,9 @@ static/css/app.css
 # Environment
 .env
 
+#examples and sessions
+docs/
+
 # OS
 .DS_Store
 Thumbs.db
