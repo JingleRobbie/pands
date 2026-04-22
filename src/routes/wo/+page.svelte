@@ -19,7 +19,7 @@
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Work Orders</h1>
 	{#if data.user?.role === 'admin'}
-		<a href="/wo/import" class="btn-primary btn-sm">Import CSV</a>
+		<a href="/wo/import" class="btn-primary btn-sm">Import</a>
 	{/if}
 </header>
 <main class="p-6">
@@ -40,7 +40,21 @@
 						<th class="px-4 py-2 text-left text-gray-600">Ship Date</th>
 						<th class="px-4 py-2 text-right text-gray-600">Lines</th>
 						<th class="px-4 py-2 text-right text-gray-600">Sq Ft</th>
-						<th class="px-4 py-2 text-right text-gray-600">Rolls</th>
+						<th class="px-4 py-2 text-right text-gray-600">
+							<span
+								class="relative inline-flex items-center gap-1 group cursor-default"
+							>
+								Progress
+								<span class="text-gray-400 text-xs">ⓘ</span>
+								<span
+									class="pointer-events-none absolute right-0 top-5 z-20 hidden group-hover:block w-52 rounded bg-gray-800 p-2.5 text-left text-xs text-white shadow-lg leading-relaxed font-normal"
+								>
+									<span class="text-green-400 font-bold">N</span> / total —
+									produced / total<br />
+									<span class="text-blue-400 font-bold">+N</span> — scheduled
+								</span>
+							</span>
+						</th>
 						<th class="px-4 py-2 text-left text-gray-600">Status</th>
 					</tr>
 				</thead>
@@ -59,15 +73,13 @@
 							<td class="px-4 py-2 text-right font-mono text-gray-600"
 								>{fmtSqft(wo.total_sqft)}</td
 							>
-							<td class="px-4 py-2 text-right tabular-nums text-gray-600">
-								{#if wo.rolls_produced > 0 || wo.rolls_scheduled > 0}
-									<span class="text-green-600">{wo.rolls_produced}</span>
-									{#if wo.rolls_scheduled > 0}<span class="text-blue-500"
-											>+{wo.rolls_scheduled}</span
-										>{/if}
-									<span class="text-gray-400">/{wo.total_rolls}</span>
-								{:else}
-									<span class="text-gray-400">{wo.total_rolls}</span>
+							<td class="px-4 py-2 text-right tabular-nums">
+								<span class="text-green-600 font-medium">{wo.rolls_produced}</span
+								><span class="text-gray-400"> / {wo.total_rolls} rolls</span>
+								{#if wo.rolls_scheduled > 0}
+									<div class="text-xs text-blue-500">
+										+{wo.rolls_scheduled} scheduled
+									</div>
 								{/if}
 							</td>
 							<td class="px-4 py-2">
@@ -80,7 +92,7 @@
 		{:else}
 			<div class="card-body text-gray-400 text-sm">
 				No work orders found. <a href="/wo/import" class="text-blue-600 hover:underline"
-					>Import a CSV</a
+					>Import a work order</a
 				> to get started.
 			</div>
 		{/if}

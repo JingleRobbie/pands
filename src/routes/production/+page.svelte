@@ -1,6 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
-	import { fmtDate } from '$lib/utils.js';
+	import { page } from '$app/state';
+	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data } = $props();
 
 	function statusBadge(s) {
@@ -13,7 +14,8 @@
 		return s.charAt(0) + s.slice(1).toLowerCase();
 	}
 	function tabClass(val) {
-		return data.status === val
+		const current = page.url.searchParams.get('status') ?? '';
+		return current === val
 			? 'rounded-full px-3 py-1 text-sm font-medium bg-gray-800 text-white'
 			: 'rounded-full px-3 py-1 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900';
 	}
@@ -63,8 +65,7 @@
 				</thead>
 				<tbody>
 					{#each data.woGroups as wo (wo.wo_id)}
-						{@const editRun = wo.runs.find((r) => r.status !== 'COMPLETED')}
-						{@const hasScheduled = wo.runs.some((r) => r.status === 'SCHEDULED')}
+						{@const hasScheduled = wo.skuLines.some((l) => l.status === 'SCHEDULED')}
 						<tr
 							class="border-b border-gray-100 cursor-pointer hover:bg-gray-50 align-top {woRowClass(
 								wo.urgency
@@ -82,26 +83,30 @@
 							<td class="px-4 py-3 align-top">
 								<table class="w-full text-xs">
 									<tbody>
-										{#each wo.runs as run (run.id)}
+										{#each wo.skuLines as line (`${line.display_label}|||${line.facing}`)}
 											<tr>
 												<td
 													class="pr-4 py-0.5 font-medium text-gray-800 w-24"
-													>{run.display_label}</td
+													>{line.display_label}</td
 												>
 												<td class="pr-4 py-0.5 text-gray-500 w-20"
-													>{run.facing}</td
+													>{line.facing}</td
 												>
 												<td
-													class="pr-4 py-0.5 tabular-nums text-gray-600 w-20"
+													class="pr-4 py-0.5 tabular-nums text-gray-600 w-16"
 												>
-													{run.rolls_scheduled} roll{run.rolls_scheduled ===
-													1
+													{line.total_rolls} roll{line.total_rolls === 1
 														? ''
 														: 's'}
 												</td>
+												<td
+													class="pr-4 py-0.5 tabular-nums font-mono text-gray-500 w-20"
+												>
+													{fmtSqft(line.total_sqft)}
+												</td>
 												<td class="py-0.5">
-													<span class={statusBadge(run.status)}
-														>{statusLabel(run.status)}</span
+													<span class={statusBadge(line.status)}
+														>{statusLabel(line.status)}</span
 													>
 												</td>
 											</tr>
@@ -114,15 +119,15 @@
 								onclick={(e) => e.stopPropagation()}
 							>
 								<div class="flex flex-col items-end gap-1">
-									{#if editRun && editRun.status !== 'UNSCHEDULED'}
+									{#if wo.first_pending_run_id}
 										<a
-											href="/production/{editRun.id}/edit"
+											href="/production/{wo.first_pending_run_id}/edit"
 											class="btn-secondary btn-sm">Edit</a
 										>
 									{/if}
 									{#if hasScheduled && data.user?.role === 'admin'}
 										<a href="/wo/{wo.wo_id}/confirm" class="btn-primary btn-sm"
-											>Confirm</a
+											>Mark Produced</a
 										>
 									{/if}
 								</div>

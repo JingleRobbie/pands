@@ -1,0 +1,9 @@
+CREATE TABLE wo_accessories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  wo_id INT NOT NULL,
+  qty VARCHAR(20),
+  part_number VARCHAR(100),
+  description VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (wo_id) REFERENCES work_orders(id) ON DELETE CASCADE
+);

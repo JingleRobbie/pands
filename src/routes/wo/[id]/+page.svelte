@@ -1,7 +1,9 @@
 <script>
+	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
-	let { data } = $props();
-	const { wo, lines } = data;
+	let { data, form } = $props();
+	const { wo, lines, contacts, customers } = data;
+	let addingContact = $state(false);
 
 	const totalSqft = lines.reduce((s, l) => s + l.sqft, 0);
 </script>
@@ -18,6 +20,9 @@
 			<a href="/wo/{wo.id}/schedule" class="btn-primary btn-sm">Schedule Production</a>
 		{/if}
 		<a href="/wo/{wo.id}/confirm" class="btn-secondary btn-sm">View Runs</a>
+		{#if wo.customer_id}
+			<a href="/shipments/new?wo={wo.id}" class="btn-secondary btn-sm">New Shipment</a>
+		{/if}
 	</div>
 </header>
 
@@ -29,7 +34,30 @@
 		<div class="card-body grid grid-cols-3 gap-4 text-sm">
 			<div>
 				<p class="form-label">Customer</p>
-				<p class="text-gray-900">{wo.customer_name}</p>
+				{#if wo.customer_id}
+					<a href="/customers/{wo.customer_id}" class="text-blue-600 hover:underline"
+						>{wo.customer_display_name}</a
+					>
+				{:else}
+					<form
+						method="POST"
+						action="?/linkCustomer"
+						use:enhance
+						class="flex gap-2 items-center mt-1"
+					>
+						<select name="customer_id" class="form-select text-sm py-1">
+							<option value="">— link customer —</option>
+							{#each customers as c (c.id)}
+								<option value={c.id}>{c.name}</option>
+							{/each}
+						</select>
+						<button type="submit" class="btn-primary btn-sm">Link</button>
+						<a href="/customers/new" class="btn-secondary btn-sm">New</a>
+					</form>
+					{#if form?.linkError}
+						<p class="text-red-600 text-xs mt-1">{form.linkError}</p>
+					{/if}
+				{/if}
 			</div>
 			<div>
 				<p class="form-label">Job</p>
@@ -68,6 +96,19 @@
 					<th class="px-4 py-2 text-right text-gray-500 font-medium">Sq Ft</th>
 					<th class="px-4 py-2 text-left text-gray-500 font-medium">Roll For</th>
 					<th class="px-4 py-2 text-left text-gray-500 font-medium">Instructions</th>
+					<th class="px-4 py-2 text-right text-gray-500 font-medium">
+						<span class="relative inline-flex items-center gap-1 group cursor-default">
+							Progress
+							<span class="text-gray-400 text-xs">ⓘ</span>
+							<span
+								class="pointer-events-none absolute right-0 top-5 z-20 hidden group-hover:block w-52 rounded bg-gray-800 p-2.5 text-left text-xs text-white shadow-lg leading-relaxed font-normal"
+							>
+								<span class="text-green-400 font-bold">N</span> / total — produced /
+								total<br />
+								<span class="text-blue-400 font-bold">+N</span> — scheduled
+							</span>
+						</span>
+					</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -90,6 +131,15 @@
 						>
 						<td class="px-4 py-2 text-gray-500">{line.rollfor}</td>
 						<td class="px-4 py-2 text-gray-400 italic text-xs">{line.instructions}</td>
+						<td class="px-4 py-2 text-right tabular-nums">
+							<span class="text-green-600 font-medium">{line.rolls_produced}</span
+							><span class="text-gray-400"> / {line.qty} rolls</span>
+							{#if line.rolls_scheduled > 0}
+								<div class="text-xs text-blue-500">
+									+{line.rolls_scheduled} scheduled
+								</div>
+							{/if}
+						</td>
 					</tr>
 				{/each}
 				<tr class="border-t border-gray-200 bg-gray-50">
@@ -101,5 +151,94 @@
 				</tr>
 			</tbody>
 		</table>
+	</div>
+
+	<!-- Contacts -->
+	<div class="card">
+		<div class="card-header flex items-center justify-between">
+			<span class="font-semibold text-sm text-gray-700">Contacts</span>
+			{#if !addingContact}
+				<button onclick={() => (addingContact = true)} class="btn-secondary btn-sm"
+					>+ Add</button
+				>
+			{/if}
+		</div>
+
+		{#if addingContact}
+			<form
+				method="POST"
+				action="?/addContact"
+				use:enhance={{
+					onResult: () => {
+						addingContact = false;
+					},
+				}}
+				class="card-body border-b border-gray-100 grid grid-cols-2 gap-3 text-sm"
+			>
+				{#if form?.contactError}
+					<p class="col-span-2 text-red-600 text-xs">{form.contactError}</p>
+				{/if}
+				<div>
+					<label for="c-name" class="form-label">Name *</label>
+					<input id="c-name" name="name" class="form-input" required />
+				</div>
+				<div>
+					<label for="c-role" class="form-label">Role</label>
+					<input
+						id="c-role"
+						name="role"
+						class="form-input"
+						placeholder="e.g. Site Foreman"
+					/>
+				</div>
+				<div>
+					<label for="c-phone" class="form-label">Phone</label>
+					<input id="c-phone" name="phone" class="form-input" />
+				</div>
+				<div>
+					<label for="c-email" class="form-label">Email</label>
+					<input id="c-email" name="email" type="email" class="form-input" />
+				</div>
+				<div class="col-span-2 flex gap-2">
+					<button type="submit" class="btn-primary btn-sm">Save Contact</button>
+					<button
+						type="button"
+						onclick={() => (addingContact = false)}
+						class="btn-secondary btn-sm">Cancel</button
+					>
+				</div>
+			</form>
+		{/if}
+
+		{#if contacts.length === 0 && !addingContact}
+			<div class="card-body text-sm text-gray-400">No contacts yet.</div>
+		{:else if contacts.length > 0}
+			<table class="w-full text-sm">
+				<tbody>
+					{#each contacts as contact (contact.id)}
+						<tr class="border-b border-gray-100 last:border-0">
+							<td class="px-4 py-3">
+								<p class="font-medium text-gray-800">{contact.name}</p>
+								{#if contact.role}<p class="text-xs text-gray-400">
+										{contact.role}
+									</p>{/if}
+							</td>
+							<td class="px-4 py-3 text-gray-600">{contact.phone ?? '—'}</td>
+							<td class="px-4 py-3 text-gray-600">{contact.email ?? '—'}</td>
+							<td class="px-4 py-3 text-right">
+								<form method="POST" action="?/deleteContact" use:enhance>
+									<input type="hidden" name="id" value={contact.id} />
+									<button
+										type="submit"
+										class="text-red-400 hover:text-red-600 text-xs"
+										>Remove</button
+									>
+								</form>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		{/if}
 	</div>
 </main>

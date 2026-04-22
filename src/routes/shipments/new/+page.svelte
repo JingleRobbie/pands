@@ -1,0 +1,144 @@
+<script>
+	import { enhance } from '$app/forms';
+	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	let { data, form } = $props();
+
+	let selected = $state(new Set());
+	const toggle = (id) => {
+		const next = new Set(selected);
+		next.has(id) ? next.delete(id) : next.add(id);
+		selected = next;
+	};
+	const allSelected = $derived(data.runs.length > 0 && selected.size === data.runs.length);
+	const someSelected = $derived(selected.size > 0 && !allSelected);
+	function toggleAll() {
+		selected = allSelected ? new Set() : new Set(data.runs.map((r) => r.id));
+	}
+	let masterSelectCb;
+	$effect(() => {
+		if (masterSelectCb) masterSelectCb.indeterminate = someSelected;
+	});
+	const totalSqft = $derived(
+		data.runs.filter((r) => selected.has(r.id)).reduce((s, r) => s + r.sqft_actual, 0)
+	);
+	const totalRolls = $derived(
+		data.runs.filter((r) => selected.has(r.id)).reduce((s, r) => s + r.rolls_actual, 0)
+	);
+</script>
+
+<div class="p-6 max-w-3xl">
+	<div class="flex items-center gap-4 mb-6">
+		<a href="/wo/{data.wo.id}" class="text-gray-400 hover:text-gray-600 text-sm"
+			>← WO #{data.wo.so_number}</a
+		>
+		<h1 class="text-xl font-semibold text-gray-900">New Shipment</h1>
+	</div>
+
+	<form method="POST" use:enhance class="space-y-6">
+		{#if form?.error}
+			<p class="text-red-600 text-sm">{form.error}</p>
+		{/if}
+
+		<input type="hidden" name="wo_id" value={data.wo.id} />
+		<input type="hidden" name="customer_id" value={data.wo.customer_id} />
+
+		<div class="card card-body space-y-3">
+			<div class="grid grid-cols-2 gap-4 text-sm">
+				<div>
+					<p class="form-label">Customer</p>
+					<p class="text-gray-900">{data.wo.customer_display_name}</p>
+				</div>
+				<div>
+					<p class="form-label">Job</p>
+					<p class="text-gray-900">{data.wo.job_name}</p>
+				</div>
+			</div>
+			<div>
+				<label for="ship_date" class="form-label">Ship Date *</label>
+				<input
+					id="ship_date"
+					name="ship_date"
+					type="date"
+					class="form-input w-48"
+					required
+				/>
+			</div>
+		</div>
+
+		<div class="card">
+			<div class="card-header flex items-center justify-between">
+				<span class="font-semibold text-sm text-gray-700">Select Production Runs</span>
+				{#if selected.size > 0}
+					<span class="text-sm text-gray-500"
+						>{totalRolls} rolls · {fmtSqft(totalSqft)} sq ft selected</span
+					>
+				{/if}
+			</div>
+			{#if data.runs.length === 0}
+				<div class="card-body text-sm text-gray-500">
+					No completed, unshipped runs for this work order.
+				</div>
+			{:else}
+				<table class="min-w-full divide-y divide-gray-200 text-sm">
+					<thead class="bg-gray-50">
+						<tr>
+							<th class="w-8 px-4 py-3">
+								<input
+									type="checkbox"
+									bind:this={masterSelectCb}
+									checked={allSelected}
+									onchange={toggleAll}
+								/>
+							</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">Run #</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">SKU</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">Run Date</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Rolls</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Sq Ft</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-100 bg-white">
+						{#each data.runs as run (run.id)}
+							<tr
+								class="cursor-pointer hover:bg-blue-50 {selected.has(run.id)
+									? 'bg-blue-50'
+									: ''}"
+								onclick={() => toggle(run.id)}
+							>
+								<td class="px-4 py-3">
+									<input
+										type="checkbox"
+										name="run_ids"
+										value={run.id}
+										checked={selected.has(run.id)}
+										onchange={() => toggle(run.id)}
+										onclick={(e) => e.stopPropagation()}
+									/>
+								</td>
+								<td class="px-4 py-3 font-mono text-gray-700">{run.run_number}</td>
+								<td class="px-4 py-3 text-gray-700">{run.display_label}</td>
+								<td class="px-4 py-3 text-gray-600"
+									>{run.run_date ? fmtDate(run.run_date) : '—'}</td
+								>
+								<td class="px-4 py-3 text-right tabular-nums text-gray-600"
+									>{run.rolls_actual}</td
+								>
+								<td
+									class="px-4 py-3 text-right tabular-nums font-mono text-gray-600"
+									>{fmtSqft(run.sqft_actual)}</td
+								>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			{/if}
+		</div>
+
+		<div class="flex gap-3">
+			<button type="submit" class="btn-primary" disabled={selected.size === 0}>
+				Create Shipment
+			</button>
+			<a href="/wo/{data.wo.id}" class="btn-secondary">Cancel</a>
+		</div>
+	</form>
+</div>

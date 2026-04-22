@@ -47,7 +47,7 @@
 		</div>
 
 		<nav class="flex-1 py-4 space-y-0.5 px-2">
-			{#each [{ href: '/matrix', label: 'Overview', icon: 'grid' }, { href: '/po', label: 'Purchase Orders', icon: 'box' }, { href: '/receiving', label: 'Receiving', icon: 'truck' }, { href: '/wo', label: 'Work Orders', icon: 'clipboard' }, /* { href: '/so', label: 'Sales Orders', icon: 'doc' },  */{ href: '/production', label: 'Production', icon: 'check' }, { href: '/calendar', label: 'Calendar', icon: 'cal' }] as nav (nav.href)}
+			{#each [{ href: '/matrix', label: 'Overview', icon: 'grid' }, { href: '/po', label: 'Purchase Orders', icon: 'box' }, { href: '/receiving', label: 'Receiving', icon: 'truck' }, { href: '/wo', label: 'Work Orders', icon: 'clipboard' }, /* { href: '/so', label: 'Sales Orders', icon: 'doc' },  */ { href: '/production', label: 'Production', icon: 'check' }, { href: '/customers', label: 'Customers', icon: 'users' }, { href: '/shipments', label: 'Shipments', icon: 'ship' }, { href: '/calendar', label: 'Calendar', icon: 'cal' }] as nav (nav.href)}
 				<a
 					href={nav.href}
 					title={collapsed ? nav.label : ''}
@@ -133,6 +133,32 @@
 								stroke-linecap="round"
 								stroke-linejoin="round"
 								d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+							/></svg
+						>
+					{:else if nav.icon === 'users'}
+						<svg
+							class="w-4 h-4 flex-shrink-0"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							viewBox="0 0 24 24"
+							><path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m3-4.13a4 4 0 100-8 4 4 0 000 8zm6 0a3 3 0 100-6 3 3 0 000 6z"
+							/></svg
+						>
+					{:else if nav.icon === 'ship'}
+						<svg
+							class="w-4 h-4 flex-shrink-0"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							viewBox="0 0 24 24"
+							><path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
 							/></svg
 						>
 					{:else}

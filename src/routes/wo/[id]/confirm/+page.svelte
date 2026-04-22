@@ -23,6 +23,22 @@
 		return groups;
 	});
 
+	let checkedRunIds = $state(new Set(runs.map((r) => r.id)));
+	const allChecked = $derived(scheduledRuns.every((r) => checkedRunIds.has(r.id)));
+	const someChecked = $derived(scheduledRuns.some((r) => checkedRunIds.has(r.id)) && !allChecked);
+	function toggleAllRuns() {
+		checkedRunIds = allChecked ? new Set() : new Set(scheduledRuns.map((r) => r.id));
+	}
+	function toggleRun(id) {
+		const next = new Set(checkedRunIds);
+		next.has(id) ? next.delete(id) : next.add(id);
+		checkedRunIds = next;
+	}
+	let masterRunsCb;
+	$effect(() => {
+		if (masterRunsCb) masterRunsCb.indeterminate = someChecked;
+	});
+
 	let confirmDeleteId = $state(null);
 	let deleteDialog;
 
@@ -45,11 +61,11 @@
 	}
 </script>
 
-<svelte:head><title>Confirm WO {wo.so_number} — PandS</title></svelte:head>
+<svelte:head><title>Produce WO {wo.so_number} — PandS</title></svelte:head>
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<div>
-		<h1 class="text-lg font-semibold text-gray-900">Confirm Production — {wo.so_number}</h1>
+		<h1 class="text-lg font-semibold text-gray-900">Record Production — {wo.so_number}</h1>
 		<p class="text-sm text-gray-500 mt-0.5">{wo.customer_name} · {wo.job_name}</p>
 	</div>
 	<a href="/production" class="btn-secondary btn-sm">Back</a>
@@ -69,7 +85,7 @@
 			<div class="card mb-4">
 				<div class="card-body space-y-2">
 					<p class="text-sm font-medium text-gray-800">
-						{form.confirmed} run{form.confirmed === 1 ? '' : 's'} confirmed.
+						{form.confirmed} run{form.confirmed === 1 ? '' : 's'} produced.
 					</p>
 					{#if form.shortfalls.length > 0}
 						<p class="text-sm text-amber-700">
@@ -106,7 +122,7 @@
 				<form method="POST" action="?/confirm" use:enhance>
 					<div class="card mb-4">
 						<div class="card-header">
-							<span class="font-semibold text-sm text-gray-700">Runs to Confirm</span>
+							<span class="font-semibold text-sm text-gray-700">Runs to Produce</span>
 							<span class="text-xs text-gray-400">{scheduledRuns.length} pending</span
 							>
 							<div class="flex items-center gap-2 ml-auto">
@@ -125,7 +141,14 @@
 						<table class="w-full text-sm">
 							<thead>
 								<tr class="border-b border-gray-100">
-									<th class="px-4 py-2 w-8"></th>
+									<th class="px-4 py-2 w-8">
+										<input
+											type="checkbox"
+											bind:this={masterRunsCb}
+											checked={allChecked}
+											onchange={toggleAllRuns}
+										/>
+									</th>
 									<th class="px-4 py-2 text-left text-gray-600">Run #</th>
 									<th class="px-4 py-2 text-left text-gray-600">SKU</th>
 									<th class="px-4 py-2 text-left text-gray-600">Facing</th>
@@ -162,7 +185,8 @@
 													name="run_id"
 													value={run.id}
 													id="confirm-{run.id}"
-													checked
+													checked={checkedRunIds.has(run.id)}
+													onchange={() => toggleRun(run.id)}
 												/>
 											</td>
 											<td class="px-4 py-2 font-mono text-xs">
@@ -217,7 +241,7 @@
 					<div class="flex gap-3">
 						{#if user?.role === 'admin'}
 							<button type="submit" class="btn-primary"
-								>Confirm &amp; Deduct Inventory</button
+								>Mark Produced &amp; Deduct Inventory</button
 							>
 						{:else}
 							<p class="text-sm text-amber-700">
@@ -233,7 +257,7 @@
 		{#if confirmedRuns.length > 0}
 			<div class="card mt-4">
 				<div class="card-header">
-					<span class="font-semibold text-sm text-gray-700">Already Completed</span>
+					<span class="font-semibold text-sm text-gray-700">Already Produced</span>
 				</div>
 				<table class="w-full text-sm">
 					<thead>

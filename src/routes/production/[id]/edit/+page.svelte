@@ -4,6 +4,24 @@
 	let { data, form } = $props();
 	const { run, maxRolls, peers } = data;
 
+	let checkedPeerIds = $state(new Set(peers.map((p) => p.id)));
+	const allPeersChecked = $derived(peers.every((p) => checkedPeerIds.has(p.id)));
+	const somePeersChecked = $derived(
+		peers.some((p) => checkedPeerIds.has(p.id)) && !allPeersChecked
+	);
+	function toggleAllPeers() {
+		checkedPeerIds = allPeersChecked ? new Set() : new Set(peers.map((p) => p.id));
+	}
+	function togglePeer(id) {
+		const next = new Set(checkedPeerIds);
+		next.has(id) ? next.delete(id) : next.add(id);
+		checkedPeerIds = next;
+	}
+	let masterPeersCb;
+	$effect(() => {
+		if (masterPeersCb) masterPeersCb.indeterminate = somePeersChecked;
+	});
+
 	let runDate = $state(
 		run.run_date instanceof Date
 			? run.run_date.toISOString().slice(0, 10)
@@ -105,7 +123,14 @@
 					<table class="w-full text-sm">
 						<thead>
 							<tr class="border-b border-gray-100">
-								<th class="px-4 py-2 text-left text-gray-400 font-normal w-8"></th>
+								<th class="px-4 py-2 w-8">
+									<input
+										type="checkbox"
+										bind:this={masterPeersCb}
+										checked={allPeersChecked}
+										onchange={toggleAllPeers}
+									/>
+								</th>
 								<th class="px-4 py-2 text-left text-gray-600">Run #</th>
 								<th class="px-4 py-2 text-left text-gray-600">SKU</th>
 								<th class="px-4 py-2 text-left text-gray-600">Current Date</th>
@@ -121,7 +146,8 @@
 											name="peer_id"
 											value={peer.id}
 											id="peer-{peer.id}"
-											checked
+											checked={checkedPeerIds.has(peer.id)}
+											onchange={() => togglePeer(peer.id)}
 										/>
 									</td>
 									<td class="px-4 py-2 font-mono text-xs">

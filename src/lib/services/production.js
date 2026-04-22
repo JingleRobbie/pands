@@ -42,6 +42,26 @@ export async function scheduleRun(woLineId, runDate, rollsScheduled, userId) {
 		const sqftScheduled = Math.round(
 			rollsScheduled * (Number(wol.width_in) / 12) * Number(wol.length_ft)
 		);
+
+		// Merge into existing run on same date rather than inserting a duplicate
+		if (runDate) {
+			const [[existing]] = await conn.query(
+				`SELECT id, run_number FROM production_runs
+				 WHERE wo_line_id = ? AND run_date = ? AND status != 'COMPLETED' LIMIT 1`,
+				[woLineId, runDate]
+			);
+			if (existing) {
+				await conn.query(
+					`UPDATE production_runs
+					 SET rolls_scheduled = rolls_scheduled + ?, sqft_scheduled = sqft_scheduled + ?
+					 WHERE id = ?`,
+					[rollsScheduled, sqftScheduled, existing.id]
+				);
+				await conn.commit();
+				return existing.run_number;
+			}
+		}
+
 		const runNumber = await nextRunNumber(conn);
 		const status = runDate ? 'SCHEDULED' : 'UNSCHEDULED';
 
@@ -75,10 +95,7 @@ export async function scheduleGroup(woId, items, runDate, userId) {
 	try {
 		await conn.beginTransaction();
 
-		const [{ insertId: groupId }] = await conn.query(
-			'INSERT INTO production_run_groups (created_by) VALUES (?)',
-			[userId ?? null]
-		);
+		let groupId = null;
 
 		for (const { woLineId, rollsScheduled } of items) {
 			const [[wol]] = await conn.query(
@@ -104,9 +121,36 @@ export async function scheduleGroup(woId, items, runDate, userId) {
 			const sqftScheduled = Math.round(
 				rollsScheduled * (Number(wol.width_in) / 12) * Number(wol.length_ft)
 			);
-			const runNumber = await nextRunNumber(conn);
 			const status = runDate ? 'SCHEDULED' : 'UNSCHEDULED';
 
+			// Merge into existing run on same date rather than inserting a duplicate
+			if (runDate) {
+				const [[existing]] = await conn.query(
+					`SELECT id FROM production_runs
+					 WHERE wo_line_id = ? AND run_date = ? AND status != 'COMPLETED' LIMIT 1`,
+					[woLineId, runDate]
+				);
+				if (existing) {
+					await conn.query(
+						`UPDATE production_runs
+						 SET rolls_scheduled = rolls_scheduled + ?, sqft_scheduled = sqft_scheduled + ?
+						 WHERE id = ?`,
+						[rollsScheduled, sqftScheduled, existing.id]
+					);
+					continue;
+				}
+			}
+
+			// Lazy-create the group only when the first new run actually needs inserting
+			if (groupId === null) {
+				const [{ insertId }] = await conn.query(
+					'INSERT INTO production_run_groups (created_by) VALUES (?)',
+					[userId ?? null]
+				);
+				groupId = insertId;
+			}
+
+			const runNumber = await nextRunNumber(conn);
 			await conn.query(
 				`INSERT INTO production_runs
 				 (run_number, group_id, wo_line_id, sku_id, run_date, rolls_scheduled, sqft_scheduled, status, created_by)

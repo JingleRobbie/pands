@@ -1,28 +1,17 @@
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/db.js';
 import { requireAdmin } from '$lib/auth.js';
+import { parseWorkOrderExcel } from '$lib/parseWO.js';
 
 export async function load({ locals }) {
 	return { user: locals.appUser };
 }
 
-function parseCSVLine(line) {
-	const fields = [];
-	let cur = '';
-	let inQ = false;
-	for (const ch of line) {
-		if (ch === '"') inQ = !inQ;
-		else if (ch === ',' && !inQ) {
-			fields.push(cur);
-			cur = '';
-		} else cur += ch;
-	}
-	fields.push(cur);
-	return fields.map((f) => f.trim());
-}
-
-function csvDate(str) {
-	const [m, d, y] = str.split('/');
+function parseExcelDate(str) {
+	if (!str) return null;
+	const parts = String(str).split('/');
+	if (parts.length !== 3) return null;
+	const [m, d, y] = parts;
 	const year = parseInt(y) + (parseInt(y) < 100 ? 2000 : 0);
 	return `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
@@ -31,14 +20,51 @@ function dbDate(val) {
 	return val?.toISOString?.().slice(0, 10) ?? String(val).slice(0, 10);
 }
 
+function parseDeliveryAddress(str) {
+	if (!str) return { addr1: null, city: null, state: null, zip: null };
+	const parts = str.split(', ');
+
+	// Last part is "STATE ZIP" e.g. "OK 74601"
+	const last = parts[parts.length - 1];
+	const stateZip = last.match(/^([A-Z]{2})\s+(\d{5}(-\d{4})?)$/);
+	if (stateZip) {
+		const state = stateZip[1];
+		const zip = stateZip[2];
+		const city = parts.length >= 2 ? parts[parts.length - 2] : null;
+		const addr1 = parts.length >= 3 ? parts.slice(0, -2).join(', ') : null;
+		return { addr1: addr1 || null, city: city || null, state, zip };
+	}
+
+	// Last part contains city + state + zip e.g. "Ponca City OK 74601"
+	const fallback = last.match(/^(.*?),?\s+([A-Z]{2})\s+(\d{5}(-\d{4})?)$/);
+	if (fallback) {
+		const city = fallback[1].trim() || null;
+		const state = fallback[2];
+		const zip = fallback[3];
+		const addr1 = parts.length >= 2 ? parts.slice(0, -1).join(', ') : null;
+		return { addr1: addr1 || null, city, state, zip };
+	}
+
+	return { addr1: str, city: null, state: null, zip: null };
+}
+
 export const actions = {
 	parse: async ({ request }) => {
 		const data = await request.formData();
-		const file = data.get('csv');
+		const file = data.get('excel');
 		if (!file || file.size === 0) return fail(400, { error: 'No file selected.' });
 
-		const text = await file.text();
-		const lines = text.trim().split(/\r?\n/).slice(1);
+		let parsed;
+		try {
+			const buffer = Buffer.from(await file.arrayBuffer());
+			parsed = parseWorkOrderExcel(buffer);
+		} catch (err) {
+			return fail(400, { error: `Could not parse workbook: ${err.message}` });
+		}
+
+		const { header, accessories, lines } = parsed;
+
+		if (!header.so_number) return fail(400, { error: 'SO number not found in workbook.' });
 
 		const [skus] = await db.query(
 			'SELECT id, thickness_in, width_in, display_label FROM material_skus WHERE is_active = TRUE'
@@ -47,54 +73,26 @@ export const actions = {
 			skus.map((s) => [`${s.thickness_in}_${s.width_in}`, s])
 		);
 
-		const woMap = new Map();
 		const errors = [];
-
-		for (const line of lines) {
-			if (!line.trim()) continue;
-			const [
-				soNum,
-				company,
-				jobname,
-				branch,
-				shipdate,
-				facing,
-				qtyStr,
-				thickStr,
-				widthStr,
-				lengthStr,
-				rollfor,
-				instructions,
-			] = parseCSVLine(line);
-
-			const thickness = parseFloat(thickStr);
-			const width = parseInt(widthStr);
-			const qty = parseInt(qtyStr);
-			const lengthFt = parseFloat(lengthStr);
+		const woLines = [];
+		for (const ln of lines) {
+			const thickness = parseFloat(ln.thickness);
+			const width = parseInt(ln.width);
+			const qty = parseInt(ln.roll_qty);
+			const lengthFt = parseFloat(ln.length);
 
 			const sku = skuByDims[`${thickness}_${width}`];
 			if (!sku) {
-				errors.push(`Unknown SKU ${thickness}"×${width}" on SO ${soNum}.`);
+				errors.push(`Unknown SKU ${thickness}"×${width}" on row ${ln.row}.`);
 				continue;
 			}
 			if (!qty || qty < 1 || !lengthFt || lengthFt <= 0) {
-				errors.push(`Invalid qty/length on SO ${soNum}.`);
+				errors.push(`Invalid qty/length on row ${ln.row}.`);
 				continue;
 			}
 
 			const sqft = Math.round(qty * (width / 12) * lengthFt);
-
-			if (!woMap.has(soNum)) {
-				woMap.set(soNum, {
-					so_number: soNum,
-					customer_name: company,
-					job_name: jobname,
-					branch,
-					ship_date: csvDate(shipdate),
-					lines: [],
-				});
-			}
-			woMap.get(soNum).lines.push({
+			woLines.push({
 				sku_id: sku.id,
 				thickness_in: sku.thickness_in,
 				width_in: sku.width_in,
@@ -102,71 +100,61 @@ export const actions = {
 				qty,
 				length_ft: lengthFt,
 				sqft,
-				rollfor: rollfor || '',
-				facing: facing || '',
-				instructions: instructions || '',
+				rollfor: ln.roll_for || '',
+				facing: ln.facing || '',
+				instructions: ln.instructions || '',
+				tab_type: ln.tab_type || '',
 			});
 		}
 
 		if (errors.length) return fail(400, { error: errors.join(' ') });
-		if (!woMap.size) return fail(400, { error: 'No valid rows parsed.' });
+		if (!woLines.length) return fail(400, { error: 'No valid line items found in workbook.' });
 
-		// Load existing work orders
-		const soNumbers = [...woMap.keys()];
-		const ph = soNumbers.map(() => '?').join(',');
-		const [existingRows] = await db.query(
-			`SELECT wo.id, wo.so_number, wo.customer_name, wo.job_name, wo.branch, wo.ship_date,
-			        wol.id AS line_id, wol.sku_id, wol.sqft
+		const { addr1, city, state, zip } = parseDeliveryAddress(header.delivery_address);
+
+		const wo = {
+			so_number: header.so_number,
+			customer_name: header.customer,
+			job_name: header.job_name,
+			branch: header.branch,
+			ship_date: parseExcelDate(header.deliver_on),
+			ship_addr1: addr1,
+			ship_city: city,
+			ship_state: state,
+			ship_zip: zip,
+			contact_name: header.contact || null,
+			contact_phone: header.phone || null,
+			accessories,
+			lines: woLines,
+		};
+
+		// Check for existing WO
+		const [[existingRow]] = await db.query(
+			`SELECT wo.id, wo.customer_name, wo.job_name, wo.branch, wo.ship_date,
+			        COUNT(wol.id) AS line_count, COALESCE(SUM(wol.sqft), 0) AS total_sqft
 			 FROM work_orders wo
 			 LEFT JOIN work_order_lines wol ON wol.wo_id = wo.id
-			 WHERE wo.so_number IN (${ph})`,
-			soNumbers
+			 WHERE wo.so_number = ?
+			 GROUP BY wo.id`,
+			[wo.so_number]
 		);
 
-		const existingByNum = {};
-		for (const row of existingRows) {
-			if (!existingByNum[row.so_number]) {
-				existingByNum[row.so_number] = {
-					id: row.id,
-					customer_name: row.customer_name,
-					job_name: row.job_name,
-					branch: row.branch,
-					ship_date: dbDate(row.ship_date),
-					lineCount: 0,
-					totalSqft: 0,
-				};
-			}
-			if (row.line_id) {
-				existingByNum[row.so_number].lineCount++;
-				existingByNum[row.so_number].totalSqft += row.sqft;
-			}
-		}
-
-		const preview = [];
-		for (const [soNum, csvWo] of woMap) {
-			const existing = existingByNum[soNum];
-			if (!existing) {
-				preview.push({ ...csvWo, status: 'new' });
-				continue;
-			}
-
-			const csvTotal = csvWo.lines.reduce((s, l) => s + l.sqft, 0);
+		if (!existingRow) {
+			wo.status = 'new';
+		} else {
+			const csvTotal = woLines.reduce((s, l) => s + l.sqft, 0);
 			const hasChanges =
-				csvWo.customer_name !== existing.customer_name ||
-				csvWo.job_name !== existing.job_name ||
-				csvWo.branch !== existing.branch ||
-				csvWo.ship_date !== existing.ship_date ||
-				csvWo.lines.length !== existing.lineCount ||
-				csvTotal !== existing.totalSqft;
-
-			preview.push({
-				...csvWo,
-				status: hasChanges ? 'changed' : 'unchanged',
-				existing_id: existing.id,
-			});
+				wo.customer_name !== existingRow.customer_name ||
+				wo.job_name !== existingRow.job_name ||
+				wo.branch !== existingRow.branch ||
+				wo.ship_date !== dbDate(existingRow.ship_date) ||
+				woLines.length !== existingRow.line_count ||
+				csvTotal !== existingRow.total_sqft;
+			wo.status = hasChanges ? 'changed' : 'unchanged';
+			wo.existing_id = existingRow.id;
 		}
 
-		return { preview };
+		return { preview: [wo] };
 	},
 
 	import: async ({ request, locals }) => {
@@ -192,21 +180,32 @@ export const actions = {
 				if (!accepted.has(wo.so_number)) continue;
 
 				if (wo.status === 'new') {
+					const [[matchedCustomer]] = await conn.query(
+						'SELECT id FROM customers WHERE LOWER(name) = LOWER(?)',
+						[wo.customer_name]
+					);
 					const [result] = await conn.query(
-						'INSERT INTO work_orders (so_number, customer_name, job_name, branch, ship_date) VALUES (?, ?, ?, ?, ?)',
+						'INSERT INTO work_orders (so_number, customer_name, job_name, branch, ship_date, customer_id, ship_addr1, ship_city, ship_state, ship_zip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 						[
 							wo.so_number,
 							wo.customer_name,
 							wo.job_name,
 							wo.branch,
 							wo.ship_date,
+							matchedCustomer?.id ?? null,
+							wo.ship_addr1,
+							wo.ship_city,
+							wo.ship_state,
+							wo.ship_zip,
 						]
 					);
+					const woId = result.insertId;
+
 					for (const line of wo.lines) {
 						await conn.query(
-							'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+							'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 							[
-								result.insertId,
+								woId,
 								line.sku_id,
 								line.thickness_in,
 								line.width_in,
@@ -216,27 +215,58 @@ export const actions = {
 								line.rollfor,
 								line.facing,
 								line.instructions,
+								line.tab_type || null,
 							]
 						);
 					}
+
+					if (wo.contact_name) {
+						await conn.query(
+							'INSERT INTO contacts (wo_id, name, phone) VALUES (?, ?, ?)',
+							[woId, wo.contact_name, wo.contact_phone || null]
+						);
+					}
+
+					for (const acc of wo.accessories || []) {
+						await conn.query(
+							'INSERT INTO wo_accessories (wo_id, qty, part_number, description) VALUES (?, ?, ?, ?)',
+							[woId, acc.qty, acc.part_number, acc.description]
+						);
+					}
+
 					created++;
 				} else if (wo.status === 'changed') {
+					const [[matchedCustomer]] = await conn.query(
+						'SELECT id FROM customers WHERE LOWER(name) = LOWER(?)',
+						[wo.customer_name]
+					);
 					await conn.query(
-						'UPDATE work_orders SET customer_name=?, job_name=?, branch=?, ship_date=? WHERE id=?',
+						'UPDATE work_orders SET customer_name=?, job_name=?, branch=?, ship_date=?, customer_id=COALESCE(customer_id, ?), ship_addr1=?, ship_city=?, ship_state=?, ship_zip=? WHERE id=?',
 						[
 							wo.customer_name,
 							wo.job_name,
 							wo.branch,
 							wo.ship_date,
+							matchedCustomer?.id ?? null,
+							wo.ship_addr1,
+							wo.ship_city,
+							wo.ship_state,
+							wo.ship_zip,
 							wo.existing_id,
 						]
 					);
+
 					await conn.query('DELETE FROM work_order_lines WHERE wo_id = ?', [
 						wo.existing_id,
 					]);
+					await conn.query('DELETE FROM contacts WHERE wo_id = ?', [wo.existing_id]);
+					await conn.query('DELETE FROM wo_accessories WHERE wo_id = ?', [
+						wo.existing_id,
+					]);
+
 					for (const line of wo.lines) {
 						await conn.query(
-							'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+							'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 							[
 								wo.existing_id,
 								line.sku_id,
@@ -248,9 +278,25 @@ export const actions = {
 								line.rollfor,
 								line.facing,
 								line.instructions,
+								line.tab_type || null,
 							]
 						);
 					}
+
+					if (wo.contact_name) {
+						await conn.query(
+							'INSERT INTO contacts (wo_id, name, phone) VALUES (?, ?, ?)',
+							[wo.existing_id, wo.contact_name, wo.contact_phone || null]
+						);
+					}
+
+					for (const acc of wo.accessories || []) {
+						await conn.query(
+							'INSERT INTO wo_accessories (wo_id, qty, part_number, description) VALUES (?, ?, ?, ?)',
+							[wo.existing_id, acc.qty, acc.part_number, acc.description]
+						);
+					}
+
 					updated++;
 				}
 			}

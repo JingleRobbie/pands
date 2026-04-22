@@ -81,7 +81,28 @@
 							</span>
 						</div>
 						<div class="card-body p-0">
-							<p class="px-4 pt-2 pb-1 text-xs text-gray-500">{wo.job_name}</p>
+							<div
+								class="px-4 pt-2 pb-1 flex flex-wrap gap-x-6 gap-y-0.5 text-xs text-gray-500"
+							>
+								<span>{wo.job_name}</span>
+								{#if wo.contact_name}
+									<span
+										>{wo.contact_name}{wo.contact_phone
+											? ` · ${wo.contact_phone}`
+											: ''}</span
+									>
+								{/if}
+								{#if wo.ship_addr1}
+									<span
+										>{wo.ship_addr1}{wo.ship_city
+											? `, ${wo.ship_city}`
+											: ''}{wo.ship_state
+											? ` ${wo.ship_state}`
+											: ''}{wo.ship_zip ? ` ${wo.ship_zip}` : ''}</span
+									>
+								{/if}
+							</div>
+
 							<table class="w-full text-xs border-collapse">
 								<thead>
 									<tr class="border-t border-gray-100 bg-gray-50">
@@ -110,6 +131,9 @@
 											>Roll For</th
 										>
 										<th class="px-4 py-1.5 text-left text-gray-500 font-medium"
+											>Tab</th
+										>
+										<th class="px-4 py-1.5 text-left text-gray-500 font-medium"
 											>Instructions</th
 										>
 									</tr>
@@ -120,8 +144,7 @@
 											<td class="px-4 py-1.5 text-gray-700 font-medium"
 												>{line.display_label}</td
 											>
-											<td class="px-4 py-1.5 text-gray-500">{line.facing}</td
-											>
+											<td class="px-4 py-1.5 text-gray-500">{line.facing}</td>
 											<td
 												class="px-4 py-1.5 text-right text-gray-600 tabular-nums"
 												>{line.qty}</td
@@ -144,6 +167,9 @@
 											>
 											<td class="px-4 py-1.5 text-gray-500">{line.rollfor}</td
 											>
+											<td class="px-4 py-1.5 text-gray-500"
+												>{line.tab_type || '—'}</td
+											>
 											<td class="px-4 py-1.5 text-gray-400 italic"
 												>{line.instructions}</td
 											>
@@ -151,7 +177,7 @@
 									{/each}
 									<tr class="border-t border-gray-200 bg-gray-50">
 										<td
-											colspan="5"
+											colspan="6"
 											class="px-4 py-1.5 text-xs text-gray-500 font-medium"
 											>Total</td
 										>
@@ -160,10 +186,50 @@
 										>
 											{fmtSqft(wo.lines.reduce((s, l) => s + l.sqft, 0))}
 										</td>
-										<td colspan="2"></td>
+										<td colspan="3"></td>
 									</tr>
 								</tbody>
 							</table>
+
+							{#if wo.accessories?.length}
+								<div class="border-t border-gray-100 px-4 py-2">
+									<p class="text-xs font-medium text-gray-500 mb-1">
+										Accessories
+									</p>
+									<table class="w-full text-xs border-collapse">
+										<thead>
+											<tr class="bg-gray-50">
+												<th
+													class="py-1 pr-4 text-left text-gray-500 font-medium w-16"
+													>Qty</th
+												>
+												<th
+													class="py-1 pr-4 text-left text-gray-500 font-medium w-32"
+													>Part #</th
+												>
+												<th class="py-1 text-left text-gray-500 font-medium"
+													>Description</th
+												>
+											</tr>
+										</thead>
+										<tbody>
+											{#each wo.accessories as acc, i (i)}
+												<tr class="border-t border-gray-100">
+													<td class="py-1 pr-4 text-gray-600 tabular-nums"
+														>{acc.qty}</td
+													>
+													<td class="py-1 pr-4 text-gray-600 font-mono"
+														>{acc.part_number}</td
+													>
+													<td class="py-1 text-gray-500"
+														>{acc.description}</td
+													>
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
+							{/if}
 						</div>
 					</div>
 				{/each}
@@ -194,25 +260,26 @@
 		{/if}
 		<div class="card">
 			<div class="card-header">
-				<span class="text-sm font-semibold text-gray-700">Upload CSV</span>
+				<span class="text-sm font-semibold text-gray-700">Upload Work Order</span>
 			</div>
 			<div class="card-body">
 				<form method="POST" action="?/parse" enctype="multipart/form-data" use:enhance>
 					<div class="space-y-4">
 						<div>
-							<label for="csv" class="form-label">Work order file (.csv)</label>
+							<label for="excel" class="form-label"
+								>Work order file (.xlsx, .xlsb)</label
+							>
 							<input
-								id="csv"
-								name="csv"
+								id="excel"
+								name="excel"
 								type="file"
-								accept=".csv,text/csv"
+								accept=".xlsx,.xlsb,.xls"
 								required
 								class="block w-full text-sm text-gray-600 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
 							/>
 						</div>
 						<p class="text-xs text-gray-400">
-							Expected columns: sonumber, company, jobname, branch, shipdate, facing,
-							qty, thickness, width, length, rollfor, instructions
+							Upload the Excel workbook from PandS. Must contain a "Work Order" sheet.
 						</p>
 						<button type="submit" class="btn-primary btn-sm">Parse & Preview</button>
 					</div>
