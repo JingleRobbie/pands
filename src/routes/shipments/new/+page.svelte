@@ -18,11 +18,26 @@
 	$effect(() => {
 		if (masterSelectCb) masterSelectCb.indeterminate = someSelected;
 	});
-	const totalSqft = $derived(
-		data.runs.filter((r) => selected.has(r.id)).reduce((s, r) => s + r.sqft_actual, 0)
-	);
+
+	let rollsToShip = $state(new Map(data.runs.map((r) => [r.id, r.rolls_actual])));
+	function setRolls(id, val) {
+		const next = new Map(rollsToShip);
+		next.set(id, val);
+		rollsToShip = next;
+	}
+
 	const totalRolls = $derived(
-		data.runs.filter((r) => selected.has(r.id)).reduce((s, r) => s + r.rolls_actual, 0)
+		data.runs
+			.filter((r) => selected.has(r.id))
+			.reduce((s, r) => s + (rollsToShip.get(r.id) ?? r.rolls_actual), 0)
+	);
+	const totalSqft = $derived(
+		data.runs
+			.filter((r) => selected.has(r.id))
+			.reduce((s, r) => {
+				const rolls = rollsToShip.get(r.id) ?? r.rolls_actual;
+				return s + Math.round((rolls / r.rolls_actual) * r.sqft_actual);
+			}, 0)
 	);
 </script>
 
@@ -90,11 +105,20 @@
 									onchange={toggleAll}
 								/>
 							</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-500">Run #</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-500">SKU</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">Roll For</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">Facing</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Ship</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Thickness</th
+							>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Width</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Length</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500"
+								>Sq Ft/Roll</th
+							>
+							<th class="px-4 py-3 text-right font-medium text-gray-500"
+								>Total Sq Ft</th
+							>
 							<th class="px-4 py-3 text-left font-medium text-gray-500">Run Date</th>
-							<th class="px-4 py-3 text-right font-medium text-gray-500">Rolls</th>
-							<th class="px-4 py-3 text-right font-medium text-gray-500">Sq Ft</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-gray-100 bg-white">
@@ -115,17 +139,45 @@
 										onclick={(e) => e.stopPropagation()}
 									/>
 								</td>
-								<td class="px-4 py-3 font-mono text-gray-700">{run.run_number}</td>
-								<td class="px-4 py-3 text-gray-700">{run.display_label}</td>
-								<td class="px-4 py-3 text-gray-600"
-									>{run.run_date ? fmtDate(run.run_date) : '—'}</td
+								<td class="px-4 py-3 text-gray-600">{run.rollfor}</td>
+								<td class="px-4 py-3 text-gray-600">{run.facing}</td>
+								<td class="px-2 py-2" onclick={(e) => e.stopPropagation()}>
+									<input
+										type="number"
+										name="rolls_to_ship_{run.id}"
+										min="1"
+										max={run.rolls_actual}
+										value={rollsToShip.get(run.id)}
+										oninput={(e) =>
+											setRolls(run.id, parseInt(e.target.value) || 1)}
+										class="form-input w-16 text-right tabular-nums text-sm py-1"
+									/>
+								</td>
+								<td class="px-4 py-3 text-right tabular-nums text-gray-600"
+									>{run.thickness_in}"</td
 								>
 								<td class="px-4 py-3 text-right tabular-nums text-gray-600"
-									>{run.rolls_actual}</td
+									>{run.width_in}"</td
+								>
+								<td class="px-4 py-3 text-right tabular-nums text-gray-600"
+									>{run.length_ft} ft</td
 								>
 								<td
 									class="px-4 py-3 text-right tabular-nums font-mono text-gray-600"
-									>{fmtSqft(run.sqft_actual)}</td
+									>{fmtSqft(Math.round(run.sqft_actual / run.rolls_actual))}</td
+								>
+								<td
+									class="px-4 py-3 text-right tabular-nums font-mono text-gray-600"
+									>{fmtSqft(
+										Math.round(
+											((rollsToShip.get(run.id) ?? run.rolls_actual) /
+												run.rolls_actual) *
+												run.sqft_actual
+										)
+									)}</td
+								>
+								<td class="px-4 py-3 text-gray-600"
+									>{run.run_date ? fmtDate(run.run_date) : '—'}</td
 								>
 							</tr>
 						{/each}

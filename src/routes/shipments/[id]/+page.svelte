@@ -1,7 +1,6 @@
 <script>
-	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
-	let { data, form } = $props();
+	let { data } = $props();
 	const { shipment } = data;
 
 	const totalRolls = shipment.lines.reduce((s, l) => s + l.rolls, 0);
@@ -33,9 +32,8 @@
 	<div class="flex items-center gap-2">
 		<a href="/shipments/{shipment.id}/billing" class="btn-secondary btn-sm">Billing Summary</a>
 		{#if shipment.status === 'DRAFT'}
-			<form method="POST" action="?/markShipped" use:enhance>
-				<button type="submit" class="btn-primary btn-sm">Mark Shipped</button>
-			</form>
+			<a href="/shipments/{shipment.id}/edit" class="btn-secondary btn-sm">Edit</a>
+			<a href="/shipments/{shipment.id}/ship" class="btn-primary btn-sm">Mark Shipped</a>
 		{/if}
 		<button onclick={() => window.print()} class="btn-secondary btn-sm">Print</button>
 	</div>

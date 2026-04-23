@@ -18,15 +18,15 @@ export async function load({ url }) {
 
 	// COMPLETED runs for this WO not already on any shipment
 	const [runs] = await db.query(
-		`SELECT pr.id, pr.run_number, pr.run_date, pr.rolls_actual, pr.sqft_actual,
-		        ms.display_label
+		`SELECT pr.id, pr.run_date, pr.rolls_actual, pr.sqft_actual,
+		        ms.display_label, wol.facing, wol.rollfor, wol.length_ft, wol.thickness_in, wol.width_in
 		 FROM production_runs pr
 		 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
 		 JOIN material_skus ms ON ms.id = pr.sku_id
 		 WHERE wol.wo_id = ?
 		   AND pr.status = 'COMPLETED'
 		   AND pr.id NOT IN (SELECT production_run_id FROM shipment_lines)
-		 ORDER BY pr.run_date, pr.run_number`,
+		 ORDER BY pr.run_date, ms.display_label`,
 		[woId]
 	);
 
@@ -44,17 +44,25 @@ export const actions = {
 		if (!shipDate) return fail(400, { error: 'Ship date is required.' });
 		if (runIds.length === 0) return fail(400, { error: 'Select at least one production run.' });
 
+		const rollsMap = {};
+		for (const id of runIds) {
+			const v = parseInt(data.get(`rolls_to_ship_${id}`));
+			if (v > 0) rollsMap[id] = v;
+		}
+
+		let shipmentId;
 		try {
-			const { shipmentId } = await createShipment(
+			({ shipmentId } = await createShipment(
 				woId,
 				customerId,
 				shipDate,
 				runIds,
-				locals.appUser.id
-			);
-			redirect(303, `/shipments/${shipmentId}`);
+				locals.appUser.id,
+				rollsMap
+			));
 		} catch (err) {
 			return fail(500, { error: err.message });
 		}
+		redirect(303, `/shipments/${shipmentId}`);
 	},
 };
