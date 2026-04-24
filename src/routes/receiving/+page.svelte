@@ -15,33 +15,29 @@
 			<span class="text-sm font-semibold text-gray-700">Open POs</span>
 		</div>
 		{#if data.overdue.length || data.upcoming.length}
-			<table class="w-full text-sm list-table">
-				<thead>
-					<tr class="border-b border-gray-100">
-						<th class="px-4 py-2 text-left text-gray-600">PO #</th>
-						<th class="px-4 py-2 text-left text-gray-600">Vendor</th>
-						<th class="px-4 py-2 text-left text-gray-600">Expected</th>
-						<th class="px-4 py-2 text-left text-gray-600">Status</th>
-						<th class="px-4 py-2 text-left text-gray-600">Open Lines</th>
+			<table class="min-w-full divide-y divide-gray-200 text-sm">
+				<thead class="bg-gray-50">
+					<tr>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">PO #</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Vendor</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Expected</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Status</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Open Lines</th>
 					</tr>
 				</thead>
-				<tbody>
+				<tbody class="divide-y divide-gray-100 bg-white">
 					{#each data.overdue as po (po.id)}
 						<tr
-							class="border-b border-amber-100 bg-amber-50 cursor-pointer border-l-2 border-l-amber-400"
+							class="bg-amber-50 cursor-pointer border-l-2 border-l-amber-400 hover:bg-amber-100"
 							onclick={() => goto(`/receiving/${po.id}`)}
 						>
-							<td class="px-4 py-2 font-medium">
-								<a href="/receiving/{po.id}" class="text-blue-700 hover:underline"
-									>{po.po_number}</a
-								>
-							</td>
-							<td class="px-4 py-2 text-gray-700">{po.vendor_name}</td>
-							<td class="px-4 py-2 text-amber-700 font-medium"
+							<td class="px-4 py-3 font-medium text-gray-900">{po.po_number}</td>
+							<td class="px-4 py-3 text-gray-700">{po.vendor_name}</td>
+							<td class="px-4 py-3 text-amber-700 font-medium"
 								>{fmtDate(po.expected_date)}</td
 							>
-							<td class="px-4 py-2"><span class="badge-amber">Overdue</span></td>
-							<td class="px-4 py-2 text-gray-500">{po.open_lines}</td>
+							<td class="px-4 py-3"><span class="badge-amber">Overdue</span></td>
+							<td class="px-4 py-3 text-gray-500">{po.open_lines}</td>
 						</tr>
 					{/each}
 
@@ -58,18 +54,14 @@
 
 					{#each data.upcoming as po (po.id)}
 						<tr
-							class="border-b border-gray-100 cursor-pointer"
+							class="hover:bg-gray-50 cursor-pointer"
 							onclick={() => goto(`/receiving/${po.id}`)}
 						>
-							<td class="px-4 py-2 font-medium">
-								<a href="/receiving/{po.id}" class="text-blue-700 hover:underline"
-									>{po.po_number}</a
-								>
-							</td>
-							<td class="px-4 py-2 text-gray-700">{po.vendor_name}</td>
-							<td class="px-4 py-2 text-gray-600">{fmtDate(po.expected_date)}</td>
-							<td class="px-4 py-2"><span class="badge-blue">Open</span></td>
-							<td class="px-4 py-2 text-gray-500">{po.open_lines}</td>
+							<td class="px-4 py-3 font-medium text-gray-900">{po.po_number}</td>
+							<td class="px-4 py-3 text-gray-700">{po.vendor_name}</td>
+							<td class="px-4 py-3 text-gray-600">{fmtDate(po.expected_date)}</td>
+							<td class="px-4 py-3"><span class="badge-blue">Open</span></td>
+							<td class="px-4 py-3 text-gray-500">{po.open_lines}</td>
 						</tr>
 					{/each}
 				</tbody>

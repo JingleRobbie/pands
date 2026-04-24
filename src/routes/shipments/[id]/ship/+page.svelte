@@ -30,6 +30,7 @@
 			>← {shipment.shipment_number}</a
 		>
 		<h1 class="text-xl font-semibold text-gray-900">Mark Shipped</h1>
+		<span class="badge-amber">{shipment.status}</span>
 	</div>
 
 	<form method="POST" use:enhance class="space-y-6">
@@ -87,16 +88,18 @@
 							<td class="px-4 py-3 text-gray-600">{line.rollfor ?? ''}</td>
 							<td class="px-4 py-3 text-gray-600">{line.facing ?? ''}</td>
 							<td class="px-2 py-2">
-								<input
-									type="number"
-									name="line_rolls_{line.id}"
-									min="1"
-									max={line.rolls}
-									value={lineRolls.get(line.id)}
-									oninput={(e) =>
-										setLineRolls(line.id, parseInt(e.target.value) || 1)}
-									class="form-input w-16 text-right tabular-nums text-sm py-1"
-								/>
+								<div class="flex justify-end">
+									<input
+										type="number"
+										name="line_rolls_{line.id}"
+										min="1"
+										max={line.rolls}
+										value={lineRolls.get(line.id)}
+										oninput={(e) =>
+											setLineRolls(line.id, parseInt(e.target.value) || 1)}
+										class="form-input w-16 text-right tabular-nums text-sm py-1"
+									/>
+								</div>
 							</td>
 							<td class="px-4 py-3 text-right tabular-nums text-gray-600"
 								>{line.thickness_in ?? ''}"</td

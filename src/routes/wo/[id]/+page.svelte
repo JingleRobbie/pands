@@ -87,14 +87,13 @@
 		<table class="w-full text-sm">
 			<thead>
 				<tr class="border-b border-gray-100 bg-gray-50">
-					<th class="px-4 py-2 text-left text-gray-500 font-medium">SKU</th>
+					<th class="px-4 py-2 text-left text-gray-500 font-medium">Roll For</th>
 					<th class="px-4 py-2 text-left text-gray-500 font-medium">Facing</th>
 					<th class="px-4 py-2 text-right text-gray-500 font-medium">Qty</th>
 					<th class="px-4 py-2 text-right text-gray-500 font-medium">Thickness</th>
 					<th class="px-4 py-2 text-right text-gray-500 font-medium">Width</th>
 					<th class="px-4 py-2 text-right text-gray-500 font-medium">Length</th>
 					<th class="px-4 py-2 text-right text-gray-500 font-medium">Sq Ft</th>
-					<th class="px-4 py-2 text-left text-gray-500 font-medium">Roll For</th>
 					<th class="px-4 py-2 text-left text-gray-500 font-medium">Instructions</th>
 					<th class="px-4 py-2 text-right text-gray-500 font-medium">
 						<span class="relative inline-flex items-center gap-1 group cursor-default">
@@ -114,7 +113,7 @@
 			<tbody>
 				{#each lines as line (line.id)}
 					<tr class="border-b border-gray-100">
-						<td class="px-4 py-2 font-medium text-gray-800">{line.display_label}</td>
+						<td class="px-4 py-2 text-gray-500">{line.rollfor}</td>
 						<td class="px-4 py-2 text-gray-500">{line.facing}</td>
 						<td class="px-4 py-2 text-right text-gray-600 tabular-nums">{line.qty}</td>
 						<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
@@ -129,7 +128,6 @@
 						<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
 							>{fmtSqft(line.sqft)}</td
 						>
-						<td class="px-4 py-2 text-gray-500">{line.rollfor}</td>
 						<td class="px-4 py-2 text-gray-400 italic text-xs">{line.instructions}</td>
 						<td class="px-4 py-2 text-right tabular-nums">
 							<span class="text-green-600 font-medium">{line.rolls_produced}</span
@@ -143,11 +141,11 @@
 					</tr>
 				{/each}
 				<tr class="border-t border-gray-200 bg-gray-50">
-					<td colspan="5" class="px-4 py-2 text-sm text-gray-500 font-medium">Total</td>
+					<td colspan="6" class="px-4 py-2 text-sm text-gray-500 font-medium">Total</td>
 					<td class="px-4 py-2 text-right font-mono font-medium text-gray-700"
 						>{fmtSqft(totalSqft)}</td
 					>
-					<td colspan="3"></td>
+					<td colspan="2"></td>
 				</tr>
 			</tbody>
 		</table>

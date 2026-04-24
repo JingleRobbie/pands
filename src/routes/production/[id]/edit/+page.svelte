@@ -131,7 +131,6 @@
 										onchange={toggleAllPeers}
 									/>
 								</th>
-								<th class="px-4 py-2 text-left text-gray-600">Run #</th>
 								<th class="px-4 py-2 text-left text-gray-600">SKU</th>
 								<th class="px-4 py-2 text-left text-gray-600">Current Date</th>
 								<th class="px-4 py-2 text-right text-gray-600">Rolls</th>
@@ -149,11 +148,6 @@
 											checked={checkedPeerIds.has(peer.id)}
 											onchange={() => togglePeer(peer.id)}
 										/>
-									</td>
-									<td class="px-4 py-2 font-mono text-xs">
-										<label for="peer-{peer.id}" class="cursor-pointer"
-											>{peer.run_number}</label
-										>
 									</td>
 									<td class="px-4 py-2">{peer.display_label}</td>
 									<td class="px-4 py-2 text-gray-500">

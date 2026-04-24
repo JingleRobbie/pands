@@ -44,42 +44,33 @@
 				</span>
 			</div>
 			{#if data.searchResults.length}
-				<table class="w-full text-sm list-table">
-					<thead>
-						<tr
-							class="border-b border-gray-100 cursor-pointer"
-							onclick={() => goto(`/so/${so.id}`)}
-						>
-							<th class="px-4 py-2 text-left text-gray-600">SO #</th>
-							<th class="px-4 py-2 text-left text-gray-600">Customer</th>
-							<th class="px-4 py-2 text-left text-gray-600">Job Name</th>
-							<th class="px-4 py-2 text-left text-gray-600">Ship Date</th>
-							<th class="px-4 py-2 text-left text-gray-600">Status</th>
-							<th class="px-4 py-2 text-right text-gray-600">Lines</th>
+				<table class="min-w-full divide-y divide-gray-200 text-sm">
+					<thead class="bg-gray-50">
+						<tr>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">SO #</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">Customer</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">Job Name</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">Ship Date</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">Status</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Lines</th>
 						</tr>
 					</thead>
-					<tbody>
+					<tbody class="divide-y divide-gray-100 bg-white">
 						{#each data.searchResults as so (so.id)}
 							<tr
-								class="border-b border-gray-100 cursor-pointer"
+								class="hover:bg-gray-50 cursor-pointer"
 								onclick={() => goto(`/so/${so.id}`)}
 							>
-								<td class="px-4 py-2">
-									<a
-										href="/so/{so.id}"
-										class="font-medium text-blue-700 hover:underline"
-										>{so.so_number}</a
-									>
-								</td>
-								<td class="px-4 py-2 text-gray-700">{so.customer_name}</td>
-								<td class="px-4 py-2 text-gray-800">{so.job_name}</td>
-								<td class="px-4 py-2 text-gray-600">{fmtDate(so.ship_date)}</td>
-								<td class="px-4 py-2">
+								<td class="px-4 py-3 font-medium text-gray-900">{so.so_number}</td>
+								<td class="px-4 py-3 text-gray-700">{so.customer_name}</td>
+								<td class="px-4 py-3 text-gray-800">{so.job_name}</td>
+								<td class="px-4 py-3 text-gray-600">{fmtDate(so.ship_date)}</td>
+								<td class="px-4 py-3">
 									<span class={statusBadge(so.status)}
 										>{statusLabel(so.status)}</span
 									>
 								</td>
-								<td class="px-4 py-2 text-right text-gray-500">{so.line_count}</td>
+								<td class="px-4 py-3 text-right text-gray-500">{so.line_count}</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -88,44 +79,35 @@
 				<div class="card-body text-gray-400 text-sm">No sales orders found.</div>
 			{/if}
 		{:else if data.sos.length}
-			<table class="w-full text-sm list-table">
-				<thead>
-					<tr
-						class="border-b border-gray-100 cursor-pointer"
-						onclick={() => goto(`/so/${so.id}`)}
-					>
-						<th class="px-4 py-2 text-left text-gray-600">SO #</th>
-						<th class="px-4 py-2 text-left text-gray-600">Customer</th>
-						<th class="px-4 py-2 text-left text-gray-600">Job Name</th>
-						<th class="px-4 py-2 text-left text-gray-600">Ship Date</th>
-						<th class="px-4 py-2 text-left text-gray-600">Status</th>
-						<th class="px-4 py-2 text-right text-gray-600">Lines</th>
+			<table class="min-w-full divide-y divide-gray-200 text-sm">
+				<thead class="bg-gray-50">
+					<tr>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">SO #</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Customer</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Job Name</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Ship Date</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Status</th>
+						<th class="px-4 py-3 text-right font-medium text-gray-500">Lines</th>
 					</tr>
 				</thead>
-				<tbody>
+				<tbody class="divide-y divide-gray-100 bg-white">
 					{#each data.sos as so (so.id)}
 						<tr
-							class="border-b border-gray-100 cursor-pointer"
+							class="hover:bg-gray-50 cursor-pointer"
 							onclick={() => goto(`/so/${so.id}`)}
 						>
-							<td class="px-4 py-2">
-								<a
-									href="/so/{so.id}"
-									class="font-medium text-blue-700 hover:underline"
-									>{so.so_number}</a
-								>
-							</td>
-							<td class="px-4 py-2 text-gray-700">{so.customer_name}</td>
-							<td class="px-4 py-2 text-gray-800">{so.job_name}</td>
-							<td class="px-4 py-2 text-gray-600">{fmtDate(so.ship_date)}</td>
-							<td class="px-4 py-2">
+							<td class="px-4 py-3 font-medium text-gray-900">{so.so_number}</td>
+							<td class="px-4 py-3 text-gray-700">{so.customer_name}</td>
+							<td class="px-4 py-3 text-gray-800">{so.job_name}</td>
+							<td class="px-4 py-3 text-gray-600">{fmtDate(so.ship_date)}</td>
+							<td class="px-4 py-3">
 								{#if so.status === 'OPEN'}<span class="badge-blue">Open</span>
 								{:else if so.status === 'IN_PROGRESS'}<span class="badge-amber"
 										>In Progress</span
 									>
 								{:else}<span class="badge-green">{so.status}</span>{/if}
 							</td>
-							<td class="px-4 py-2 text-right text-gray-500">{so.line_count}</td>
+							<td class="px-4 py-3 text-right text-gray-500">{so.line_count}</td>
 						</tr>
 					{/each}
 				</tbody>

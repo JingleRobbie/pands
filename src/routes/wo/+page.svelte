@@ -30,17 +30,17 @@
 			</span>
 		</div>
 		{#if data.wos.length}
-			<table class="w-full text-sm list-table">
-				<thead>
-					<tr class="border-b border-gray-100">
-						<th class="px-4 py-2 text-left text-gray-600">SO #</th>
-						<th class="px-4 py-2 text-left text-gray-600">Customer</th>
-						<th class="px-4 py-2 text-left text-gray-600">Job</th>
-						<th class="px-4 py-2 text-left text-gray-600">Branch</th>
-						<th class="px-4 py-2 text-left text-gray-600">Ship Date</th>
-						<th class="px-4 py-2 text-right text-gray-600">Lines</th>
-						<th class="px-4 py-2 text-right text-gray-600">Sq Ft</th>
-						<th class="px-4 py-2 text-right text-gray-600">
+			<table class="min-w-full divide-y divide-gray-200 text-sm">
+				<thead class="bg-gray-50">
+					<tr>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">SO #</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Customer</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Job</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Branch</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Ship Date</th>
+						<th class="px-4 py-3 text-right font-medium text-gray-500">Lines</th>
+						<th class="px-4 py-3 text-right font-medium text-gray-500">Sq Ft</th>
+						<th class="px-4 py-3 text-right font-medium text-gray-500">
 							<span
 								class="relative inline-flex items-center gap-1 group cursor-default"
 							>
@@ -55,25 +55,25 @@
 								</span>
 							</span>
 						</th>
-						<th class="px-4 py-2 text-left text-gray-600">Status</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Status</th>
 					</tr>
 				</thead>
-				<tbody>
+				<tbody class="divide-y divide-gray-100 bg-white">
 					{#each data.wos as wo (wo.id)}
 						<tr
-							class="border-b border-gray-100 cursor-pointer hover:bg-gray-50"
+							class="hover:bg-gray-50 cursor-pointer"
 							onclick={() => goto(`/wo/${wo.id}`)}
 						>
-							<td class="px-4 py-2 font-medium text-gray-900">{wo.so_number}</td>
-							<td class="px-4 py-2 text-gray-700">{wo.customer_name}</td>
-							<td class="px-4 py-2 text-gray-700">{wo.job_name}</td>
-							<td class="px-4 py-2 text-gray-500">{wo.branch}</td>
-							<td class="px-4 py-2 text-gray-600">{fmtDate(wo.ship_date)}</td>
-							<td class="px-4 py-2 text-right text-gray-500">{wo.line_count}</td>
-							<td class="px-4 py-2 text-right font-mono text-gray-600"
+							<td class="px-4 py-3 font-medium text-gray-900">{wo.so_number}</td>
+							<td class="px-4 py-3 text-gray-700">{wo.customer_name}</td>
+							<td class="px-4 py-3 text-gray-700">{wo.job_name}</td>
+							<td class="px-4 py-3 text-gray-500">{wo.branch}</td>
+							<td class="px-4 py-3 text-gray-600">{fmtDate(wo.ship_date)}</td>
+							<td class="px-4 py-3 text-right text-gray-500">{wo.line_count}</td>
+							<td class="px-4 py-3 text-right font-mono text-gray-600"
 								>{fmtSqft(wo.total_sqft)}</td
 							>
-							<td class="px-4 py-2 text-right tabular-nums">
+							<td class="px-4 py-3 text-right tabular-nums">
 								<span class="text-green-600 font-medium">{wo.rolls_produced}</span
 								><span class="text-gray-400"> / {wo.total_rolls} rolls</span>
 								{#if wo.rolls_scheduled > 0}
@@ -82,7 +82,7 @@
 									</div>
 								{/if}
 							</td>
-							<td class="px-4 py-2">
+							<td class="px-4 py-3">
 								<span class={statusBadge(wo.status)}>{statusLabel(wo.status)}</span>
 							</td>
 						</tr>

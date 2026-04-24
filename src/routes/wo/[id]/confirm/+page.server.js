@@ -9,7 +9,7 @@ export async function load({ params, locals }) {
 	if (!wo) error(404, 'Work order not found');
 
 	const [runs] = await db.query(
-		`SELECT pr.*, ms.display_label AS sku_label, wol.facing, wol.length_ft, wol.width_in
+		`SELECT pr.*, ms.display_label AS sku_label, wol.facing, wol.length_ft, wol.width_in, wol.thickness_in, wol.rollfor
 		 FROM production_runs pr
 		 JOIN material_skus ms ON ms.id = pr.sku_id
 		 JOIN work_order_lines wol ON wol.id = pr.wo_line_id

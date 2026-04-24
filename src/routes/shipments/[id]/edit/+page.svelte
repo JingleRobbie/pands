@@ -12,6 +12,19 @@
 		next.set(id, val);
 		lineRolls = next;
 	}
+	const allLinesKept = $derived(
+		shipment.lines.length > 0 && shipment.lines.every((l) => keepLines.has(l.id))
+	);
+	const someLinesKept = $derived(
+		shipment.lines.some((l) => keepLines.has(l.id)) && !allLinesKept
+	);
+	function toggleAllLines() {
+		keepLines = allLinesKept ? new Set() : new Set(shipment.lines.map((l) => l.id));
+	}
+	let masterLinesCb;
+	$effect(() => {
+		if (masterLinesCb) masterLinesCb.indeterminate = someLinesKept;
+	});
 
 	// Available runs to add
 	let addSelected = $state(new Set());
@@ -26,6 +39,19 @@
 		next.has(id) ? next.delete(id) : next.add(id);
 		addSelected = next;
 	}
+	const allAddsSelected = $derived(
+		availableRuns.length > 0 && availableRuns.every((r) => addSelected.has(r.id))
+	);
+	const someAddsSelected = $derived(
+		availableRuns.some((r) => addSelected.has(r.id)) && !allAddsSelected
+	);
+	function toggleAllAdds() {
+		addSelected = allAddsSelected ? new Set() : new Set(availableRuns.map((r) => r.id));
+	}
+	let masterAddsCb;
+	$effect(() => {
+		if (masterAddsCb) masterAddsCb.indeterminate = someAddsSelected;
+	});
 
 	const allRuns = $derived([
 		...shipment.lines.map((l) => ({ ...l, _type: 'line', rolls_actual: l.rolls })),
@@ -64,6 +90,9 @@
 			>← {shipment.shipment_number}</a
 		>
 		<h1 class="text-xl font-semibold text-gray-900">Edit Shipment</h1>
+		<span class="badge-{shipment.status === 'SHIPPED' ? 'green' : 'amber'}"
+			>{shipment.status}</span
+		>
 	</div>
 
 	<form method="POST" use:enhance class="space-y-6">
@@ -105,15 +134,24 @@
 					>
 				{/if}
 			</div>
-			{#if allRuns.length === 0}
+			{#if shipment.lines.length === 0 && availableRuns.length === 0}
 				<div class="card-body text-sm text-gray-500">
 					No runs available for this shipment.
 				</div>
-			{:else}
+			{/if}
+
+			{#if shipment.lines.length > 0}
 				<table class="min-w-full divide-y divide-gray-200 text-sm">
 					<thead class="bg-gray-50">
 						<tr>
-							<th class="w-8 px-4 py-3"></th>
+							<th class="w-8 px-4 py-3">
+								<input
+									type="checkbox"
+									bind:this={masterLinesCb}
+									checked={allLinesKept}
+									onchange={toggleAllLines}
+								/>
+							</th>
 							<th class="px-4 py-3 text-left font-medium text-gray-500">Roll For</th>
 							<th class="px-4 py-3 text-left font-medium text-gray-500">Facing</th>
 							<th class="px-4 py-3 text-right font-medium text-gray-500">Ship</th>
@@ -163,17 +201,22 @@
 								<td class="px-4 py-3 text-gray-600">{line.rollfor ?? ''}</td>
 								<td class="px-4 py-3 text-gray-600">{line.facing ?? ''}</td>
 								<td class="px-2 py-2" onclick={(e) => e.stopPropagation()}>
-									<input
-										type="number"
-										name="line_rolls_{line.id}"
-										min="1"
-										max={line.rolls}
-										value={lineRolls.get(line.id)}
-										oninput={(e) =>
-											setLineRolls(line.id, parseInt(e.target.value) || 1)}
-										disabled={!kept}
-										class="form-input w-16 text-right tabular-nums text-sm py-1"
-									/>
+									<div class="flex justify-end">
+										<input
+											type="number"
+											name="line_rolls_{line.id}"
+											min="1"
+											max={line.rolls}
+											value={lineRolls.get(line.id)}
+											oninput={(e) =>
+												setLineRolls(
+													line.id,
+													parseInt(e.target.value) || 1
+												)}
+											disabled={!kept}
+											class="form-input w-16 text-right tabular-nums text-sm py-1"
+										/>
+									</div>
 								</td>
 								<td class="px-4 py-3 text-right tabular-nums text-gray-600"
 									>{line.thickness_in ?? ''}"</td
@@ -202,6 +245,44 @@
 								>
 							</tr>
 						{/each}
+					</tbody>
+				</table>
+			{/if}
+
+			{#if availableRuns.length > 0}
+				<div
+					class="border-t border-gray-200 px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500"
+				>
+					Add Runs
+				</div>
+				<table class="min-w-full divide-y divide-gray-200 text-sm">
+					<thead class="bg-gray-50 border-t border-gray-100">
+						<tr>
+							<th class="w-8 px-4 py-3">
+								<input
+									type="checkbox"
+									bind:this={masterAddsCb}
+									checked={allAddsSelected}
+									onchange={toggleAllAdds}
+								/>
+							</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">Roll For</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">Facing</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Ship</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Thickness</th
+							>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Width</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Length</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500"
+								>Sq Ft/Roll</th
+							>
+							<th class="px-4 py-3 text-right font-medium text-gray-500"
+								>Total Sq Ft</th
+							>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">Run Date</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-100 bg-white">
 						{#each availableRuns as run (run.id)}
 							{@const sel = addSelected.has(run.id)}
 							<tr
@@ -223,16 +304,18 @@
 								<td class="px-4 py-3 text-gray-600">{run.rollfor}</td>
 								<td class="px-4 py-3 text-gray-600">{run.facing}</td>
 								<td class="px-2 py-2" onclick={(e) => e.stopPropagation()}>
-									<input
-										type="number"
-										name="add_rolls_{run.id}"
-										min="1"
-										max={run.rolls_actual}
-										value={addRolls.get(run.id)}
-										oninput={(e) =>
-											setAddRolls(run.id, parseInt(e.target.value) || 1)}
-										class="form-input w-16 text-right tabular-nums text-sm py-1"
-									/>
+									<div class="flex justify-end">
+										<input
+											type="number"
+											name="add_rolls_{run.id}"
+											min="1"
+											max={run.rolls_actual}
+											value={addRolls.get(run.id)}
+											oninput={(e) =>
+												setAddRolls(run.id, parseInt(e.target.value) || 1)}
+											class="form-input w-16 text-right tabular-nums text-sm py-1"
+										/>
+									</div>
 								</td>
 								<td class="px-4 py-3 text-right tabular-nums text-gray-600"
 									>{run.thickness_in}"</td

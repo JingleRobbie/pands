@@ -52,22 +52,20 @@
 			</span>
 		</div>
 		{#if data.woGroups.length}
-			<table class="w-full text-sm">
-				<thead>
-					<tr class="border-b border-gray-100">
-						<th class="px-4 py-2 text-left text-gray-600 w-28">Date</th>
-						<th class="px-4 py-2 text-left text-gray-600 w-36">Customer</th>
-						<th class="px-4 py-2 text-left text-gray-600">Job</th>
-						<th class="px-4 py-2 text-left text-gray-600 w-24">WO #</th>
-						<th class="px-4 py-2 text-left text-gray-600">Runs</th>
-						<th class="px-4 py-2 text-right w-24"></th>
+			<table class="min-w-full divide-y divide-gray-200 text-sm">
+				<thead class="bg-gray-50">
+					<tr>
+						<th class="px-4 py-3 text-left font-medium text-gray-500 w-28">Date</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500 w-36">Customer</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Job</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500 w-24">WO #</th>
+						<th class="px-4 py-3 text-left font-medium text-gray-500">Runs</th>
 					</tr>
 				</thead>
-				<tbody>
+				<tbody class="divide-y divide-gray-100 bg-white">
 					{#each data.woGroups as wo (wo.wo_id)}
-						{@const hasScheduled = wo.skuLines.some((l) => l.status === 'SCHEDULED')}
 						<tr
-							class="border-b border-gray-100 cursor-pointer hover:bg-gray-50 align-top {woRowClass(
+							class="cursor-pointer hover:bg-gray-50 align-top {woRowClass(
 								wo.urgency
 							)}"
 							onclick={() => goto(`/wo/${wo.wo_id}/confirm`)}
@@ -113,24 +111,6 @@
 										{/each}
 									</tbody>
 								</table>
-							</td>
-							<td
-								class="px-4 py-3 align-top text-right"
-								onclick={(e) => e.stopPropagation()}
-							>
-								<div class="flex flex-col items-end gap-1">
-									{#if wo.first_pending_run_id}
-										<a
-											href="/production/{wo.first_pending_run_id}/edit"
-											class="btn-secondary btn-sm">Edit</a
-										>
-									{/if}
-									{#if hasScheduled && data.user?.role === 'admin'}
-										<a href="/wo/{wo.wo_id}/confirm" class="btn-primary btn-sm"
-											>Mark Produced</a
-										>
-									{/if}
-								</div>
 							</td>
 						</tr>
 					{/each}

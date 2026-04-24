@@ -1,4 +1,5 @@
 <script>
+	import { goto } from '$app/navigation';
 	let { data } = $props();
 </script>
 
@@ -27,13 +28,11 @@
 				</thead>
 				<tbody class="divide-y divide-gray-100 bg-white">
 					{#each data.customers as c (c.id)}
-						<tr class="hover:bg-gray-50">
-							<td class="px-4 py-3">
-								<a
-									href="/customers/{c.id}"
-									class="font-medium text-blue-600 hover:underline">{c.name}</a
-								>
-							</td>
+						<tr
+							class="hover:bg-gray-50 cursor-pointer"
+							onclick={() => goto(`/customers/${c.id}`)}
+						>
+							<td class="px-4 py-3 font-medium text-gray-900">{c.name}</td>
 							<td class="px-4 py-3 text-gray-600">{c.contact_name ?? '—'}</td>
 							<td class="px-4 py-3 text-gray-600">{c.billing_city ?? '—'}</td>
 							<td class="px-4 py-3 text-gray-600">{c.phone ?? '—'}</td>

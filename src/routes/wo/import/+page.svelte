@@ -23,6 +23,19 @@
 		next.has(soNum) ? next.delete(soNum) : next.add(soNum);
 		accepted = next;
 	}
+
+	const selectable = $derived(
+		(form?.preview ?? []).filter((p) => p.status !== 'unchanged').map((p) => p.so_number)
+	);
+	const allAccepted = $derived(selectable.length > 0 && selectable.every((n) => accepted.has(n)));
+	const someAccepted = $derived(selectable.some((n) => accepted.has(n)) && !allAccepted);
+	function toggleAll() {
+		accepted = allAccepted ? new Set() : new Set(selectable);
+	}
+	let masterCb;
+	$effect(() => {
+		if (masterCb) masterCb.indeterminate = someAccepted;
+	});
 </script>
 
 <svelte:head><title>Import Work Orders — PandS</title></svelte:head>
@@ -53,6 +66,17 @@
 		<form method="POST" action="?/import" use:enhance>
 			<input type="hidden" name="csv_data" value={JSON.stringify(form.preview)} />
 
+			{#if selectable.length > 0}
+				<div class="flex items-center gap-2 mb-2">
+					<input
+						type="checkbox"
+						bind:this={masterCb}
+						checked={allAccepted}
+						onchange={toggleAll}
+					/>
+					<span class="text-sm text-gray-600">Select all</span>
+				</div>
+			{/if}
 			<div class="space-y-4">
 				{#each form.preview as wo (wo.so_number)}
 					{@const s = STATUS[wo.status]}

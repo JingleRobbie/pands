@@ -1,5 +1,8 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { get } from 'svelte/store';
+	import { page } from '$app/stores';
+	import { localDate } from '$lib/utils.js';
 	let { data } = $props();
 	const { matrix } = data;
 
@@ -19,7 +22,10 @@
 		[...new Set(matrix.skus.map((s) => s.thickness_in))].sort((a, b) => a - b)
 	);
 
-	let selectedThicknesses = $state(new Set());
+	const _init = get(page).url.searchParams;
+	let selectedThicknesses = $state(
+		new Set((_init.get('thickness') ?? '').split(',').filter(Boolean).map(Number))
+	);
 
 	const visibleSkus = $derived(
 		selectedThicknesses.size === 0
@@ -33,8 +39,20 @@
 		selectedThicknesses = next;
 	}
 
-	let historyRange = $state('current');
-	const today = new Date().toISOString().slice(0, 10);
+	let historyRange = $state(_init.get('history') ?? 'current');
+	const today = localDate();
+
+	$effect(() => {
+		const p = new URLSearchParams();
+		if (historyRange !== 'current') p.set('history', historyRange);
+		if (selectedThicknesses.size > 0) p.set('thickness', [...selectedThicknesses].join(','));
+		const qs = p.toString();
+		goto(qs ? `?${qs}` : location.pathname, {
+			replaceState: true,
+			keepFocus: true,
+			noScroll: true,
+		});
+	});
 	const cutoffDays = { '7d': 7, '30d': 30, '365d': 365 };
 	const visibleHistoryRows = $derived(
 		historyRange === 'current'
@@ -63,6 +81,14 @@
 			<option value="30d">Last 30 days</option>
 			<option value="365d">Last year</option>
 		</select>
+		<a
+			href="/inventory/count"
+			class="btn-secondary btn-sm"
+			class:opacity-40={data.appUser?.role !== 'admin'}
+			class:pointer-events-none={data.appUser?.role !== 'admin'}
+			title={data.appUser?.role !== 'admin' ? 'Admin only' : 'Record inventory count'}
+			>Record Count</a
+		>
 		<a href="/po/new" class="btn-secondary btn-sm">+ PO</a>
 		<a href="/so/new" class="btn-secondary btn-sm">+ SO</a>
 		<a href="/production/schedule" class="btn-primary btn-sm">Schedule Run</a>
@@ -124,16 +150,26 @@
 			</thead>
 			<tbody>
 				<!-- Historical activity rows -->
-				{#each visibleHistoryRows as row (`${row.subType}-${row.objectId}`)}
+				{#each visibleHistoryRows as row, i (i)}
 					{@const href =
 						row.subType === 'po'
 							? `/po/${row.objectId}`
-							: `/production/${row.objectId}/confirm`}
+							: row.subType === 'adjustment'
+								? `/inventory/counts/${row.objectId}`
+								: `/wo/${row.objectId}/confirm`}
 					<tr class="row-historical cursor-pointer" onclick={() => goto(href)}>
-						<td class="text-sm">{row.partyName ?? ''}</td>
+						<td class="text-sm">
+							{#if row.subType === 'adjustment'}
+								{row.description}
+							{:else}
+								{row.partyName ?? ''}
+							{/if}
+						</td>
 						<td class="text-sm">
 							{#if row.subType === 'po'}
 								<span class="badge-green">RECEIVED</span>
+							{:else if row.subType === 'adjustment'}
+								<span class="badge-amber">ADJUSTMENT</span>
 							{:else}
 								{row.description}
 							{/if}
@@ -141,6 +177,8 @@
 						<td class="text-sm">
 							{#if row.subType === 'po'}
 								{row.poNumber}
+							{:else if row.subType === 'adjustment'}
+								{''}
 							{:else}
 								{row.soNumber || row.poNumber}
 							{/if}

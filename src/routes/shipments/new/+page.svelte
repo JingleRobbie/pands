@@ -142,16 +142,18 @@
 								<td class="px-4 py-3 text-gray-600">{run.rollfor}</td>
 								<td class="px-4 py-3 text-gray-600">{run.facing}</td>
 								<td class="px-2 py-2" onclick={(e) => e.stopPropagation()}>
-									<input
-										type="number"
-										name="rolls_to_ship_{run.id}"
-										min="1"
-										max={run.rolls_actual}
-										value={rollsToShip.get(run.id)}
-										oninput={(e) =>
-											setRolls(run.id, parseInt(e.target.value) || 1)}
-										class="form-input w-16 text-right tabular-nums text-sm py-1"
-									/>
+									<div class="flex justify-end">
+										<input
+											type="number"
+											name="rolls_to_ship_{run.id}"
+											min="1"
+											max={run.rolls_actual}
+											value={rollsToShip.get(run.id)}
+											oninput={(e) =>
+												setRolls(run.id, parseInt(e.target.value) || 1)}
+											class="form-input w-16 text-right tabular-nums text-sm py-1"
+										/>
+									</div>
 								</td>
 								<td class="px-4 py-3 text-right tabular-nums text-gray-600"
 									>{run.thickness_in}"</td

@@ -9,10 +9,10 @@
 	<link rel="stylesheet" href="/css/app.css" />
 </svelte:head>
 
-<div class="bg-gray-50 min-h-screen flex">
+<div class="bg-gray-50 h-screen overflow-hidden flex">
 	<!-- Sidebar -->
 	<aside
-		class="min-h-screen flex-shrink-0 flex flex-col transition-[width] duration-200 overflow-hidden"
+		class="h-screen flex-shrink-0 flex flex-col transition-[width] duration-200 overflow-y-auto overflow-x-hidden"
 		style="background-color:#0F1E2E; width:{collapsed ? '3.5rem' : '14rem'};"
 	>
 		<div class="px-3 py-5 border-b border-white/10 flex items-center justify-between min-w-0">
@@ -186,6 +186,35 @@
 			{/each}
 		</nav>
 
+		{#if data.appUser?.role === 'admin'}
+			<div class="border-t border-white/10 pt-2 px-2 pb-1">
+				<a
+					href="/inventory/counts"
+					title={collapsed ? 'Inventory Counts' : ''}
+					class="flex items-center py-2 rounded-md text-sm font-medium transition-colors
+					       {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}
+					       {$page.url.pathname.startsWith('/inventory')
+						? 'bg-brand text-white'
+						: 'text-white/70 hover:bg-white/10 hover:text-white'}"
+				>
+					<svg
+						class="w-4 h-4 flex-shrink-0"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6m-6 4h3"
+						/>
+					</svg>
+					{#if !collapsed}Inventory Counts{/if}
+				</a>
+			</div>
+		{/if}
+
 		<div class="border-t border-white/10 pt-2 px-2 pb-1">
 			<a
 				href="/settings"
@@ -223,7 +252,7 @@
 	</aside>
 
 	<!-- Main content -->
-	<div class="flex-1 flex flex-col min-h-screen overflow-hidden">
+	<div class="flex-1 flex flex-col h-screen overflow-y-auto">
 		{@render children()}
 	</div>
 </div>

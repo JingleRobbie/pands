@@ -1,7 +1,8 @@
 import { db } from '$lib/db.js';
+import { localDate } from '$lib/utils.js';
 
 async function nextRunNumber(conn) {
-	const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+	const today = localDate().replace(/-/g, '');
 	const prefix = `PR-${today}-`;
 	const [[{ last }]] = await conn.query(
 		'SELECT MAX(run_number) AS last FROM production_runs WHERE run_number LIKE ?',

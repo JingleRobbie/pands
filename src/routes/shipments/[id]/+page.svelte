@@ -69,9 +69,6 @@
 		<thead>
 			<tr class="bg-gray-100">
 				<th class="px-4 py-2 text-left font-semibold text-gray-700 border-b border-gray-200"
-					>Run #</th
-				>
-				<th class="px-4 py-2 text-left font-semibold text-gray-700 border-b border-gray-200"
 					>SKU</th
 				>
 				<th
@@ -87,7 +84,6 @@
 		<tbody>
 			{#each shipment.lines as line (line.id)}
 				<tr class="border-b border-gray-100">
-					<td class="px-4 py-2 font-mono text-gray-700">{line.run_number}</td>
 					<td class="px-4 py-2 text-gray-700">{line.display_label}</td>
 					<td class="px-4 py-2 text-right tabular-nums text-gray-600">{line.rolls}</td>
 					<td class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"

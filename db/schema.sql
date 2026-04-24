@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS inventory_transactions (
   id               INT AUTO_INCREMENT PRIMARY KEY,
   sku_id           INT NOT NULL,
   transaction_type ENUM('RECEIPT','CONSUMPTION','ADJUSTMENT_IN','ADJUSTMENT_OUT') NOT NULL,
-  sqft_quantity    INT NOT NULL,   -- always positive
+  sqft_quantity    INT NOT NULL,   -- always positive (magnitude of change)
+  counted_sqft     INT NULL,       -- absolute count entered by user (INVENTORY_COUNT rows only)
   reference_type   ENUM('PO_LINE','PRODUCTION_RUN','MANUAL') DEFAULT 'MANUAL',
   reference_id     INT,
   memo             TEXT,
@@ -148,5 +149,18 @@ CREATE TABLE IF NOT EXISTS work_order_lines (
   FOREIGN KEY (sku_id) REFERENCES material_skus(id)
 );
 
+CREATE TABLE IF NOT EXISTS inventory_counts (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  memo       VARCHAR(255),
+  count_date DATE NOT NULL DEFAULT (CURDATE()),
+  created_by INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES app_users(id)
+);
+
 -- Seed a default user (add more via MySQL directly or a future admin screen)
 INSERT IGNORE INTO app_users (id, display_name, role) VALUES (1, 'Admin', 'admin');
+
+-- Migrations for existing installs:
+-- CREATE TABLE IF NOT EXISTS inventory_counts ... (see above)
+-- ALTER TABLE inventory_transactions MODIFY COLUMN reference_type ENUM('PO_LINE','PRODUCTION_RUN','MANUAL','INVENTORY_COUNT') DEFAULT 'MANUAL';

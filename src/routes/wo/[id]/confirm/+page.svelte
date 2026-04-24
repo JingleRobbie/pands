@@ -149,9 +149,11 @@
 											onchange={toggleAllRuns}
 										/>
 									</th>
-									<th class="px-4 py-2 text-left text-gray-600">Run #</th>
-									<th class="px-4 py-2 text-left text-gray-600">SKU</th>
+									<th class="px-4 py-2 text-left text-gray-600">Roll For</th>
 									<th class="px-4 py-2 text-left text-gray-600">Facing</th>
+									<th class="px-4 py-2 text-right text-gray-600">Thickness</th>
+									<th class="px-4 py-2 text-right text-gray-600">Width</th>
+									<th class="px-4 py-2 text-right text-gray-600">Length</th>
 									<th class="px-4 py-2 text-left text-gray-600">Date</th>
 									<th class="px-4 py-2 text-right text-gray-600">Scheduled</th>
 									<th class="px-4 py-2 text-right text-gray-600">Actual Rolls</th>
@@ -163,7 +165,7 @@
 									{#if group.runs.length > 1}
 										<tr>
 											<td
-												colspan="8"
+												colspan="10"
 												class="px-4 py-1 bg-gray-50 border-y border-gray-200"
 											>
 												<span
@@ -189,13 +191,20 @@
 													onchange={() => toggleRun(run.id)}
 												/>
 											</td>
-											<td class="px-4 py-2 font-mono text-xs">
-												<label for="confirm-{run.id}" class="cursor-pointer"
-													>{run.run_number}</label
-												>
-											</td>
-											<td class="px-4 py-2">{run.sku_label}</td>
+											<td class="px-4 py-2 text-gray-500">{run.rollfor}</td>
 											<td class="px-4 py-2 text-gray-500">{run.facing}</td>
+											<td
+												class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
+												>{run.thickness_in}"</td
+											>
+											<td
+												class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
+												>{run.width_in}"</td
+											>
+											<td
+												class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
+												>{run.length_ft}'</td
+											>
 											<td class="px-4 py-2">
 												<input
 													type="date"
@@ -262,8 +271,11 @@
 				<table class="w-full text-sm">
 					<thead>
 						<tr class="border-b border-gray-100">
-							<th class="px-4 py-2 text-left text-gray-600">Run #</th>
-							<th class="px-4 py-2 text-left text-gray-600">SKU</th>
+							<th class="px-4 py-2 text-left text-gray-600">Roll For</th>
+							<th class="px-4 py-2 text-left text-gray-600">Facing</th>
+							<th class="px-4 py-2 text-right text-gray-600">Thickness</th>
+							<th class="px-4 py-2 text-right text-gray-600">Width</th>
+							<th class="px-4 py-2 text-right text-gray-600">Length</th>
 							<th class="px-4 py-2 text-left text-gray-600">Date</th>
 							<th class="px-4 py-2 text-right text-gray-600">Rolls</th>
 							<th class="px-4 py-2 text-right text-gray-600">Sq Ft</th>
@@ -272,8 +284,17 @@
 					<tbody>
 						{#each confirmedRuns as run (run.id)}
 							<tr class="border-b border-gray-50 text-gray-400">
-								<td class="px-4 py-2 font-mono text-xs">{run.run_number}</td>
-								<td class="px-4 py-2">{run.sku_label}</td>
+								<td class="px-4 py-2">{run.rollfor}</td>
+								<td class="px-4 py-2">{run.facing}</td>
+								<td class="px-4 py-2 text-right tabular-nums font-mono"
+									>{run.thickness_in}"</td
+								>
+								<td class="px-4 py-2 text-right tabular-nums font-mono"
+									>{run.width_in}"</td
+								>
+								<td class="px-4 py-2 text-right tabular-nums font-mono"
+									>{run.length_ft}'</td
+								>
 								<td class="px-4 py-2">{fmtDate(run.run_date)}</td>
 								<td class="px-4 py-2 text-right tabular-nums">{run.rolls_actual}</td
 								>

@@ -189,6 +189,14 @@ export async function confirmRun(runId, rollsActual, userId, runDate = null) {
 		]);
 		if (!run) throw new Error('Production run not found.');
 		if (run.status === 'COMPLETED') throw new Error('This run is already completed.');
+		if (run.run_date) {
+			const runDateStr =
+				run.run_date instanceof Date
+					? run.run_date.toISOString().slice(0, 10)
+					: String(run.run_date).slice(0, 10);
+			if (todayStr() < runDateStr)
+				throw new Error(`Cannot confirm a run before its run date (${runDateStr}).`);
+		}
 		if (rollsActual > run.rolls_scheduled)
 			throw new Error(
 				`Cannot record ${rollsActual} rolls — only ${run.rolls_scheduled} rolls were scheduled.`

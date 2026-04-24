@@ -89,7 +89,6 @@
 					<table class="w-full text-xs">
 						<thead
 							><tr class="border-b border-gray-100">
-								<th class="px-4 py-1.5 text-left text-gray-500">Run #</th>
 								<th class="px-4 py-1.5 text-left text-gray-500">Date</th>
 								<th class="px-4 py-1.5 text-right text-gray-500">Sqft</th>
 								<th class="px-4 py-1.5 text-left text-gray-500">Status</th>
@@ -98,7 +97,6 @@
 						<tbody>
 							{#each item.runs as run (run.id)}
 								<tr class="border-b border-gray-50">
-									<td class="px-4 py-1.5 font-mono">{run.run_number}</td>
 									<td class="px-4 py-1.5">{fmtDate(run.run_date)}</td>
 									<td class="px-4 py-1.5 text-right font-mono"
 										>{Math.round(run.sqft_scheduled).toLocaleString()}</td

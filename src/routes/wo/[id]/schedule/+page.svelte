@@ -53,9 +53,11 @@
 			<table class="w-full text-sm">
 				<thead>
 					<tr class="border-b border-gray-100 bg-gray-50">
-						<th class="px-4 py-2 text-left text-gray-500 font-medium">SKU</th>
+						<th class="px-4 py-2 text-left text-gray-500 font-medium">Roll For</th>
 						<th class="px-4 py-2 text-left text-gray-500 font-medium">Facing</th>
-						<th class="px-4 py-2 text-right text-gray-500 font-medium">Roll For</th>
+						<th class="px-4 py-2 text-right text-gray-500 font-medium">Thickness</th>
+						<th class="px-4 py-2 text-right text-gray-500 font-medium">Width</th>
+						<th class="px-4 py-2 text-right text-gray-500 font-medium">Length</th>
 						<th class="px-4 py-2 text-right text-gray-500 font-medium">Remaining</th>
 						<th class="px-4 py-2 text-right text-gray-500 font-medium"
 							>Rolls to schedule</th
@@ -69,10 +71,17 @@
 							<td class="hidden"
 								><input type="hidden" name="line_id" value={line.id} /></td
 							>
-							<td class="px-4 py-2 font-medium text-gray-800">{line.display_label}</td
-							>
+							<td class="px-4 py-2 text-gray-500">{line.rollfor}</td>
 							<td class="px-4 py-2 text-gray-500">{line.facing}</td>
-							<td class="px-4 py-2 text-right text-gray-500">{line.rollfor}</td>
+							<td class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
+								>{line.thickness_in}"</td
+							>
+							<td class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
+								>{line.width_in}"</td
+							>
+							<td class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
+								>{line.length_ft}'</td
+							>
 							<td class="px-4 py-2 text-right tabular-nums text-gray-600"
 								>{line.rollsUnscheduled}</td
 							>

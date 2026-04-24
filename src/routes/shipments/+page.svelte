@@ -1,4 +1,5 @@
 <script>
+	import { goto } from '$app/navigation';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data } = $props();
 </script>
@@ -28,14 +29,11 @@
 				</thead>
 				<tbody class="divide-y divide-gray-100 bg-white">
 					{#each data.shipments as s (s.id)}
-						<tr class="hover:bg-gray-50">
-							<td class="px-4 py-3">
-								<a
-									href="/shipments/{s.id}"
-									class="font-medium text-blue-600 hover:underline"
-									>{s.shipment_number}</a
-								>
-							</td>
+						<tr
+							class="hover:bg-gray-50 cursor-pointer"
+							onclick={() => goto(`/shipments/${s.id}`)}
+						>
+							<td class="px-4 py-3 font-medium text-gray-900">{s.shipment_number}</td>
 							<td class="px-4 py-3 text-gray-700">{s.customer_name}</td>
 							<td class="px-4 py-3 text-gray-600">{s.job_name}</td>
 							<td class="px-4 py-3 text-gray-600">{fmtDate(s.ship_date)}</td>
