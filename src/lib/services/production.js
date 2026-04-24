@@ -141,13 +141,27 @@ export async function scheduleGroup(woId, items, runDate, userId) {
 				}
 			}
 
-			// Lazy-create the group only when the first new run actually needs inserting
+			// Lazy-find-or-create the group on first new INSERT in this batch
 			if (groupId === null) {
-				const [{ insertId }] = await conn.query(
-					'INSERT INTO production_run_groups (created_by) VALUES (?)',
-					[userId ?? null]
-				);
-				groupId = insertId;
+				if (runDate) {
+					const [[existingGroup]] = await conn.query(
+						`SELECT pr.group_id
+						 FROM production_runs pr
+						 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
+						 WHERE wol.wo_id = ? AND pr.run_date = ? AND pr.status != 'COMPLETED'
+						   AND pr.group_id IS NOT NULL
+						 LIMIT 1`,
+						[woId, runDate]
+					);
+					if (existingGroup?.group_id) groupId = existingGroup.group_id;
+				}
+				if (groupId === null) {
+					const [{ insertId }] = await conn.query(
+						'INSERT INTO production_run_groups (created_by) VALUES (?)',
+						[userId ?? null]
+					);
+					groupId = insertId;
+				}
 			}
 
 			const runNumber = await nextRunNumber(conn);

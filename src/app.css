@@ -112,3 +112,22 @@
 		@apply text-green-700;
 	}
 }
+
+@media print {
+	.no-print {
+		display: none !important;
+	}
+	aside {
+		display: none !important;
+	}
+	/* Reset the app shell height/overflow constraints so page content flows normally */
+	.print-root {
+		display: block !important;
+		height: auto !important;
+		overflow: visible !important;
+	}
+	.print-root > div {
+		height: auto !important;
+		overflow: visible !important;
+	}
+}

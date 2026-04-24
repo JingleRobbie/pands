@@ -104,7 +104,10 @@
 							>
 								<span class="text-green-400 font-bold">N</span> / total — produced /
 								total<br />
-								<span class="text-blue-400 font-bold">+N</span> — scheduled
+								<span class="text-blue-400 font-bold">+N</span> — scheduled<br />
+								<span class="text-green-300 font-bold">N shipped</span> — on a
+								SHIPPED shipment<br />
+								<span class="text-amber-300">N pending</span> — on a DRAFT shipment
 							</span>
 						</span>
 					</th>
@@ -135,6 +138,16 @@
 							{#if line.rolls_scheduled > 0}
 								<div class="text-xs text-blue-500">
 									+{line.rolls_scheduled} scheduled
+								</div>
+							{/if}
+							{#if line.rolls_shipped > 0}
+								<div class="text-xs text-green-600 font-medium">
+									{line.rolls_shipped} shipped
+								</div>
+							{/if}
+							{#if line.rolls_in_draft > 0}
+								<div class="text-xs text-amber-600">
+									{line.rolls_in_draft} pending shipment
 								</div>
 							{/if}
 						</td>

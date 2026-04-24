@@ -3,10 +3,11 @@
 	import { goto } from '$app/navigation';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { wo, runs, matrix, user } = data;
+	const { wo, matrix, user } = data;
 
-	const scheduledRuns = $derived(runs.filter((r) => r.status !== 'COMPLETED'));
-	const confirmedRuns = $derived(runs.filter((r) => r.status === 'COMPLETED'));
+	let localRuns = $state(data.runs);
+	const scheduledRuns = $derived(localRuns.filter((r) => r.status !== 'COMPLETED'));
+	const confirmedRuns = $derived(localRuns.filter((r) => r.status === 'COMPLETED'));
 
 	const groupedScheduled = $derived(() => {
 		const groups = [];
@@ -23,7 +24,7 @@
 		return groups;
 	});
 
-	let checkedRunIds = $state(new Set(runs.map((r) => r.id)));
+	let checkedRunIds = $state(new Set(localRuns.map((r) => r.id)));
 	const allChecked = $derived(scheduledRuns.every((r) => checkedRunIds.has(r.id)));
 	const someChecked = $derived(scheduledRuns.some((r) => checkedRunIds.has(r.id)) && !allChecked);
 	function toggleAllRuns() {
@@ -52,7 +53,7 @@
 		return d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10);
 	}
 
-	let dates = $state(Object.fromEntries(runs.map((r) => [r.id, toDateInput(r.run_date)])));
+	let dates = $state(Object.fromEntries(localRuns.map((r) => [r.id, toDateInput(r.run_date)])));
 	let fillDate = $state('');
 
 	function applyDateToAll() {
@@ -315,9 +316,14 @@
 		<form
 			method="POST"
 			action="?/remove"
-			use:enhance={() => () => {
-				deleteDialog.close();
-				confirmDeleteId = null;
+			use:enhance={() => {
+				const deletedId = confirmDeleteId;
+				return () => {
+					localRuns = localRuns.filter((r) => r.id !== deletedId);
+					checkedRunIds = new Set([...checkedRunIds].filter((id) => id !== deletedId));
+					deleteDialog.close();
+					confirmDeleteId = null;
+				};
 			}}
 		>
 			<input type="hidden" name="run_id" value={confirmDeleteId} />

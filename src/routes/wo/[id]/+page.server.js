@@ -18,7 +18,21 @@ export async function load({ params, locals }) {
 		          SELECT SUM(pr.rolls_scheduled)
 		          FROM production_runs pr
 		          WHERE pr.wo_line_id = wol.id AND pr.status != 'COMPLETED'
-		        ), 0) AS rolls_scheduled
+		        ), 0) AS rolls_scheduled,
+		        COALESCE((
+		          SELECT SUM(sl.rolls)
+		          FROM shipment_lines sl
+		          JOIN production_runs pr2 ON pr2.id = sl.production_run_id
+		          JOIN shipments s ON s.id = sl.shipment_id
+		          WHERE pr2.wo_line_id = wol.id AND s.status = 'SHIPPED'
+		        ), 0) AS rolls_shipped,
+		        COALESCE((
+		          SELECT SUM(sl.rolls)
+		          FROM shipment_lines sl
+		          JOIN production_runs pr2 ON pr2.id = sl.production_run_id
+		          JOIN shipments s ON s.id = sl.shipment_id
+		          WHERE pr2.wo_line_id = wol.id AND s.status = 'DRAFT'
+		        ), 0) AS rolls_in_draft
 		 FROM work_order_lines wol
 		 JOIN material_skus ms ON ms.id = wol.sku_id
 		 WHERE wol.wo_id = ?

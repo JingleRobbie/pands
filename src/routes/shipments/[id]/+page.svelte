@@ -97,12 +97,19 @@
 	<table class="w-full text-sm border border-gray-200">
 		<thead>
 			<tr class="bg-gray-100">
+				<th
+					class="px-4 py-2 text-right font-semibold text-gray-700 border-b border-gray-200"
+					>Rolls</th
+				>
+				<th class="px-4 py-2 text-left font-semibold text-gray-700 border-b border-gray-200"
+					>Roll For</th
+				>
 				<th class="px-4 py-2 text-left font-semibold text-gray-700 border-b border-gray-200"
 					>SKU</th
 				>
 				<th
 					class="px-4 py-2 text-right font-semibold text-gray-700 border-b border-gray-200"
-					>Rolls</th
+					>Length</th
 				>
 				<th
 					class="px-4 py-2 text-right font-semibold text-gray-700 border-b border-gray-200"
@@ -113,8 +120,12 @@
 		<tbody>
 			{#each shipment.lines as line (line.id)}
 				<tr class="border-b border-gray-100">
-					<td class="px-4 py-2 text-gray-700">{line.display_label}</td>
 					<td class="px-4 py-2 text-right tabular-nums text-gray-600">{line.rolls}</td>
+					<td class="px-4 py-2 text-gray-600">{line.rollfor ?? '—'}</td>
+					<td class="px-4 py-2 text-gray-700">{line.display_label}</td>
+					<td class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
+						>{line.length_ft} ft</td
+					>
 					<td class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
 						>{fmtSqft(line.sqft)}</td
 					>
@@ -123,7 +134,7 @@
 		</tbody>
 		<tfoot>
 			<tr class="bg-gray-50 font-semibold">
-				<td colspan="2" class="px-4 py-2 text-gray-700">Total</td>
+				<td colspan="3" class="px-4 py-2 text-gray-700">Total</td>
 				<td class="px-4 py-2 text-right tabular-nums text-gray-800">{totalRolls}</td>
 				<td class="px-4 py-2 text-right tabular-nums font-mono text-gray-800"
 					>{fmtSqft(totalSqft)}</td

@@ -9,7 +9,7 @@
 	<link rel="stylesheet" href="/css/app.css" />
 </svelte:head>
 
-<div class="bg-gray-50 h-screen overflow-hidden flex">
+<div class="print-root bg-gray-50 h-screen overflow-hidden flex">
 	<!-- Sidebar -->
 	<aside
 		class="h-screen flex-shrink-0 flex flex-col transition-[width] duration-200 overflow-y-auto overflow-x-hidden"
