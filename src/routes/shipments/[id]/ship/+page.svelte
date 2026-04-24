@@ -5,6 +5,10 @@
 	const { shipment } = data;
 
 	let lineRolls = $state(new Map(shipment.lines.map((l) => [l.id, l.rolls])));
+	let confirmDialog;
+	function openConfirm() {
+		confirmDialog.showModal();
+	}
 	function setLineRolls(id, val) {
 		const next = new Map(lineRolls);
 		next.set(id, val);
@@ -33,7 +37,15 @@
 		<span class="badge-amber">{shipment.status}</span>
 	</div>
 
-	<form method="POST" use:enhance class="space-y-6">
+	<form
+		method="POST"
+		use:enhance={() =>
+			({ update }) => {
+				confirmDialog?.close();
+				return update();
+			}}
+		class="space-y-6"
+	>
 		{#if form?.error}
 			<p class="text-red-600 text-sm">{form.error}</p>
 		{/if}
@@ -131,8 +143,29 @@
 		</div>
 
 		<div class="flex gap-3">
-			<button type="submit" class="btn-primary">Confirm &amp; Mark Shipped</button>
+			<button type="button" class="btn-primary" onclick={openConfirm}
+				>Confirm &amp; Mark Shipped</button
+			>
 			<a href="/shipments/{shipment.id}" class="btn-secondary">Cancel</a>
 		</div>
+
+		<dialog
+			bind:this={confirmDialog}
+			class="rounded-lg shadow-xl p-6 w-96 backdrop:bg-black/30"
+		>
+			<p class="text-sm font-medium text-gray-900 mb-1">Mark shipment as SHIPPED?</p>
+			<p class="text-xs text-gray-500 mb-4">
+				{totalRolls} rolls · {fmtSqft(totalSqft)} sq ft will be committed. This deducts inventory
+				and cannot be undone.
+			</p>
+			<div class="flex gap-2 justify-end">
+				<button
+					type="button"
+					class="btn-secondary btn-sm"
+					onclick={() => confirmDialog.close()}>Cancel</button
+				>
+				<button type="submit" class="btn-primary btn-sm">Confirm</button>
+			</div>
+		</dialog>
 	</form>
 </div>

@@ -318,10 +318,23 @@ export async function getShipment(id) {
 export async function getAllShipments() {
 	const [rows] = await db.query(
 		`SELECT s.id, s.shipment_number, s.ship_date, s.status,
-		        wo.so_number, wo.job_name,
+		        wo.id AS wo_id, wo.so_number, wo.job_name,
 		        c.name AS customer_name,
 		        SUM(sl.sqft) AS total_sqft,
-		        SUM(sl.rolls) AS total_rolls
+		        SUM(sl.rolls) AS total_rolls,
+		        (
+		          EXISTS (SELECT 1 FROM work_order_lines wl3 WHERE wl3.wo_id = wo.id)
+		          AND
+		          (SELECT COUNT(*) FROM work_order_lines wl
+		             WHERE wl.wo_id = wo.id AND wl.rolls_produced < wl.qty) = 0
+		          AND
+		          (SELECT COALESCE(SUM(sl2.rolls), 0)
+		             FROM shipments s2
+		             JOIN shipment_lines sl2 ON sl2.shipment_id = s2.id
+		             WHERE s2.wo_id = wo.id AND s2.status = 'SHIPPED')
+		          >=
+		          (SELECT COALESCE(SUM(wl2.qty), 0) FROM work_order_lines wl2 WHERE wl2.wo_id = wo.id)
+		        ) AS wo_fully_shipped
 		 FROM shipments s
 		 JOIN work_orders wo ON wo.id = s.wo_id
 		 JOIN customers c ON c.id = s.customer_id

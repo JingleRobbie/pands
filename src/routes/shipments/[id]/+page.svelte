@@ -5,6 +5,10 @@
 
 	const totalRolls = shipment.lines.reduce((s, l) => s + l.rolls, 0);
 	const totalSqft = shipment.lines.reduce((s, l) => s + l.sqft, 0);
+
+	let dismissed = $state(false);
+	const showCreated = $derived(data.justCreated && !dismissed);
+	const showShipped = $derived(data.justShipped && !dismissed);
 </script>
 
 <svelte:head>
@@ -38,6 +42,31 @@
 		<button onclick={() => window.print()} class="btn-secondary btn-sm">Print</button>
 	</div>
 </div>
+
+{#if showCreated}
+	<div
+		class="no-print mb-0 mx-6 mt-3 px-4 py-3 rounded-md text-sm bg-green-50 text-green-800 border border-green-200 flex items-center justify-between"
+	>
+		<span>Shipment {shipment.shipment_number} created as DRAFT.</span>
+		<button
+			type="button"
+			class="text-green-700 hover:text-green-900 leading-none"
+			onclick={() => (dismissed = true)}>×</button
+		>
+	</div>
+{/if}
+{#if showShipped}
+	<div
+		class="no-print mb-0 mx-6 mt-3 px-4 py-3 rounded-md text-sm bg-green-50 text-green-800 border border-green-200 flex items-center justify-between"
+	>
+		<span>Shipment {shipment.shipment_number} marked as SHIPPED.</span>
+		<button
+			type="button"
+			class="text-green-700 hover:text-green-900 leading-none"
+			onclick={() => (dismissed = true)}>×</button
+		>
+	</div>
+{/if}
 
 <div class="p-8 max-w-4xl mx-auto">
 	<div class="flex justify-between items-start mb-8">

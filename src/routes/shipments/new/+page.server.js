@@ -63,6 +63,6 @@ export const actions = {
 		} catch (err) {
 			return fail(500, { error: err.message });
 		}
-		redirect(303, `/shipments/${shipmentId}`);
+		redirect(303, `/shipments/${shipmentId}?created=1`);
 	},
 };

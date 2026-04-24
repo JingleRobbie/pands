@@ -26,6 +26,6 @@ export const actions = {
 		} catch (err) {
 			return fail(500, { error: err.message });
 		}
-		redirect(303, `/shipments/${params.id}`);
+		redirect(303, `/shipments/${params.id}?shipped=1`);
 	},
 };
