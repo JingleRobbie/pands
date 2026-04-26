@@ -1,9 +1,19 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
 	const { wo, matrix, user } = data;
+
+	const highlightId = $derived(parseInt($page.url.searchParams.get('highlight')) || null);
+	$effect(() => {
+		if (highlightId) {
+			document
+				.getElementById(`run-${highlightId}`)
+				?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}
+	});
 
 	let localRuns = $state(data.runs);
 	const scheduledRuns = $derived(localRuns.filter((r) => r.status !== 'COMPLETED'));
@@ -193,9 +203,12 @@
 									{/if}
 									{#each group.runs as run (run.id)}
 										<tr
-											class="border-b border-gray-50 {group.runs.length > 1
-												? 'border-l-2 border-l-indigo-200'
-												: ''}"
+											id="run-{run.id}"
+											class="border-b border-gray-50 {highlightId === run.id
+												? 'border-l-4 border-l-yellow-400 bg-yellow-50'
+												: group.runs.length > 1
+													? 'border-l-2 border-l-indigo-200'
+													: ''}"
 										>
 											<td class="px-4 py-2">
 												<input

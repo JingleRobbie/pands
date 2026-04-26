@@ -1,8 +1,10 @@
 <script>
 	import '../app.css';
 	import { page } from '$app/stores';
+	import SearchOverlay from '$lib/components/SearchOverlay.svelte';
 	let { data, children } = $props();
 	let collapsed = $state(data.appUser?.sidebar_collapsed ?? false);
+	let searchOpen = $state(false);
 </script>
 
 <svelte:head>
@@ -47,6 +49,28 @@
 		</div>
 
 		<nav class="flex-1 py-4 space-y-0.5 px-2">
+			<button
+				onclick={() => (searchOpen = true)}
+				title={collapsed ? 'Search' : ''}
+				class="w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors text-white/70 hover:bg-white/10 hover:text-white mb-1
+				       {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}"
+			>
+				<svg
+					class="w-4 h-4 flex-shrink-0"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					viewBox="0 0 24 24"
+				>
+					<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+				</svg>
+				{#if !collapsed}
+					<span class="flex-1 text-left">Search</span>
+					<kbd class="text-xs text-white/30 border border-white/20 rounded px-1 font-mono"
+						>⌃K</kbd
+					>
+				{/if}
+			</button>
 			{#each [{ href: '/matrix', label: 'Overview', icon: 'grid' }, { href: '/po', label: 'Purchase Orders', icon: 'box' }, { href: '/receiving', label: 'Receiving', icon: 'truck' }, { href: '/wo', label: 'Work Orders', icon: 'clipboard' }, /* { href: '/so', label: 'Sales Orders', icon: 'doc' },  */ { href: '/production', label: 'Production', icon: 'check' }, { href: '/customers', label: 'Customers', icon: 'users' }, { href: '/shipments', label: 'Shipments', icon: 'ship' }, { href: '/calendar', label: 'Calendar', icon: 'cal' }] as nav (nav.href)}
 				<a
 					href={nav.href}
@@ -256,3 +280,5 @@
 		{@render children()}
 	</div>
 </div>
+
+<SearchOverlay bind:open={searchOpen} />
