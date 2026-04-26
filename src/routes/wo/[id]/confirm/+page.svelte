@@ -42,6 +42,7 @@
 
 	let confirmDeleteId = $state(null);
 	let deleteDialog;
+	let justDeleted = $state(false);
 
 	function requestDelete(runId) {
 		confirmDeleteId = runId;
@@ -79,6 +80,19 @@
 				class="mb-4 px-4 py-3 rounded-md text-sm bg-red-50 text-red-800 border border-red-200"
 			>
 				{form.error}
+			</div>
+		{/if}
+
+		{#if justDeleted}
+			<div
+				class="mb-4 px-4 py-3 rounded-md text-sm bg-green-50 text-green-800 border border-green-200 flex items-center justify-between"
+			>
+				<span>Production run deleted.</span>
+				<button
+					type="button"
+					class="text-green-700 hover:text-green-900 leading-none"
+					onclick={() => (justDeleted = false)}>×</button
+				>
 			</div>
 		{/if}
 
@@ -331,6 +345,7 @@
 					checkedRunIds = new Set([...checkedRunIds].filter((id) => id !== deletedId));
 					deleteDialog.close();
 					confirmDeleteId = null;
+					justDeleted = true;
 				};
 			}}
 		>
