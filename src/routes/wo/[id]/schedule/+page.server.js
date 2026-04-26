@@ -50,6 +50,7 @@ export const actions = {
 			.map((woLineId, i) => ({ woLineId, rollsScheduled: rolls[i] }))
 			.filter((item) => item.rollsScheduled > 0);
 
+		if (!runDate) return fail(400, { error: 'Production date is required.' });
 		if (items.length === 0)
 			return fail(400, { error: 'Enter a roll count for at least one line.' });
 

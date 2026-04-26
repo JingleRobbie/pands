@@ -57,6 +57,7 @@
 						name="run_date"
 						type="date"
 						class="form-input py-1 text-sm"
+						required
 					/>
 				</div>
 			</div>
