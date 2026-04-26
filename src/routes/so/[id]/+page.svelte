@@ -19,8 +19,8 @@
 		{#if so.status === 'OPEN' || so.status === 'IN_PROGRESS'}
 			<a href="/so/{so.id}/edit" class="btn-secondary btn-sm">Edit</a>
 		{/if}
-		{#if so.status === 'OPEN' || so.status === 'IN_PROGRESS'}
-			<a href="/so/{so.id}/schedule" class="btn-primary btn-sm">Schedule</a>
+		{#if data.woId && (so.status === 'OPEN' || so.status === 'IN_PROGRESS')}
+			<a href="/wo/{data.woId}/schedule" class="btn-primary btn-sm">Schedule</a>
 		{/if}
 		<button onclick={() => (outlookOpen = !outlookOpen)} class="btn-secondary btn-sm"
 			>Inventory Outlook</button

@@ -6,7 +6,14 @@
 
 	let lineRolls = $state(new Map(shipment.lines.map((l) => [l.id, l.rolls])));
 	let confirmDialog;
+	const anyInvalid = $derived(
+		shipment.lines.some((l) => {
+			const val = lineRolls.get(l.id) ?? l.rolls;
+			return val < 1 || val > l.rolls;
+		})
+	);
 	function openConfirm() {
+		if (anyInvalid) return;
 		confirmDialog.showModal();
 	}
 	function setLineRolls(id, val) {
@@ -108,7 +115,10 @@
 										max={line.rolls}
 										value={lineRolls.get(line.id)}
 										oninput={(e) =>
-											setLineRolls(line.id, parseInt(e.target.value) || 1)}
+											setLineRolls(
+												line.id,
+												Math.max(0, parseInt(e.target.value) || 0)
+											)}
 										class="form-input w-16 text-right tabular-nums text-sm py-1"
 									/>
 								</div>
@@ -142,8 +152,21 @@
 			</table>
 		</div>
 
+		{#if anyInvalid}
+			<div
+				class="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800"
+			>
+				One or more lines has an invalid roll count (must be between 1 and the line
+				maximum). To remove a line entirely, go back and
+				<a href="/shipments/{shipment.id}/edit" class="underline font-medium"
+					>edit the shipment</a
+				>
+				to remove that line before marking as shipped.
+			</div>
+		{/if}
+
 		<div class="flex gap-3">
-			<button type="button" class="btn-primary" onclick={openConfirm}
+			<button type="button" class="btn-primary" onclick={openConfirm} disabled={anyInvalid}
 				>Confirm &amp; Mark Shipped</button
 			>
 			<a href="/shipments/{shipment.id}" class="btn-secondary">Cancel</a>

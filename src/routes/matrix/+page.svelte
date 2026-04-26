@@ -91,7 +91,6 @@
 		>
 		<a href="/po/new" class="btn-secondary btn-sm">+ PO</a>
 		<a href="/so/new" class="btn-secondary btn-sm">+ SO</a>
-		<a href="/production/schedule" class="btn-primary btn-sm">Schedule Run</a>
 	</div>
 </header>
 

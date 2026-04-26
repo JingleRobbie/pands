@@ -8,5 +8,6 @@ export async function load({ params, url }) {
 		shipment,
 		justCreated: url.searchParams.get('created') === '1',
 		justShipped: url.searchParams.get('shipped') === '1',
+		fromWoId: parseInt(url.searchParams.get('wo')) || null,
 	};
 }

@@ -13,12 +13,23 @@ export const actions = {
 		const data = await request.formData();
 
 		const lineRolls = {};
-		for (const [key, val] of data.entries()) {
-			const m = key.match(/^line_rolls_(\d+)$/);
-			if (m) {
-				const v = parseInt(val);
-				if (v > 0) lineRolls[parseInt(m[1])] = v;
+		const invalidLines = [];
+		for (const [key, value] of data.entries()) {
+			if (key.startsWith('line_rolls_')) {
+				const lineId = parseInt(key.replace('line_rolls_', ''));
+				const rolls = parseInt(value);
+				if (isNaN(rolls) || rolls < 1) {
+					invalidLines.push(lineId);
+				} else {
+					lineRolls[lineId] = rolls;
+				}
 			}
+		}
+		if (invalidLines.length > 0) {
+			return fail(400, { error: 'All roll counts must be at least 1.' });
+		}
+		if (Object.keys(lineRolls).length === 0) {
+			return fail(400, { error: 'No roll lines found.' });
 		}
 
 		try {

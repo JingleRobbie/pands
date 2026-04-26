@@ -4,6 +4,7 @@
 	let { data, form } = $props();
 	const { wo, lines, contacts, customers } = data;
 	let addingContact = $state(false);
+	let dismissed = $state(false);
 
 	const totalSqft = lines.reduce((s, l) => s + l.sqft, 0);
 </script>
@@ -13,7 +14,13 @@
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<div class="flex items-center gap-4">
 		<a href="/wo" class="text-gray-400 hover:text-gray-600 text-sm">← Work Orders</a>
-		<h1 class="text-lg font-semibold text-gray-900">WO #{wo.so_number}</h1>
+		<h1 class="text-lg font-semibold text-gray-900">
+			WO #{wo.so_number}{#if wo.customer_id}
+				— {wo.customer_display_name}{:else if wo.customer_name}
+				— <span class="text-amber-600 font-normal text-base italic">{wo.customer_name}</span>
+  <span class="text-amber-500 text-sm font-normal"> (not linked)</span>
+			{/if}
+		</h1>
 	</div>
 	<div class="flex items-center gap-2">
 		{#if wo.status !== 'COMPLETE' && wo.status !== 'CANCELLED'}
@@ -25,6 +32,36 @@
 		{/if}
 	</div>
 </header>
+
+{#if data.justCreatedShipmentId && !dismissed}
+	<div
+		class="mx-6 mt-4 px-4 py-3 rounded-md text-sm bg-green-50 text-green-800 border border-green-200 flex items-center justify-between"
+	>
+		<span
+			>Shipment created. <a
+				href="/shipments/{data.justCreatedShipmentId}"
+				class="underline font-medium">View packing slip →</a
+			></span
+		>
+		<button
+			type="button"
+			class="text-green-700 hover:text-green-900 leading-none"
+			onclick={() => (dismissed = true)}>×</button
+		>
+	</div>
+{/if}
+{#if data.justCreatedCustomer && !dismissed}
+	<div
+		class="mx-6 mt-4 px-4 py-3 rounded-md text-sm bg-green-50 text-green-800 border border-green-200 flex items-center justify-between"
+	>
+		<span>Customer saved and linked to this work order.</span>
+		<button
+			type="button"
+			class="text-green-700 hover:text-green-900 leading-none"
+			onclick={() => (dismissed = true)}>×</button
+		>
+	</div>
+{/if}
 
 <main class="p-6 max-w-4xl space-y-4">
 	<div class="card">
@@ -52,7 +89,7 @@
 							{/each}
 						</select>
 						<button type="submit" class="btn-primary btn-sm">Link</button>
-						<a href="/customers/new" class="btn-secondary btn-sm">New</a>
+						<a href="/customers/new?wo={wo.id}" class="btn-secondary btn-sm">New</a>
 					</form>
 					{#if form?.linkError}
 						<p class="text-red-600 text-xs mt-1">{form.linkError}</p>

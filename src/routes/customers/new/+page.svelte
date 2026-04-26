@@ -1,6 +1,7 @@
 <script>
 	import { enhance } from '$app/forms';
-	let { form } = $props();
+	let { data, form } = $props();
+	const woId = form?.woId ?? data.woId;
 </script>
 
 <div class="p-6 max-w-md">
@@ -11,6 +12,7 @@
 			<p class="text-red-600 text-sm">{form.error}</p>
 		{/if}
 
+		<input type="hidden" name="wo_id" value={woId ?? ''} />
 		<div class="card card-body space-y-4">
 			<div>
 				<label for="name" class="form-label">Company Name *</label>
@@ -24,7 +26,7 @@
 
 		<div class="flex gap-3">
 			<button type="submit" class="btn-primary">Create Customer</button>
-			<a href="/customers" class="btn-secondary">Cancel</a>
+			<a href={woId ? `/wo/${woId}` : '/customers'} class="btn-secondary">Cancel</a>
 		</div>
 	</form>
 </div>

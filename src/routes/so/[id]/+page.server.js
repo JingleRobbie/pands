@@ -36,7 +36,8 @@ export async function load({ params }) {
 		})
 	);
 
+	const [[wo]] = await db.query('SELECT id FROM work_orders WHERE so_number = ?', [so.so_number]);
 	const skuIds = [...new Set(lines.map((l) => l.sku_id))];
 	const matrix = await getMatrixDataForSkus(skuIds);
-	return { so, lineData, matrix };
+	return { so, lineData, matrix, woId: wo?.id ?? null };
 }

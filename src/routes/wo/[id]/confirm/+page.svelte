@@ -86,7 +86,8 @@
 			<div class="card mb-4">
 				<div class="card-body space-y-2">
 					<p class="text-sm font-medium text-gray-800">
-						{form.confirmed} run{form.confirmed === 1 ? '' : 's'} produced.
+						{form.confirmed} run{form.confirmed === 1 ? '' : 's'} confirmed. Inventory has
+						been deducted.
 					</p>
 					{#if form.shortfalls.length > 0}
 						<p class="text-sm text-amber-700">
@@ -116,7 +117,7 @@
 			{#if scheduledRuns.length === 0}
 				<div class="card">
 					<div class="card-body text-sm text-gray-500">
-						All production runs for this work order are already completed.
+						All runs confirmed. No pending production for this work order.
 					</div>
 				</div>
 			{:else}
@@ -232,15 +233,22 @@
 													class="form-input w-20 text-right tabular-nums"
 												/>
 											</td>
-											<td class="px-4 py-2 text-center">
-												{#if user?.role === 'admin'}
-													<button
-														type="button"
-														class="text-gray-300 hover:text-red-500 font-bold leading-none text-lg"
-														onclick={() => requestDelete(run.id)}
-														>×</button
+											<td class="px-4 py-2 text-right">
+												<div class="flex items-center justify-end gap-2">
+													<a
+														href="/production/{run.id}/edit"
+														class="text-gray-400 hover:text-blue-600 text-xs"
+														>Edit</a
 													>
-												{/if}
+													{#if user?.role === 'admin'}
+														<button
+															type="button"
+															class="text-gray-300 hover:text-red-500 font-bold leading-none text-lg"
+															onclick={() => requestDelete(run.id)}
+															>×</button
+														>
+													{/if}
+												</div>
 											</td>
 										</tr>
 									{/each}

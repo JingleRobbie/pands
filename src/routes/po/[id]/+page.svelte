@@ -22,6 +22,7 @@
 	</div>
 	<div class="flex gap-2">
 		{#if po.status === 'OPEN'}
+			<a href="/receiving/{po.id}" class="btn-secondary btn-sm">Record Receipt</a>
 			<a href="/po/{po.id}/edit" class="btn-secondary btn-sm">Edit</a>
 			{#if user?.role === 'admin'}
 				<form method="POST" action="?/cancel" use:enhance>

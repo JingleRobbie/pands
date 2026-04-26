@@ -24,7 +24,10 @@
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Edit PO {po.po_number}</h1>
-	<a href="/po/{po.id}" class="btn-secondary btn-sm">Cancel</a>
+	<div class="flex gap-2">
+		<a href="/receiving/{po.id}" class="btn-secondary btn-sm">Record Receipt</a>
+		<a href="/po/{po.id}" class="btn-secondary btn-sm">Cancel</a>
+	</div>
 </header>
 <main class="p-6">
 	<div class="max-w-2xl">

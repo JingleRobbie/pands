@@ -5,6 +5,9 @@
 	const { wo, schedulableLines, doneLines } = data;
 
 	let rolls = $state(Object.fromEntries(schedulableLines.map((l) => [l.id, l.rollsUnscheduled])));
+	function zeroAll() {
+		for (const line of schedulableLines) rolls[line.id] = 0;
+	}
 </script>
 
 <svelte:head><title>Schedule WO {wo.so_number} — PandS</title></svelte:head>
@@ -39,7 +42,14 @@
 	<form method="POST" use:enhance>
 		<div class="card">
 			<div class="card-header flex items-center justify-between">
-				<span class="font-semibold text-sm text-gray-700">Lines to schedule</span>
+				<div class="flex items-center gap-3">
+					<span class="font-semibold text-sm text-gray-700">Lines to schedule</span>
+					<button
+						type="button"
+						onclick={zeroAll}
+						class="text-gray-300 hover:text-gray-500 text-xs">Zero All</button
+					>
+				</div>
 				<div class="flex items-center gap-2">
 					<label for="run_date" class="form-label mb-0">Production date</label>
 					<input

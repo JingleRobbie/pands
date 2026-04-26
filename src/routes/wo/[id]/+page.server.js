@@ -2,7 +2,7 @@ import { db } from '$lib/db.js';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { getAllCustomers } from '$lib/services/customers.js';
 
-export async function load({ params, locals }) {
+export async function load({ params, locals, url }) {
 	const [[wo]] = await db.query(
 		`SELECT wo.*, c.name AS customer_display_name
 		 FROM work_orders wo
@@ -46,7 +46,15 @@ export async function load({ params, locals }) {
 
 	const customers = await getAllCustomers();
 
-	return { wo, lines, contacts, customers, user: locals.appUser };
+	return {
+		wo,
+		lines,
+		contacts,
+		customers,
+		user: locals.appUser,
+		justCreatedShipmentId: parseInt(url.searchParams.get('shipment_created')) || null,
+		justCreatedCustomer: url.searchParams.get('customer_created') === '1',
+	};
 }
 
 export const actions = {
