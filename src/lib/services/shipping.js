@@ -315,6 +315,10 @@ export async function getShipment(id) {
 	return { ...shipment, lines };
 }
 
+export async function revertShipment(shipmentId) {
+	await db.query("UPDATE shipments SET status = 'DRAFT' WHERE id = ?", [shipmentId]);
+}
+
 export async function getAllShipments() {
 	const [rows] = await db.query(
 		`SELECT s.id, s.shipment_number, s.ship_date, s.status,

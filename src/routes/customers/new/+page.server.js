@@ -25,6 +25,6 @@ export const actions = {
 		} catch (err) {
 			return fail(500, { error: err.message, woId });
 		}
-		redirect(303, woId ? `/wo/${woId}?customer_created=1` : `/customers/${customerId}`);
+		redirect(303, woId ? `/wo/${woId}?customer_created=1` : `/customers`);
 	},
 };

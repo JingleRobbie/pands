@@ -69,7 +69,7 @@
 		<h1 class="text-lg font-semibold text-gray-900">Record Production — {wo.so_number}</h1>
 		<p class="text-sm text-gray-500 mt-0.5">{wo.customer_name} · {wo.job_name}</p>
 	</div>
-	<a href="/production" class="btn-secondary btn-sm">Back</a>
+	<a href="/wo/{wo.id}" class="btn-secondary btn-sm">Back</a>
 </header>
 
 <main class="p-6">
@@ -106,8 +106,8 @@
 							{/each}
 						</ul>
 					{/if}
-					<a href="/production" class="btn-secondary btn-sm inline-block mt-2"
-						>Back to Production</a
+					<a href="/wo/{wo.id}" class="btn-secondary btn-sm inline-block mt-2"
+						>Back to Work Order</a
 					>
 				</div>
 			</div>
@@ -266,7 +266,7 @@
 								Admin access required to confirm runs.
 							</p>
 						{/if}
-						<a href="/production" class="btn-secondary">Cancel</a>
+						<a href="/wo/{wo.id}" class="btn-secondary">Cancel</a>
 					</div>
 				</form>
 			{/if}

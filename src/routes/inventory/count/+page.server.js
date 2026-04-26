@@ -51,6 +51,17 @@ export const actions = {
 		return { preview, memo, countDate };
 	},
 
+	back: async ({ request, locals }) => {
+		if (locals.appUser?.role !== 'admin') error(403, 'Admin only');
+		const data = await request.formData();
+		const memo = data.get('memo')?.trim() || '';
+		const countDate = data.get('count_date')?.trim() || localDate();
+		const skuIds = data.getAll('sku_id').map(Number);
+		const newCounts = data.getAll('new_count').map(Number);
+		const counts = Object.fromEntries(skuIds.map((id, i) => [id, newCounts[i]]));
+		return { back: true, counts, memo, countDate };
+	},
+
 	commit: async ({ request, locals }) => {
 		if (locals.appUser?.role !== 'admin') error(403, 'Admin only');
 		const data = await request.formData();

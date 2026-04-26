@@ -5,9 +5,13 @@
 	const { skus } = data;
 	const today = localDate();
 
-	let dateInput = $state(today);
+	let dateInput = $state(form?.countDate ?? today);
 	let balances = $state({ ...data.balances });
 	let loadingBalances = $state(false);
+
+	$effect(() => {
+		if (form?.back && form.countDate) dateInput = form.countDate;
+	});
 
 	$effect(() => {
 		const date = dateInput;
@@ -77,7 +81,7 @@
 			</div>
 		</div>
 
-		<form method="POST" action="?/commit" use:enhance>
+		<form method="POST" use:enhance>
 			<input type="hidden" name="memo" value={form.memo} />
 			<input type="hidden" name="count_date" value={form.countDate} />
 			{#each form.preview as item (item.skuId)}
@@ -86,9 +90,13 @@
 				<input type="hidden" name="new_count" value={item.newCount} />
 			{/each}
 			<div class="flex items-center gap-4">
-				<button type="submit" class="btn-primary">Confirm & Post</button>
-				<a href="/inventory/count" class="text-sm text-gray-500 hover:text-gray-700"
-					>Go Back</a
+				<button type="submit" formaction="?/commit" class="btn-primary"
+					>Confirm & Post</button
+				>
+				<button
+					type="submit"
+					formaction="?/back"
+					class="text-sm text-gray-500 hover:text-gray-700">Go Back</button
 				>
 			</div>
 		</form>
@@ -114,6 +122,7 @@
 						name="memo"
 						class="form-input"
 						placeholder="e.g. Physical count 2026-04-23"
+						value={form?.back ? form.memo : ''}
 					/>
 				</div>
 			</div>
@@ -164,6 +173,7 @@
 										min="0"
 										class="form-input w-32 py-1 text-right tabular-nums"
 										placeholder="—"
+										value={form?.counts?.[sku.id] ?? ''}
 									/>
 								</td>
 							</tr>

@@ -1,14 +1,18 @@
 <script>
+	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data } = $props();
-	const { shipment } = data;
+	const shipment = $derived(data.shipment);
 
-	const totalRolls = shipment.lines.reduce((s, l) => s + l.rolls, 0);
-	const totalSqft = shipment.lines.reduce((s, l) => s + l.sqft, 0);
+	const totalRolls = $derived(shipment.lines.reduce((s, l) => s + l.rolls, 0));
+	const totalSqft = $derived(shipment.lines.reduce((s, l) => s + l.sqft, 0));
 
 	let dismissed = $state(false);
 	const showCreated = $derived(data.justCreated && !dismissed);
 	const showShipped = $derived(data.justShipped && !dismissed);
+	const showReverted = $derived(data.justReverted && !dismissed);
+
+	let revertDialog;
 </script>
 
 <svelte:head>
@@ -45,6 +49,13 @@
 			<a href="/shipments/{shipment.id}/edit" class="btn-secondary btn-sm">Edit</a>
 			<a href="/shipments/{shipment.id}/ship" class="btn-primary btn-sm">Mark Shipped</a>
 		{/if}
+		{#if shipment.status === 'SHIPPED' && data.user?.role === 'admin'}
+			<button
+				type="button"
+				class="btn-secondary btn-sm text-amber-700 border-amber-300 hover:border-amber-400"
+				onclick={() => revertDialog.showModal()}>Revert to Draft</button
+			>
+		{/if}
 		<button onclick={() => window.print()} class="btn-secondary btn-sm">Print</button>
 	</div>
 </div>
@@ -73,6 +84,42 @@
 		>
 	</div>
 {/if}
+{#if showReverted}
+	<div
+		class="no-print mb-0 mx-6 mt-3 px-4 py-3 rounded-md text-sm bg-amber-50 text-amber-800 border border-amber-200 flex items-center justify-between"
+	>
+		<span>Shipment {shipment.shipment_number} reverted to DRAFT.</span>
+		<button
+			type="button"
+			class="text-amber-700 hover:text-amber-900 leading-none"
+			onclick={() => (dismissed = true)}>×</button
+		>
+	</div>
+{/if}
+
+<dialog bind:this={revertDialog} class="rounded-lg shadow-xl p-6 w-96 backdrop:bg-black/30">
+	<p class="text-sm font-medium text-gray-900 mb-1">Revert shipment to DRAFT?</p>
+	<p class="text-xs text-gray-500 mb-4">
+		The shipment will return to DRAFT status and can be edited or re-shipped. Production run
+		data is not affected.
+	</p>
+	<form
+		method="POST"
+		action="?/revert"
+		use:enhance={() =>
+			async ({ update }) => {
+				revertDialog.close();
+				await update();
+			}}
+	>
+		<div class="flex gap-2 justify-end">
+			<button type="button" class="btn-secondary btn-sm" onclick={() => revertDialog.close()}
+				>Cancel</button
+			>
+			<button type="submit" class="btn-danger btn-sm">Revert to Draft</button>
+		</div>
+	</form>
+</dialog>
 
 <div class="p-8 max-w-4xl mx-auto">
 	<div class="flex justify-between items-start mb-8">
