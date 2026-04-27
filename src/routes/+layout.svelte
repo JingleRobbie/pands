@@ -5,6 +5,26 @@
 	let { data, children } = $props();
 	let collapsed = $state(data.appUser?.sidebar_collapsed ?? false);
 	let searchOpen = $state(false);
+
+	const navItems = [
+		{ href: '/matrix', label: 'Overview', icon: 'grid' },
+		{ href: '/po', label: 'Purchase Orders', icon: 'box' },
+		{ href: '/receiving', label: 'Receiving', icon: 'truck' },
+		{ href: '/wo', label: 'Work Orders', icon: 'clipboard' },
+		{ href: '/production', label: 'Production', icon: 'check' },
+		{ href: '/customers', label: 'Customers', icon: 'users' },
+		{ href: '/shipments', label: 'Shipments', icon: 'ship' },
+		{ href: '/calendar', label: 'Prod Calendar', icon: 'cal' },
+		{ href: '/shipments/calendar', label: 'Ship Calendar', icon: 'cal' },
+	];
+
+	const activeHref = $derived(
+		navItems
+			.filter(
+				(n) => $page.url.pathname === n.href || $page.url.pathname.startsWith(n.href + '/')
+			)
+			.sort((a, b) => b.href.length - a.href.length)[0]?.href ?? ''
+	);
 </script>
 
 <svelte:head>
@@ -71,13 +91,13 @@
 					>
 				{/if}
 			</button>
-			{#each [{ href: '/matrix', label: 'Overview', icon: 'grid' }, { href: '/po', label: 'Purchase Orders', icon: 'box' }, { href: '/receiving', label: 'Receiving', icon: 'truck' }, { href: '/wo', label: 'Work Orders', icon: 'clipboard' }, /* { href: '/so', label: 'Sales Orders', icon: 'doc' },  */ { href: '/production', label: 'Production', icon: 'check' }, { href: '/customers', label: 'Customers', icon: 'users' }, { href: '/shipments', label: 'Shipments', icon: 'ship' }, { href: '/calendar', label: 'Calendar', icon: 'cal' }] as nav (nav.href)}
+			{#each navItems as nav (nav.href)}
 				<a
 					href={nav.href}
 					title={collapsed ? nav.label : ''}
 					class="flex items-center py-2 rounded-md text-sm font-medium transition-colors
 					          {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}
-					          {$page.url.pathname.startsWith(nav.href)
+					          {activeHref === nav.href
 						? 'bg-brand text-white'
 						: 'text-white/70 hover:bg-white/10 hover:text-white'}"
 				>

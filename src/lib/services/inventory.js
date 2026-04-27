@@ -90,7 +90,7 @@ export async function getMatrixData(fromDate = null) {
 	// 5. Scheduled production runs
 	const [prodRuns] = await db.query(
 		`
-		SELECT pr.id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
+		SELECT pr.id, pr.group_id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
 		       wol.facing,
 		       wo.so_number, wo.job_name, wo.id AS wo_id, wo.ship_date, wo.customer_name
 		FROM production_runs pr
@@ -104,19 +104,29 @@ export async function getMatrixData(fromDate = null) {
 
 	const prodRowMap = {};
 	for (const run of prodRuns) {
-		prodRowMap[run.id] = {
-			rowType: 'production',
-			partyName: run.customer_name,
-			description: run.job_name,
-			soNumber: run.so_number,
-			poNumber: '',
-			eventDate: run.run_date,
-			shipDate: run.ship_date,
-			facing: run.facing,
-			runId: run.id,
-			objectId: run.wo_id,
-			deltas: { [run.sku_id]: -Number(run.sqft_scheduled) },
-		};
+		const key = run.group_id ?? run.id;
+		if (!prodRowMap[key]) {
+			prodRowMap[key] = {
+				rowType: 'production',
+				partyName: run.customer_name,
+				description: run.job_name,
+				soNumber: run.so_number,
+				poNumber: '',
+				eventDate: run.run_date,
+				shipDate: run.ship_date,
+				facings: new Set(),
+				groupId: key,
+				objectId: run.wo_id,
+				deltas: {},
+			};
+		}
+		prodRowMap[key].deltas[run.sku_id] =
+			(prodRowMap[key].deltas[run.sku_id] ?? 0) - Number(run.sqft_scheduled);
+		if (run.facing) prodRowMap[key].facings.add(run.facing);
+	}
+	for (const row of Object.values(prodRowMap)) {
+		row.facing = [...row.facings].join(', ');
+		delete row.facings;
 	}
 
 	// 6. Sort dated rows: same date → POs before production runs
@@ -251,7 +261,7 @@ export async function getMatrixDataForSkus(skuIds) {
 	// 5. Scheduled production runs for these SKUs
 	const [prodRuns] = await db.query(
 		`
-		SELECT pr.id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
+		SELECT pr.id, pr.group_id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
 		       wol.facing,
 		       wo.so_number, wo.job_name, wo.id AS wo_id, wo.ship_date, wo.customer_name
 		FROM production_runs pr
@@ -266,19 +276,29 @@ export async function getMatrixDataForSkus(skuIds) {
 
 	const prodRowMap = {};
 	for (const run of prodRuns) {
-		prodRowMap[run.id] = {
-			rowType: 'production',
-			partyName: run.customer_name,
-			description: run.job_name,
-			soNumber: run.so_number,
-			poNumber: '',
-			eventDate: run.run_date,
-			shipDate: run.ship_date,
-			facing: run.facing,
-			runId: run.id,
-			objectId: run.wo_id,
-			deltas: { [run.sku_id]: -Number(run.sqft_scheduled) },
-		};
+		const key = run.group_id ?? run.id;
+		if (!prodRowMap[key]) {
+			prodRowMap[key] = {
+				rowType: 'production',
+				partyName: run.customer_name,
+				description: run.job_name,
+				soNumber: run.so_number,
+				poNumber: '',
+				eventDate: run.run_date,
+				shipDate: run.ship_date,
+				facings: new Set(),
+				groupId: key,
+				objectId: run.wo_id,
+				deltas: {},
+			};
+		}
+		prodRowMap[key].deltas[run.sku_id] =
+			(prodRowMap[key].deltas[run.sku_id] ?? 0) - Number(run.sqft_scheduled);
+		if (run.facing) prodRowMap[key].facings.add(run.facing);
+	}
+	for (const row of Object.values(prodRowMap)) {
+		row.facing = [...row.facings].join(', ');
+		delete row.facings;
 	}
 
 	// 6. Sort dated rows: same date → POs before production runs
@@ -486,6 +506,7 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 	const [prodTxns] = await db.query(
 		`
 		SELECT it.sku_id, it.sqft_quantity, it.reference_id AS pr_id,
+		       pr.group_id,
 		       DATE(it.created_at) AS event_date,
 		       wol.facing,
 		       wo.so_number, wo.job_name, wo.id AS wo_id, wo.ship_date, wo.customer_name
@@ -502,8 +523,9 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 
 	const prodRowMap = {};
 	for (const t of prodTxns) {
-		if (!prodRowMap[t.pr_id]) {
-			prodRowMap[t.pr_id] = {
+		const key = t.group_id ?? t.pr_id;
+		if (!prodRowMap[key]) {
+			prodRowMap[key] = {
 				rowType: 'historical',
 				subType: 'production',
 				partyName: t.customer_name,
@@ -512,13 +534,18 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 				poNumber: '',
 				eventDate: t.event_date,
 				shipDate: t.ship_date,
-				facing: t.facing,
+				facings: new Set(),
 				objectId: t.wo_id,
 				deltas: {},
 			};
 		}
-		prodRowMap[t.pr_id].deltas[t.sku_id] =
-			(prodRowMap[t.pr_id].deltas[t.sku_id] ?? 0) - Number(t.sqft_quantity);
+		prodRowMap[key].deltas[t.sku_id] =
+			(prodRowMap[key].deltas[t.sku_id] ?? 0) - Number(t.sqft_quantity);
+		if (t.facing) prodRowMap[key].facings.add(t.facing);
+	}
+	for (const row of Object.values(prodRowMap)) {
+		row.facing = [...row.facings].join(', ');
+		delete row.facings;
 	}
 
 	// Inventory count adjustment rows

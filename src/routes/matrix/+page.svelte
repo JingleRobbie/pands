@@ -234,7 +234,7 @@
 				</tr>
 
 				<!-- Dated + unscheduled rows -->
-				{#each matrix.rows as row (row.rowType + (row.runId ?? row.woLineId ?? row.objectId))}
+				{#each matrix.rows as row (row.rowType + (row.groupId ?? row.woLineId ?? row.objectId))}
 					{@const href =
 						row.rowType === 'po'
 							? `/po/${row.objectId}`
