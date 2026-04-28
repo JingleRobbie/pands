@@ -72,10 +72,10 @@
 <svelte:head><title>Overview — PandS</title></svelte:head>
 
 <!-- Page header -->
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+<header class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Inventory Overview</h1>
 	<div class="flex items-center gap-2">
-		<select bind:value={historyRange} class="form-select text-sm py-1 px-2 h-8">
+		<select bind:value={historyRange} class="form-select py-1 px-2 h-8">
 			<option value="current">Current</option>
 			<option value="7d">Last 7 days</option>
 			<option value="30d">Last 30 days</option>
@@ -94,7 +94,7 @@
 	</div>
 </header>
 
-<div class="px-6 pt-4 pb-2 flex items-center gap-2 flex-wrap">
+<div class="px-6 pt-2 pb-1 flex items-center gap-2 flex-wrap">
 	{#each thicknesses as t (t)}
 		<button
 			onclick={() => toggleThickness(t)}
@@ -113,37 +113,27 @@
 	{/if}
 </div>
 
-<main class="p-6 overflow-auto">
+<main class="p-3 overflow-auto">
 	<div class="card overflow-x-auto">
 		<table class="matrix-table w-full text-left border-collapse">
 			<thead>
 				<tr>
-					<th class="min-w-[120px]">Name</th>
-					<th class="min-w-[140px]">Description</th>
-					<th class="min-w-[90px]">Order #</th>
-					<th class="min-w-[70px]">Run</th>
-					<th class="min-w-[70px]">Ship</th>
-					<th class="min-w-[70px]">Facing</th>
+					<th rowspan="2" class="min-w-[100px]">Name</th>
+					<th rowspan="2" class="min-w-[100px]">Description</th>
+					<th rowspan="2" class="min-w-[70px]">Order #</th>
+					<th rowspan="2" class="min-w-[50px]">Run</th>
+					<th rowspan="2" class="min-w-[50px]">Ship</th>
+					<th rowspan="2" class="min-w-[50px]">Facing</th>
 					{#each visibleSkus as sku (sku.id)}
-						{@const trimmed = sku.display_label.trim()}
-						<th class="sku-col-start min-w-[50px] align-bottom">
-							<div class="h-16 relative overflow-visible">
-								<span
-									class="absolute bottom-1 left-1/2 inline-block origin-bottom-left -rotate-45 whitespace-nowrap text-xs font-normal"
-								>
-									{trimmed} Δ
-								</span>
-							</div>
-						</th>
-						<th class="min-w-[90px] align-bottom">
-							<div class="h-16 relative overflow-visible">
-								<span
-									class="absolute bottom-1 left-1/2 inline-block origin-bottom-left -rotate-45 whitespace-nowrap text-xs font-normal text-gray-400"
-								>
-									{trimmed} bal
-								</span>
-							</div>
-						</th>
+						<th colspan="2" class="sku-col-start text-center"
+							>{sku.display_label.trim()}</th
+						>
+					{/each}
+				</tr>
+				<tr>
+					{#each visibleSkus as sku (sku.id)}
+						<th class="sku-col-start min-w-[50px] text-right">Δ</th>
+						<th class="min-w-[70px] text-gray-400 font-normal text-right">bal</th>
 					{/each}
 				</tr>
 			</thead>
@@ -157,14 +147,14 @@
 								? `/inventory/counts/${row.objectId}`
 								: `/wo/${row.objectId}/confirm`}
 					<tr class="row-historical cursor-pointer" onclick={() => goto(href)}>
-						<td class="text-sm">
+						<td>
 							{#if row.subType === 'adjustment'}
 								{row.description}
 							{:else}
 								{row.partyName ?? ''}
 							{/if}
 						</td>
-						<td class="text-sm">
+						<td>
 							{#if row.subType === 'po'}
 								<span class="badge-green">RECEIVED</span>
 							{:else if row.subType === 'adjustment'}
@@ -173,7 +163,7 @@
 								{row.description}
 							{/if}
 						</td>
-						<td class="text-sm">
+						<td>
 							{#if row.subType === 'po'}
 								{row.poNumber}
 							{:else if row.subType === 'adjustment'}
@@ -182,20 +172,22 @@
 								{row.soNumber || row.poNumber}
 							{/if}
 						</td>
-						<td class="text-sm">{fmtDate(row.eventDate)}</td>
-						<td class="text-sm"
+						<td>{fmtDate(row.eventDate)}</td>
+						<td class=""
 							>{#if row.shipDate}{fmtDate(row.shipDate)}{/if}</td
 						>
-						<td class="text-sm text-gray-600">{row.facing ?? ''}</td>
+						<td class="text-gray-600">{row.facing ?? ''}</td>
 						{#each visibleSkus as sku (sku.id)}
 							{@const cell = row.cells[sku.id]}
 							<td
-								class="sku-col-start text-right font-mono text-sm"
+								class="sku-col-start text-right font-mono"
 								onclick={(e) => e.stopPropagation()}
 							>
 								{#if cell?.delta != null}
 									{#if cell.delta > 0}
-										<span class="sqft-positive">+{fmtSqft(cell.delta)}</span>
+										<span class="sqft-positive">{fmtSqft(cell.delta)}</span>
+									{:else if cell.delta === 0}
+										<span class="sqft-negative">{fmtSqft(0)}</span>
 									{:else}
 										<span class="sqft-negative"
 											>({fmtSqft(Math.abs(cell.delta))})</span
@@ -203,13 +195,16 @@
 									{/if}
 								{/if}
 							</td>
-							<td
-								class="text-right font-mono text-sm {(cell?.runningTotal ?? 0) < 0
-									? 'sqft-negative'
-									: 'text-gray-400'}"
-								onclick={(e) => e.stopPropagation()}
-							>
-								{fmtSqft(cell?.runningTotal ?? 0)}
+							<td class="text-right font-mono" onclick={(e) => e.stopPropagation()}>
+								{#if (cell?.runningTotal ?? 0) > 0}
+									<span class="sqft-positive">{fmtSqft(cell.runningTotal)}</span>
+								{:else if (cell?.runningTotal ?? 0) === 0}
+									<span class="sqft-negative">0</span>
+								{:else}
+									<span class="sqft-negative"
+										>({fmtSqft(Math.abs(cell.runningTotal))})</span
+									>
+								{/if}
 							</td>
 						{/each}
 					</tr>
@@ -223,12 +218,16 @@
 					{#each visibleSkus as sku (sku.id)}
 						{@const cell = matrix.balanceRow.cells[sku.id]}
 						<td class="sku-col-start"></td>
-						<td
-							class="text-right font-mono text-sm {cell?.runningTotal < 0
-								? 'sqft-negative'
-								: ''}"
-						>
-							{fmtSqft(cell?.runningTotal ?? 0)}
+						<td class="text-right font-mono">
+							{#if (cell?.runningTotal ?? 0) > 0}
+								<span class="sqft-positive">{fmtSqft(cell.runningTotal)}</span>
+							{:else if (cell?.runningTotal ?? 0) === 0}
+								<span class="sqft-negative">0</span>
+							{:else}
+								<span class="sqft-negative"
+									>({fmtSqft(Math.abs(cell.runningTotal))})</span
+								>
+							{/if}
 						</td>
 					{/each}
 				</tr>
@@ -240,7 +239,7 @@
 							? `/po/${row.objectId}`
 							: `/wo/${row.objectId}/${row.rowType === 'unscheduled' ? 'schedule' : 'confirm'}`}
 					<tr class="row-{row.rowType} cursor-pointer" onclick={() => goto(href)}>
-						<td class="text-gray-600 text-sm">{row.partyName ?? ''}</td>
+						<td class="text-gray-600">{row.partyName ?? ''}</td>
 						<td class="font-medium">
 							{#if row.rowType === 'po'}
 								{@const sc =
@@ -257,34 +256,36 @@
 							{/if}
 						</td>
 						<td
-							class="text-sm {row.rowType === 'po'
+							class={row.rowType === 'po'
 								? 'text-blue-700'
 								: row.rowType === 'unscheduled'
 									? 'text-amber-700'
-									: 'text-gray-600'}"
+									: 'text-gray-600'}
 						>
 							{row.soNumber || row.poNumber}
 						</td>
-						<td class="text-sm text-gray-600">
+						<td class="text-gray-600">
 							{#if row.eventDate}
 								{fmtDate(row.eventDate)}
 							{:else if row.rowType === 'unscheduled'}
 								<span class="text-amber-600 font-semibold">?</span>
 							{/if}
 						</td>
-						<td class="text-sm text-gray-600">
+						<td class="text-gray-600">
 							{#if row.shipDate}{fmtDate(row.shipDate)}{/if}
 						</td>
-						<td class="text-sm text-gray-600">{row.facing ?? ''}</td>
+						<td class="text-gray-600">{row.facing ?? ''}</td>
 						{#each visibleSkus as sku (sku.id)}
 							{@const cell = row.cells[sku.id]}
 							<td
-								class="sku-col-start text-right font-mono text-sm"
+								class="sku-col-start text-right font-mono"
 								onclick={(e) => e.stopPropagation()}
 							>
 								{#if cell?.delta != null}
 									{#if cell.delta > 0}
-										<span class="sqft-positive">+{fmtSqft(cell.delta)}</span>
+										<span class="sqft-positive">{fmtSqft(cell.delta)}</span>
+									{:else if cell.delta === 0}
+										<span class="sqft-negative">{fmtSqft(0)}</span>
 									{:else}
 										<span class="sqft-negative"
 											>({fmtSqft(Math.abs(cell.delta))})</span
@@ -292,19 +293,22 @@
 									{/if}
 								{/if}
 							</td>
-							<td
-								class="text-right font-mono text-sm {cell?.runningTotal < 0
-									? 'sqft-negative'
-									: 'text-gray-500'}"
-								onclick={(e) => e.stopPropagation()}
-							>
-								{fmtSqft(cell?.runningTotal ?? 0)}
+							<td class="text-right font-mono" onclick={(e) => e.stopPropagation()}>
+								{#if (cell?.runningTotal ?? 0) > 0}
+									<span class="sqft-positive">{fmtSqft(cell.runningTotal)}</span>
+								{:else if (cell?.runningTotal ?? 0) === 0}
+									<span class="sqft-negative">0</span>
+								{:else}
+									<span class="sqft-negative"
+										>({fmtSqft(Math.abs(cell.runningTotal))})</span
+									>
+								{/if}
 							</td>
 						{/each}
 					</tr>
 				{:else}
 					<tr>
-						<td colspan="100" class="py-10 text-center text-gray-400 text-sm">
+						<td colspan="100" class="py-10 text-center text-gray-400">
 							No upcoming orders.
 							<a href="/po/new" class="underline">Add a PO</a> or
 							<a href="/so/new" class="underline">add a Sales Order</a>.
