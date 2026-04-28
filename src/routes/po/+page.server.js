@@ -1,6 +1,26 @@
 import { db } from '$lib/db.js';
 import { localDate } from '$lib/utils.js';
 
+async function attachLines(pos) {
+	if (!pos.length) return;
+	const ids = pos.map((p) => p.id);
+	const ph = ids.map(() => '?').join(',');
+	const [lines] = await db.query(
+		`SELECT pol.po_id, ms.sku_code, pol.sqft_ordered
+		 FROM purchase_order_lines pol
+		 JOIN material_skus ms ON ms.id = pol.sku_id
+		 WHERE pol.po_id IN (${ph})
+		 ORDER BY ms.sort_order`,
+		ids
+	);
+	const byPo = {};
+	for (const l of lines) {
+		if (!byPo[l.po_id]) byPo[l.po_id] = [];
+		byPo[l.po_id].push({ sku_code: l.sku_code, sqft_ordered: l.sqft_ordered });
+	}
+	for (const po of pos) po.lines = byPo[po.id] ?? [];
+}
+
 const RECV_JOIN = `
 	LEFT JOIN (
 		SELECT pol.po_id, DATE(MIN(it.created_at)) AS received_at
@@ -35,6 +55,7 @@ export async function load({ url, locals }) {
 			 GROUP BY po.id ORDER BY po.expected_date, po.po_number`,
 			[today]
 		);
+		await Promise.all([attachLines(overdue), attachLines(upcoming)]);
 		return { overdue, upcoming, searchResults: null, q: '', status: '', user: locals.appUser };
 	}
 
@@ -58,5 +79,6 @@ export async function load({ url, locals }) {
 		 GROUP BY po.id ORDER BY po.expected_date DESC, po.po_number`,
 		params
 	);
+	await attachLines(searchResults);
 	return { upcoming: [], searchResults, q, status, user: locals.appUser };
 }

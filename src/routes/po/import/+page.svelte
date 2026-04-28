@@ -6,6 +6,7 @@
 	const STATUS = {
 		new: { label: 'New', badge: 'badge-green', defaultAccepted: true },
 		changed: { label: 'Changes', badge: 'badge-amber', defaultAccepted: true },
+		removed: { label: 'Removed', badge: 'badge-red', defaultAccepted: false },
 		unchanged: { label: 'No change', badge: 'badge-gray', defaultAccepted: false },
 	};
 
@@ -55,6 +56,9 @@
 					</p>{/if}
 				{#if form.updated}<p class="text-sm text-gray-600">
 						{form.updated} PO{form.updated !== 1 ? 's' : ''} updated.
+					</p>{/if}
+				{#if form.cancelled}<p class="text-sm text-gray-600">
+						{form.cancelled} PO{form.cancelled !== 1 ? 's' : ''} cancelled.
 					</p>{/if}
 				<a href="/po" class="btn-primary btn-sm inline-block mt-2">Back to POs</a>
 			</div>
@@ -123,7 +127,92 @@
 								</tbody>
 							</table>
 						{:else if po.status === 'changed'}
-							<!-- TODO(human): implement diff display for changed POs -->
+							<div class="border-t border-gray-100">
+								{#if po.diff.dateChanged || po.diff.vendorChanged}
+									<div
+										class="px-4 py-2 flex flex-wrap gap-4 text-xs bg-amber-50 border-b border-amber-100"
+									>
+										{#if po.diff.vendorChanged}
+											<span class="text-gray-500"
+												>Vendor: <span class="line-through text-red-400"
+													>{po.diff.oldVendor}</span
+												>
+												→
+												<span class="text-gray-800">{po.vendor_name}</span
+												></span
+											>
+										{/if}
+										{#if po.diff.dateChanged}
+											<span class="text-gray-500"
+												>Delivery: <span class="line-through text-red-400"
+													>{fmtDate(po.diff.oldDate)}</span
+												>
+												→
+												<span class="text-gray-800"
+													>{fmtDate(po.expected_date)}</span
+												></span
+											>
+										{/if}
+									</div>
+								{/if}
+								<table class="w-full text-sm border-collapse">
+									<tbody>
+										{#each po.diff.linesAdded as line (line.sku_code)}
+											<tr class="border-t border-gray-100 bg-green-50">
+												<td class="px-4 py-1.5 text-green-700"
+													>+ {line.sku_code}</td
+												>
+												<td
+													class="px-4 py-1.5 text-right tabular-nums text-green-700"
+													>{fmtSqft(line.sqft_ordered)} sqft</td
+												>
+											</tr>
+										{/each}
+										{#each po.diff.linesRemoved as line (line.sku_code)}
+											<tr class="border-t border-gray-100 bg-red-50">
+												<td class="px-4 py-1.5 text-red-400 line-through"
+													>− {line.sku_code}</td
+												>
+												<td
+													class="px-4 py-1.5 text-right tabular-nums text-red-400 line-through"
+													>{fmtSqft(line.sqft_ordered)} sqft</td
+												>
+											</tr>
+										{/each}
+										{#each po.diff.linesChanged as line (line.sku_code)}
+											<tr class="border-t border-gray-100">
+												<td class="px-4 py-1.5 text-gray-700"
+													>{line.sku_code}</td
+												>
+												<td
+													class="px-4 py-1.5 text-right tabular-nums text-gray-500"
+												>
+													<span class="line-through text-red-400"
+														>{fmtSqft(line.old_sqft)}</span
+													>
+													→ {fmtSqft(line.sqft_ordered)} sqft
+												</td>
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</div>
+						{:else if po.status === 'removed'}
+							<table class="w-full text-sm border-collapse">
+								<tbody>
+									{#each po.lines as line (line.sku_code)}
+										<tr class="border-t border-gray-100">
+											<td class="px-4 py-1.5 text-red-400 line-through"
+												>{line.sku_code}</td
+											>
+											<td
+												class="px-4 py-1.5 text-right tabular-nums text-red-400 line-through"
+												>{fmtSqft(line.sqft_ordered)} sqft</td
+											>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
 						{:else}
 							<div class="card-body text-sm text-gray-400">No changes detected.</div>
 						{/if}
@@ -158,24 +247,25 @@
 		{/if}
 		<div class="card">
 			<div class="card-header">
-				<span class="text-sm font-semibold text-gray-700">Upload CSV</span>
+				<span class="text-sm font-semibold text-gray-700">Upload PO file</span>
 			</div>
 			<div class="card-body">
 				<form method="POST" action="?/parse" enctype="multipart/form-data" use:enhance>
 					<div class="space-y-4">
 						<div>
-							<label for="csv" class="form-label">PO update file (.csv)</label>
+							<label for="xlsm" class="form-label">PO sync file (.xlsm)</label>
 							<input
-								id="csv"
-								name="csv"
+								id="xlsm"
+								name="xlsm"
 								type="file"
-								accept=".csv,text/csv"
+								accept=".xlsm,.xlsx,.xls"
 								required
 								class="block w-full text-sm text-gray-600 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
 							/>
 						</div>
 						<p class="text-xs text-gray-400">
-							Expected columns: Date, PO, Vendor, Item, Quantity
+							Expects a sheet named "Formatted" with columns: Num, Name, Deliv Date,
+							Item Code, Qty
 						</p>
 						<button type="submit" class="btn-primary btn-sm">Parse & Preview</button>
 					</div>

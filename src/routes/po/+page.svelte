@@ -1,6 +1,6 @@
 <script>
 	import { goto } from '$app/navigation';
-	import { fmtDate } from '$lib/utils.js';
+	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data } = $props();
 	function statusBadge(s) {
 		if (s === 'OPEN') return 'badge-blue';
@@ -25,7 +25,7 @@
 	<h1 class="text-lg font-semibold text-gray-900">Purchase Orders</h1>
 	<div class="flex gap-2">
 		{#if data.user?.role === 'admin'}
-			<a href="/po/import" class="btn-secondary btn-sm">Import CSV</a>
+			<a href="/po/import" class="btn-secondary btn-sm">Import</a>
 		{/if}
 		<a href="/po/new" class="btn-primary btn-sm">+ New PO</a>
 	</div>
@@ -55,7 +55,9 @@
 								>Expected / Received</th
 							>
 							<th class="px-4 py-3 text-left font-medium text-gray-500">Status</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-500">Lines</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500"
+								>SKUs / Sq Ft</th
+							>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-gray-100 bg-white">
@@ -85,7 +87,22 @@
 										>{statusLabel(po.status)}</span
 									>
 								</td>
-								<td class="px-4 py-3 text-gray-500">{po.line_count}</td>
+								<td class="px-4 py-3">
+									{#each po.lines ?? [] as line, i (line.sku_code)}
+										<div
+											class="flex justify-between gap-6 text-xs text-gray-600 px-1 rounded {i %
+												2 ===
+											0
+												? 'bg-gray-100'
+												: ''}"
+										>
+											<span>{line.sku_code}</span>
+											<span class="tabular-nums"
+												>{fmtSqft(line.sqft_ordered)}</span
+											>
+										</div>
+									{/each}
+								</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -109,7 +126,9 @@
 								>Expected / Received</th
 							>
 							<th class="px-4 py-3 text-left font-medium text-gray-500">Status</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-500">Lines</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500"
+								>SKUs / Sq Ft</th
+							>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-gray-100 bg-white">
@@ -126,7 +145,22 @@
 								<td class="px-4 py-3">
 									<span class="badge-amber">Overdue</span>
 								</td>
-								<td class="px-4 py-3 text-gray-500">{po.line_count}</td>
+								<td class="px-4 py-3">
+									{#each po.lines ?? [] as line, i (line.sku_code)}
+										<div
+											class="flex justify-between gap-6 text-xs text-gray-600 px-1 rounded {i %
+												2 ===
+											0
+												? 'bg-gray-100'
+												: ''}"
+										>
+											<span>{line.sku_code}</span>
+											<span class="tabular-nums"
+												>{fmtSqft(line.sqft_ordered)}</span
+											>
+										</div>
+									{/each}
+								</td>
 							</tr>
 						{/each}
 
@@ -170,7 +204,22 @@
 										>{statusLabel(po.status)}</span
 									>
 								</td>
-								<td class="px-4 py-3 text-gray-500">{po.line_count}</td>
+								<td class="px-4 py-3">
+									{#each po.lines ?? [] as line, i (line.sku_code)}
+										<div
+											class="flex justify-between gap-6 text-xs text-gray-600 px-1 rounded {i %
+												2 ===
+											0
+												? 'bg-gray-100'
+												: ''}"
+										>
+											<span>{line.sku_code}</span>
+											<span class="tabular-nums"
+												>{fmtSqft(line.sqft_ordered)}</span
+											>
+										</div>
+									{/each}
+								</td>
 							</tr>
 						{/each}
 					</tbody>
