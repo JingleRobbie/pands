@@ -8,7 +8,10 @@
       "Bash(npm list:*)",
       "Bash(npm uninstall:*)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(npm ls *)",
+      "Bash(npm install *)",
+      "Bash(npm audit *)"
     ]
   },
   "hooks": {
