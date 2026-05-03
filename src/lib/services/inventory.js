@@ -1,27 +1,27 @@
 import { db } from '$lib/db.js';
 import { localDate } from '$lib/utils.js';
 
+function transactionDelta(alias = 'it') {
+	return `CASE
+		WHEN ${alias}.transaction_type IN ('RECEIPT','ADJUSTMENT_IN') THEN ${alias}.sqft_quantity
+		WHEN ${alias}.transaction_type IN ('RECEIPT_REVERSAL','CONSUMPTION','ADJUSTMENT_OUT') THEN -${alias}.sqft_quantity
+		ELSE 0
+	END`;
+}
+
+function transactionEventDate(alias = 'it') {
+	return `${alias}.effective_date`;
+}
+
 export async function getAllBalances() {
-	const [txnRows] = await db.query(`
+	const [rows] = await db.query(`
 		SELECT sku_id,
-			SUM(CASE WHEN transaction_type = 'ADJUSTMENT_IN'                       THEN sqft_quantity ELSE 0 END)
-			- SUM(CASE WHEN transaction_type IN ('CONSUMPTION','ADJUSTMENT_OUT') THEN sqft_quantity ELSE 0 END)
-			AS balance
-		FROM inventory_transactions
+			SUM(${transactionDelta('it')}) AS balance
+		FROM inventory_transactions it
 		WHERE sku_id IN (SELECT id FROM material_skus WHERE is_active = TRUE)
 		GROUP BY sku_id
 	`);
-	const [poRows] = await db.query(`
-		SELECT pol.sku_id, SUM(pol.sqft_ordered) AS received
-		FROM purchase_order_lines pol
-		JOIN purchase_orders po ON po.id = pol.po_id
-		WHERE (po.expected_date <= CURDATE() OR po.status = 'RECEIVED')
-		  AND po.status != 'CANCELLED'
-		  AND pol.status != 'CANCELLED'
-		  AND pol.sku_id IN (SELECT id FROM material_skus WHERE is_active = TRUE)
-		GROUP BY pol.sku_id
-	`);
-	return mergeBalanceRows(txnRows, poRows);
+	return rowsToBalanceMap(rows);
 }
 
 export async function getMatrixData(fromDate = null) {
@@ -266,10 +266,9 @@ function buildRunningMap(skuIds, balanceMap) {
 	return running;
 }
 
-function mergeBalanceRows(txnRows, poRows) {
+function rowsToBalanceMap(rows) {
 	const map = {};
-	for (const r of txnRows) map[r.sku_id] = Number(r.balance) || 0;
-	for (const r of poRows) map[r.sku_id] = (map[r.sku_id] ?? 0) + Number(r.received);
+	for (const r of rows) map[r.sku_id] = Number(r.balance) || 0;
 	return map;
 }
 
@@ -301,38 +300,18 @@ function subtractDays(dateStr, n) {
 }
 
 export async function getCountBalancesAsOf(dateStr) {
-	const [txnRows] = await db.query(
+	const [rows] = await db.query(
 		`
 		SELECT it.sku_id,
-		  SUM(CASE WHEN it.transaction_type = 'ADJUSTMENT_IN'
-		           AND DATE(it.created_at) <= ? THEN it.sqft_quantity ELSE 0 END)
-		- SUM(CASE WHEN it.transaction_type = 'ADJUSTMENT_OUT'
-		           AND DATE(it.created_at) <= ? THEN it.sqft_quantity ELSE 0 END)
-		- SUM(CASE WHEN it.transaction_type = 'CONSUMPTION'
-		           AND pr.run_date <= ? THEN it.sqft_quantity ELSE 0 END)
-		AS balance
+		  SUM(${transactionDelta('it')}) AS balance
 		FROM inventory_transactions it
-		LEFT JOIN production_runs pr
-		  ON it.reference_type = 'PRODUCTION_RUN' AND pr.id = it.reference_id
 		WHERE it.sku_id IN (SELECT id FROM material_skus WHERE is_active = TRUE)
+		  AND ${transactionEventDate('it')} <= ?
 		GROUP BY it.sku_id
-	`,
-		[dateStr, dateStr, dateStr]
-	);
-	const [poRows] = await db.query(
-		`
-		SELECT pol.sku_id, SUM(pol.sqft_ordered) AS received
-		FROM purchase_order_lines pol
-		JOIN purchase_orders po ON po.id = pol.po_id
-		WHERE (po.expected_date <= ? OR po.status = 'RECEIVED')
-		  AND po.status != 'CANCELLED'
-		  AND pol.status != 'CANCELLED'
-		  AND pol.sku_id IN (SELECT id FROM material_skus WHERE is_active = TRUE)
-		GROUP BY pol.sku_id
 	`,
 		[dateStr]
 	);
-	return mergeBalanceRows(txnRows, poRows);
+	return rowsToBalanceMap(rows);
 }
 
 export async function createCountBatch(items, memo, countDate, userId) {
@@ -348,9 +327,9 @@ export async function createCountBatch(items, memo, countDate, userId) {
 			const type = delta > 0 ? 'ADJUSTMENT_IN' : 'ADJUSTMENT_OUT';
 			await conn.query(
 				`INSERT INTO inventory_transactions
-				   (sku_id, transaction_type, sqft_quantity, counted_sqft, reference_type, reference_id, created_by)
-				 VALUES (?, ?, ?, ?, 'INVENTORY_COUNT', ?, ?)`,
-				[skuId, type, Math.abs(delta), newCount ?? null, countId, userId]
+				   (sku_id, transaction_type, sqft_quantity, counted_sqft, effective_date, reference_type, reference_id, created_by)
+				 VALUES (?, ?, ?, ?, ?, 'INVENTORY_COUNT', ?, ?)`,
+				[skuId, type, Math.abs(delta), newCount ?? null, countDate, countId, userId]
 			);
 		}
 		await conn.commit();
@@ -364,29 +343,34 @@ export async function createCountBatch(items, memo, countDate, userId) {
 }
 
 async function getHistoricalActivityRows(skuIds, fromDate) {
-	const [poLines] = await db.query(
+	const [receiptTxns] = await db.query(
 		`
-		SELECT pol.sku_id, pol.sqft_ordered AS sqft_quantity,
-		       LEAST(po.expected_date, CURDATE()) AS event_date,
-		       po.id AS po_id, po.po_number, po.vendor_name
-		FROM purchase_order_lines pol
+		SELECT it.sku_id, it.sqft_quantity, it.transaction_type,
+		       it.effective_date AS event_date,
+		       pol.po_id, po.po_number, po.vendor_name
+		FROM inventory_transactions it
+		JOIN purchase_order_lines pol ON pol.id = it.reference_id
 		JOIN purchase_orders po ON po.id = pol.po_id
-		WHERE (po.expected_date < CURDATE() OR po.status = 'RECEIVED')
-		  AND po.expected_date >= ?
-		  AND po.status != 'CANCELLED' AND pol.status != 'CANCELLED'
-		ORDER BY event_date, po.po_number
+		WHERE it.reference_type = 'PO_LINE'
+		  AND it.transaction_type IN ('RECEIPT','RECEIPT_REVERSAL')
+		  AND it.effective_date >= ?
+		ORDER BY it.effective_date, it.created_at, po.po_number
 	`,
 		[fromDate]
 	);
 
 	const poRowMap = {};
-	for (const t of poLines) {
-		if (!poRowMap[t.po_id]) {
-			poRowMap[t.po_id] = {
+	for (const t of receiptTxns) {
+		const key = `${t.po_id}:${t.event_date}:${t.transaction_type}`;
+		if (!poRowMap[key]) {
+			const isReversal = t.transaction_type === 'RECEIPT_REVERSAL';
+			poRowMap[key] = {
 				rowType: 'historical',
 				subType: 'po',
 				partyName: t.vendor_name,
-				description: `PO ${t.po_number}`,
+				description: isReversal ? `PO ${t.po_number} Unreceived` : `PO ${t.po_number}`,
+				activityLabel: isReversal ? 'UNRECEIVED' : 'RECEIVED',
+				activityClass: isReversal ? 'badge-amber' : 'badge-green',
 				poNumber: t.po_number,
 				soNumber: '',
 				eventDate: t.event_date,
@@ -395,15 +379,16 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 				deltas: {},
 			};
 		}
-		poRowMap[t.po_id].deltas[t.sku_id] =
-			(poRowMap[t.po_id].deltas[t.sku_id] ?? 0) + Number(t.sqft_quantity);
+		const sign = t.transaction_type === 'RECEIPT' ? 1 : -1;
+		poRowMap[key].deltas[t.sku_id] =
+			(poRowMap[key].deltas[t.sku_id] ?? 0) + sign * Number(t.sqft_quantity);
 	}
 
 	const [prodTxns] = await db.query(
 		`
 		SELECT it.sku_id, it.sqft_quantity, it.reference_id AS pr_id,
 		       pr.group_id,
-		       DATE(it.created_at) AS event_date,
+		       it.effective_date AS event_date,
 		       wol.facing,
 		       wo.so_number, wo.job_name, wo.id AS wo_id, wo.ship_date, wo.customer_name
 		FROM inventory_transactions it
@@ -411,8 +396,8 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 		JOIN work_order_lines wol ON wol.id = pr.wo_line_id
 		JOIN work_orders wo ON wo.id = wol.wo_id
 		WHERE it.reference_type = 'PRODUCTION_RUN' AND it.transaction_type = 'CONSUMPTION'
-		  AND DATE(it.created_at) >= ?
-		ORDER BY it.created_at
+		  AND it.effective_date >= ?
+		ORDER BY it.effective_date, it.created_at
 	`,
 		[fromDate]
 	);
@@ -506,32 +491,18 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 }
 
 async function getBalancesAsOf(skuIds, dateStr) {
-	const [txnRows] = await db.query(
+	if (!skuIds.length) return {};
+	const [rows] = await db.query(
 		`
-		SELECT sku_id,
-			SUM(CASE WHEN transaction_type = 'ADJUSTMENT_IN'                       THEN sqft_quantity ELSE 0 END)
-			- SUM(CASE WHEN transaction_type IN ('CONSUMPTION','ADJUSTMENT_OUT') THEN sqft_quantity ELSE 0 END)
-			AS balance
-		FROM inventory_transactions
-		WHERE sku_id IN (?) AND DATE(created_at) <= ?
-		GROUP BY sku_id
+		SELECT it.sku_id,
+			SUM(${transactionDelta('it')}) AS balance
+		FROM inventory_transactions it
+		WHERE it.sku_id IN (?) AND ${transactionEventDate('it')} <= ?
+		GROUP BY it.sku_id
 	`,
 		[skuIds, dateStr]
 	);
-	const [poRows] = await db.query(
-		`
-		SELECT pol.sku_id, SUM(pol.sqft_ordered) AS received
-		FROM purchase_order_lines pol
-		JOIN purchase_orders po ON po.id = pol.po_id
-		WHERE po.expected_date <= ?
-		  AND po.status != 'CANCELLED'
-		  AND pol.status != 'CANCELLED'
-		  AND pol.sku_id IN (?)
-		GROUP BY pol.sku_id
-	`,
-		[dateStr, skuIds]
-	);
-	return mergeBalanceRows(txnRows, poRows);
+	return rowsToBalanceMap(rows);
 }
 
 export const __inventoryTest = {
@@ -539,5 +510,5 @@ export const __inventoryTest = {
 	buildRunningMap,
 	buildUnscheduledRows,
 	calcSqft,
-	mergeBalanceRows,
+	rowsToBalanceMap,
 };

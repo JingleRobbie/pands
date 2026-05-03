@@ -273,11 +273,13 @@ export async function confirmRun(runId, rollsActual, userId, runDate = null) {
 		const sqftActual = calcSqft(line, rollsActual);
 
 		await conn.query(
-			`INSERT INTO inventory_transactions (sku_id, transaction_type, sqft_quantity, reference_type, reference_id, memo, created_by)
-			 VALUES (?, 'CONSUMPTION', ?, 'PRODUCTION_RUN', ?, ?, ?)`,
+			`INSERT INTO inventory_transactions
+			 (sku_id, transaction_type, sqft_quantity, effective_date, reference_type, reference_id, memo, created_by)
+			 VALUES (?, 'CONSUMPTION', ?, COALESCE(?, CURDATE()), 'PRODUCTION_RUN', ?, ?, ?)`,
 			[
 				run.sku_id,
 				sqftActual,
+				runDate || dateOnly(run.run_date),
 				runId,
 				`Run ${run.run_number} - ${line.so_number} ${line.job_name}`,
 				userId ?? null,

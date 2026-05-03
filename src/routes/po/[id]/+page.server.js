@@ -21,7 +21,13 @@ export async function load({ params, locals }) {
 			 FROM inventory_transactions it
 			 WHERE it.reference_type = 'PO_LINE'
 			   AND it.transaction_type = 'RECEIPT'
-			   AND it.reference_id IN (SELECT id FROM purchase_order_lines WHERE po_id = ?)`,
+			   AND it.reference_id IN (SELECT id FROM purchase_order_lines WHERE po_id = ?)
+			   AND NOT EXISTS (
+			     SELECT 1
+			     FROM inventory_transactions reversal
+			     WHERE reversal.transaction_type = 'RECEIPT_REVERSAL'
+			       AND reversal.reverses_transaction_id = it.id
+			   )`,
 			[params.id]
 		);
 		receivedAt = row?.received_at ?? null;

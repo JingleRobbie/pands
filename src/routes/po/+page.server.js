@@ -27,6 +27,12 @@ const RECV_JOIN = `
 		FROM inventory_transactions it
 		JOIN purchase_order_lines pol ON pol.id = it.reference_id
 		WHERE it.reference_type = 'PO_LINE' AND it.transaction_type = 'RECEIPT'
+		  AND NOT EXISTS (
+		    SELECT 1
+		    FROM inventory_transactions reversal
+		    WHERE reversal.transaction_type = 'RECEIPT_REVERSAL'
+		      AND reversal.reverses_transaction_id = it.id
+		  )
 		GROUP BY pol.po_id
 	) recv ON recv.po_id = po.id`;
 

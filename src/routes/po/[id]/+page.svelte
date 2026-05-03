@@ -23,7 +23,7 @@
 		return async ({ update }) => {
 			unreceiveDialog.close();
 			pendingUnreceive = null;
-			await update();
+			await update({ invalidateAll: true });
 		};
 	}
 </script>

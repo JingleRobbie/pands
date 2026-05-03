@@ -5,19 +5,14 @@ vi.mock('$lib/db.js', () => ({ db: {} }));
 const { __inventoryTest } = await import('./inventory.js');
 
 describe('inventory helpers', () => {
-	it('merges transaction balances with received PO quantities', () => {
+	it('maps ledger aggregate rows to SKU balances', () => {
 		expect(
-			__inventoryTest.mergeBalanceRows(
-				[
-					{ sku_id: 1, balance: 100 },
-					{ sku_id: 2, balance: -25 },
-				],
-				[
-					{ sku_id: 1, received: 50 },
-					{ sku_id: 3, received: 75 },
-				]
-			)
-		).toEqual({ 1: 150, 2: -25, 3: 75 });
+			__inventoryTest.rowsToBalanceMap([
+				{ sku_id: 1, balance: 100 },
+				{ sku_id: 2, balance: -25 },
+				{ sku_id: 3, balance: null },
+			])
+		).toEqual({ 1: 100, 2: -25, 3: 0 });
 	});
 
 	it('builds running cells for every matrix sku', () => {

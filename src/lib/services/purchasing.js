@@ -1,5 +1,25 @@
 import { db } from '$lib/db.js';
 
+async function updatePoStatusFromLines(conn, poId) {
+	const [[counts]] = await conn.query(
+		`SELECT
+		   SUM(status = 'OPEN') AS openCount,
+		   SUM(status = 'RECEIVED') AS receivedCount
+		 FROM purchase_order_lines
+		 WHERE po_id = ?`,
+		[poId]
+	);
+
+	if (Number(counts.openCount) > 0) {
+		await conn.query(`UPDATE purchase_orders SET status = 'OPEN' WHERE id = ?`, [poId]);
+		return;
+	}
+
+	if (Number(counts.receivedCount) > 0) {
+		await conn.query(`UPDATE purchase_orders SET status = 'RECEIVED' WHERE id = ?`, [poId]);
+	}
+}
+
 /**
  * Mark a set of open PO lines as received, create RECEIPT inventory transactions,
  * and close the PO if no open lines remain.
@@ -23,8 +43,8 @@ export async function receivePoLines(poId, receipts, userId) {
 
 			await conn.query(
 				`INSERT INTO inventory_transactions
-				   (sku_id, transaction_type, sqft_quantity, reference_type, reference_id, created_by)
-				 VALUES (?, 'RECEIPT', ?, 'PO_LINE', ?, ?)`,
+				   (sku_id, transaction_type, sqft_quantity, effective_date, reference_type, reference_id, created_by)
+				 VALUES (?, 'RECEIPT', ?, CURDATE(), 'PO_LINE', ?, ?)`,
 				[line.sku_id, sqftReceived, lineId, userId]
 			);
 
@@ -36,16 +56,7 @@ export async function receivePoLines(poId, receipts, userId) {
 			);
 		}
 
-		// Close the PO if no OPEN lines remain
-		const [[{ openCount }]] = await conn.query(
-			`SELECT COUNT(*) AS openCount
-			 FROM purchase_order_lines
-			 WHERE po_id = ? AND status = 'OPEN'`,
-			[poId]
-		);
-		if (openCount === 0) {
-			await conn.query(`UPDATE purchase_orders SET status = 'RECEIVED' WHERE id = ?`, [poId]);
-		}
+		await updatePoStatusFromLines(conn, poId);
 
 		await conn.commit();
 	} catch (err) {
@@ -57,13 +68,14 @@ export async function receivePoLines(poId, receipts, userId) {
 }
 
 /**
- * Reverse received PO lines by reopening the lines and reopening the PO.
+ * Reverse received PO lines by appending receipt reversal transactions,
+ * reopening the lines, and reopening the PO.
  *
  * @param {number} poId
  * @param {number[]} lineIds
- * @param {number} _userId
+ * @param {number} userId
  */
-export async function unreceivePoLines(poId, lineIds, _userId) {
+export async function unreceivePoLines(poId, lineIds, userId) {
 	if (lineIds.length === 0) throw new Error('No received PO lines were selected.');
 
 	const conn = await db.getConnection();
@@ -74,13 +86,53 @@ export async function unreceivePoLines(poId, lineIds, _userId) {
 			const [[line]] = await conn.query(
 				`SELECT id, sku_id, sqft_received
 				 FROM purchase_order_lines
-				 WHERE id = ? AND po_id = ? AND status = 'RECEIVED'`,
+				 WHERE id = ? AND po_id = ? AND status = 'RECEIVED'
+				 FOR UPDATE`,
 				[lineId, poId]
 			);
 			if (!line) throw new Error(`Line ${lineId} is not a received line on PO ${poId}`);
 			if (!line.sqft_received || line.sqft_received < 1) {
 				throw new Error(`Line ${lineId} does not have a received quantity to reverse.`);
 			}
+
+			const [[receipt]] = await conn.query(
+				`SELECT it.id, it.sku_id, it.sqft_quantity, it.effective_date
+				 FROM inventory_transactions it
+				 WHERE it.reference_type = 'PO_LINE'
+				   AND it.reference_id = ?
+				   AND it.transaction_type = 'RECEIPT'
+				   AND NOT EXISTS (
+				     SELECT 1
+				     FROM inventory_transactions reversal
+				     WHERE reversal.transaction_type = 'RECEIPT_REVERSAL'
+				       AND reversal.reverses_transaction_id = it.id
+				   )
+				 ORDER BY it.created_at DESC, it.id DESC
+				 LIMIT 1
+				 FOR UPDATE`,
+				[lineId]
+			);
+			if (!receipt) {
+				throw new Error(
+					`Line ${lineId} does not have an active receipt transaction to reverse.`
+				);
+			}
+
+			await conn.query(
+				`INSERT INTO inventory_transactions
+				   (sku_id, transaction_type, sqft_quantity, effective_date, reference_type, reference_id,
+				    reverses_transaction_id, memo, created_by)
+				 VALUES (?, 'RECEIPT_REVERSAL', ?, ?, 'PO_LINE', ?, ?, ?, ?)`,
+				[
+					receipt.sku_id,
+					receipt.sqft_quantity,
+					receipt.effective_date,
+					lineId,
+					receipt.id,
+					`Unreceived PO line ${lineId}`,
+					userId ?? null,
+				]
+			);
 
 			await conn.query(
 				`UPDATE purchase_order_lines
@@ -90,7 +142,7 @@ export async function unreceivePoLines(poId, lineIds, _userId) {
 			);
 		}
 
-		await conn.query(`UPDATE purchase_orders SET status = 'OPEN' WHERE id = ?`, [poId]);
+		await updatePoStatusFromLines(conn, poId);
 
 		await conn.commit();
 	} catch (err) {

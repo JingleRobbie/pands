@@ -219,16 +219,22 @@ CREATE TABLE IF NOT EXISTS inventory_counts (
 CREATE TABLE IF NOT EXISTS inventory_transactions (
   id               INT AUTO_INCREMENT PRIMARY KEY,
   sku_id           INT NOT NULL,
-  transaction_type ENUM('RECEIPT','CONSUMPTION','ADJUSTMENT_IN','ADJUSTMENT_OUT') NOT NULL,
+  transaction_type ENUM('RECEIPT','RECEIPT_REVERSAL','CONSUMPTION','ADJUSTMENT_IN','ADJUSTMENT_OUT') NOT NULL,
   sqft_quantity    INT NOT NULL,
   counted_sqft     INT NULL,
+  effective_date    DATE NOT NULL DEFAULT (CURDATE()),
   reference_type   ENUM('PO_LINE','PRODUCTION_RUN','MANUAL','INVENTORY_COUNT') DEFAULT 'MANUAL',
   reference_id     INT,
+  reverses_transaction_id INT NULL,
   memo             TEXT,
   created_by       INT,
   created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (sku_id) REFERENCES material_skus(id),
-  FOREIGN KEY (created_by) REFERENCES app_users(id)
+  FOREIGN KEY (reverses_transaction_id) REFERENCES inventory_transactions(id),
+  FOREIGN KEY (created_by) REFERENCES app_users(id),
+  INDEX idx_inventory_transactions_sku_effective (sku_id, effective_date),
+  INDEX idx_inventory_transactions_sku_created (sku_id, created_at),
+  INDEX idx_inventory_transactions_reference (reference_type, reference_id)
 );
 
 INSERT IGNORE INTO app_users (id, display_name, role) VALUES (1, 'Admin', 'admin');

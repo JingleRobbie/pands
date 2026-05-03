@@ -344,7 +344,7 @@
 								type="button"
 								class="btn-primary"
 								onclick={(e) => requestConfirm(e.currentTarget.form)}
-								disabled={!anyChecked}>Mark Produced &amp; Deduct Inventory</button
+								disabled={!anyChecked}>Mark Produced</button
 							>
 						{:else}
 							<p class="text-sm text-amber-700">

@@ -169,7 +169,9 @@
 						</td>
 						<td>
 							{#if row.subType === 'po'}
-								<span class="badge-green">RECEIVED</span>
+								<span class={row.activityClass ?? 'badge-green'}
+									>{row.activityLabel ?? 'RECEIVED'}</span
+								>
 							{:else if row.subType === 'adjustment'}
 								<span class="badge-amber">ADJUSTMENT</span>
 							{:else}
