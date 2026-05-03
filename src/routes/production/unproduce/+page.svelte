@@ -4,11 +4,10 @@
 	import { page } from '$app/state';
 	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
-	import { untrack } from 'svelte';
 
 	let { data, form } = $props();
 	const eligibleRuns = $derived(data.eligibleRuns);
-	let selectedDate = $state(untrack(() => data.selectedDate ?? ''));
+	let selectedDate = $derived(data.selectedDate ?? '');
 	const returnTo = $derived(getReturnTo(page.url, '/production'));
 
 	let unproduceDialog = $state(null);
@@ -24,6 +23,11 @@
 				returnTo
 			)
 		);
+	}
+
+	function clearDateFilter() {
+		selectedDate = '';
+		goto(withReturnTo('/production/unproduce', returnTo));
 	}
 
 	function requestUnproduce(formElement, run) {
@@ -82,7 +86,7 @@
 			</div>
 			<button type="button" class="btn-secondary" onclick={applyDateFilter}>Find</button>
 			{#if data.selectedDate}
-				<a href={withReturnTo('/production/unproduce', returnTo)} class="btn-secondary">Clear</a>
+				<button type="button" class="btn-secondary" onclick={clearDateFilter}>Clear</button>
 			{/if}
 		</div>
 	</div>
