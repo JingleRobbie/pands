@@ -1,7 +1,10 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
+	import { pathWithSearch, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data } = $props();
+	const returnTo = $derived(pathWithSearch(page.url));
 	function statusBadge(s) {
 		if (s === 'OPEN') return 'badge-blue';
 		if (s === 'CANCELLED') return 'badge-gray';
@@ -31,12 +34,31 @@
 	</div>
 </header>
 <main class="p-6 space-y-4">
-	<nav class="flex gap-1">
-		<a href="/po" class={tabClass('')}>Active</a>
-		<a href="/po?status=open" class={tabClass('open')}>Open</a>
-		<a href="/po?status=cancelled" class={tabClass('cancelled')}>Cancelled</a>
-		<a href="/po?status=all" class={tabClass('all')}>All</a>
-	</nav>
+	<div class="flex items-center justify-between gap-4">
+		<nav class="flex gap-1">
+			<a href="/po" class={tabClass('')}>Active</a>
+			<a href="/po?status=open" class={tabClass('open')}>Open</a>
+			<a href="/po?status=cancelled" class={tabClass('cancelled')}>Cancelled</a>
+			<a href="/po?status=all" class={tabClass('all')}>All</a>
+		</nav>
+		{#if data.status}
+			<form method="GET" class="flex items-end gap-2">
+				<input type="hidden" name="status" value={data.status} />
+				{#if data.q}
+					<input type="hidden" name="q" value={data.q} />
+				{/if}
+				<div>
+					<label for="from" class="form-label">
+						{data.status === 'open' || data.status === 'cancelled'
+							? 'Expected From'
+							: 'Activity From'}
+					</label>
+					<input id="from" name="from" type="date" class="form-input" value={data.from} />
+				</div>
+				<button type="submit" class="btn-secondary">Apply</button>
+			</form>
+		{/if}
+	</div>
 
 	{#if data.searchResults !== null}
 		<div class="card">
@@ -64,7 +86,7 @@
 						{#each data.searchResults as po (po.id)}
 							<tr
 								class="hover:bg-gray-50 cursor-pointer"
-								onclick={() => goto(`/po/${po.id}`)}
+								onclick={() => goto(withReturnTo(`/po/${po.id}`, returnTo))}
 							>
 								<td class="px-4 py-3 font-medium text-gray-900">{po.po_number}</td>
 								<td class="px-4 py-3 text-gray-700">{po.vendor_name}</td>
@@ -135,7 +157,7 @@
 						{#each data.overdue as po (po.id)}
 							<tr
 								class="bg-amber-50 cursor-pointer border-l-2 border-l-amber-400 hover:bg-amber-100"
-								onclick={() => goto(`/po/${po.id}`)}
+								onclick={() => goto(withReturnTo(`/po/${po.id}`, returnTo))}
 							>
 								<td class="px-4 py-3 font-medium text-gray-900">{po.po_number}</td>
 								<td class="px-4 py-3 text-gray-700">{po.vendor_name}</td>
@@ -181,7 +203,7 @@
 						{#each data.upcoming as po (po.id)}
 							<tr
 								class="hover:bg-gray-50 cursor-pointer"
-								onclick={() => goto(`/po/${po.id}`)}
+								onclick={() => goto(withReturnTo(`/po/${po.id}`, returnTo))}
 							>
 								<td class="px-4 py-3 font-medium text-gray-900">{po.po_number}</td>
 								<td class="px-4 py-3 text-gray-700">{po.vendor_name}</td>

@@ -1,10 +1,13 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate } from '$lib/utils.js';
 	let { data, form } = $props();
 	const run = $derived(data.run);
 	const matrix = $derived(data.matrix);
+	const returnTo = $derived(getReturnTo(page.url, '/production'));
 	let confirmDialog = $state(null);
 	let allowConfirmSubmit = $state(false);
 
@@ -41,9 +44,12 @@
 	<h1 class="text-lg font-semibold text-gray-900">Record Production Run</h1>
 	<div class="flex gap-2">
 		{#if run.status !== 'COMPLETED'}
-			<a href="/production/{run.id}/edit" class="btn-secondary btn-sm">Edit</a>
+			<a
+				href={withReturnTo(`/production/${run.id}/edit`, returnTo)}
+				class="btn-secondary btn-sm">Edit</a
+			>
 		{/if}
-		<a href="/production" class="btn-secondary btn-sm">Back</a>
+		<a href={returnTo} class="btn-secondary btn-sm">Back</a>
 	</div>
 </header>
 <main class="p-6">
@@ -100,6 +106,7 @@
 
 		{#if run.status !== 'COMPLETED'}
 			<form method="POST" onsubmit={handleConfirmSubmit} use:enhance={confirmEnhance}>
+				<input type="hidden" name="return_to" value={returnTo} />
 				<div class="card mb-4">
 					<div class="card-header">
 						<span class="font-semibold text-sm text-gray-700">Actual Production</span>
@@ -129,7 +136,7 @@
 						onclick={(e) => requestConfirm(e.currentTarget.form)}
 						>Mark Produced</button
 					>
-					<a href="/production" class="btn-secondary">Cancel</a>
+					<a href={returnTo} class="btn-secondary">Cancel</a>
 				</div>
 				<dialog
 					bind:this={confirmDialog}

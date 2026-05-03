@@ -1,7 +1,10 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
+	import { pathWithSearch, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate } from '$lib/utils.js';
 	let { data } = $props();
+	const returnTo = $derived(pathWithSearch(page.url));
 	function statusBadge(s) {
 		if (s === 'OPEN') return 'badge-blue';
 		if (s === 'IN_PROGRESS') return 'badge-amber';
@@ -59,7 +62,7 @@
 						{#each data.searchResults as so (so.id)}
 							<tr
 								class="hover:bg-gray-50 cursor-pointer"
-								onclick={() => goto(`/so/${so.id}`)}
+								onclick={() => goto(withReturnTo(`/so/${so.id}`, returnTo))}
 							>
 								<td class="px-4 py-3 font-medium text-gray-900">{so.so_number}</td>
 								<td class="px-4 py-3 text-gray-700">{so.customer_name}</td>
@@ -94,7 +97,7 @@
 					{#each data.sos as so (so.id)}
 						<tr
 							class="hover:bg-gray-50 cursor-pointer"
-							onclick={() => goto(`/so/${so.id}`)}
+							onclick={() => goto(withReturnTo(`/so/${so.id}`, returnTo))}
 						>
 							<td class="px-4 py-3 font-medium text-gray-900">{so.so_number}</td>
 							<td class="px-4 py-3 text-gray-700">{so.customer_name}</td>

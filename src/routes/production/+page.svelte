@@ -1,8 +1,10 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { pathWithSearch, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data } = $props();
+	const returnTo = $derived(pathWithSearch(page.url));
 
 	function statusBadge(s) {
 		if (s === 'SCHEDULED') return 'badge-blue';
@@ -36,17 +38,40 @@
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Production</h1>
 	{#if data.user?.role === 'admin'}
-		<a href="/production/unproduce" class="btn-secondary btn-sm">Unproduce</a>
+		<a href={withReturnTo('/production/unproduce', returnTo)} class="btn-secondary btn-sm"
+			>Unproduce</a
+		>
 	{/if}
 </header>
 <main class="p-6 space-y-4">
-	<nav class="flex gap-1">
-		<a href="/production" class={tabClass('')}>Active</a>
-		<a href="/production?status=unscheduled" class={tabClass('unscheduled')}>Unscheduled</a>
-		<a href="/production?status=scheduled" class={tabClass('scheduled')}>Scheduled</a>
-		<a href="/production?status=completed" class={tabClass('completed')}>Completed</a>
-		<a href="/production?status=all" class={tabClass('all')}>All</a>
-	</nav>
+	<div class="flex items-center justify-between gap-4">
+		<nav class="flex gap-1">
+			<a href="/production" class={tabClass('')}>Active</a>
+			<a href="/production?status=unscheduled" class={tabClass('unscheduled')}>Unscheduled</a>
+			<a href="/production?status=scheduled" class={tabClass('scheduled')}>Scheduled</a>
+			<a href="/production?status=completed" class={tabClass('completed')}>Completed</a>
+			<a href="/production?status=all" class={tabClass('all')}>All</a>
+		</nav>
+		{#if data.status}
+			<form method="GET" class="flex items-end gap-2">
+				<input type="hidden" name="status" value={data.status} />
+				{#if data.q}
+					<input type="hidden" name="q" value={data.q} />
+				{/if}
+				<div>
+					<label for="from" class="form-label">
+						{data.status === 'unscheduled'
+							? 'Created From'
+							: data.status === 'completed'
+								? 'Completed From'
+								: 'Run From'}
+					</label>
+					<input id="from" name="from" type="date" class="form-input" value={data.from} />
+				</div>
+				<button type="submit" class="btn-secondary">Apply</button>
+			</form>
+		{/if}
+	</div>
 
 	<div class="card">
 		<div class="card-header">
@@ -71,7 +96,7 @@
 							class="cursor-pointer hover:bg-gray-50 align-top {woRowClass(
 								wo.urgency
 							)}"
-							onclick={() => goto(`/wo/${wo.wo_id}/confirm`)}
+							onclick={() => goto(withReturnTo(`/wo/${wo.wo_id}/confirm`, returnTo))}
 						>
 							<td class="px-4 py-3 align-top {woDateClass(wo.urgency)}">
 								{wo.minDate ? fmtDate(wo.minDate) : '—'}

@@ -1,12 +1,15 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	import { untrack } from 'svelte';
 
 	let { data, form } = $props();
 	const eligibleRuns = $derived(data.eligibleRuns);
 	let selectedDate = $state(untrack(() => data.selectedDate ?? ''));
+	const returnTo = $derived(getReturnTo(page.url, '/production'));
 
 	let unproduceDialog = $state(null);
 	let pendingForm = $state(null);
@@ -15,7 +18,12 @@
 	let allowSubmit = $state(false);
 
 	function applyDateFilter() {
-		goto(selectedDate ? `/production/unproduce?date=${selectedDate}` : '/production/unproduce');
+		goto(
+			withReturnTo(
+				selectedDate ? `/production/unproduce?date=${selectedDate}` : '/production/unproduce',
+				returnTo
+			)
+		);
 	}
 
 	function requestUnproduce(formElement, run) {
@@ -57,7 +65,7 @@
 				: 'Eligible completed production from the last 3 production dates'}
 		</p>
 	</div>
-	<a href="/production" class="btn-secondary btn-sm">Back</a>
+	<a href={returnTo} class="btn-secondary btn-sm">Back</a>
 </header>
 
 <main class="p-6 space-y-4">
@@ -74,7 +82,7 @@
 			</div>
 			<button type="button" class="btn-secondary" onclick={applyDateFilter}>Find</button>
 			{#if data.selectedDate}
-				<a href="/production/unproduce" class="btn-secondary">Clear</a>
+				<a href={withReturnTo('/production/unproduce', returnTo)} class="btn-secondary">Clear</a>
 			{/if}
 		</div>
 	</div>
@@ -145,6 +153,7 @@
 										name="selected_date"
 										value={data.selectedDate ?? ''}
 									/>
+									<input type="hidden" name="return_to" value={returnTo} />
 									<input
 										type="number"
 										name="rolls_to_unproduce"

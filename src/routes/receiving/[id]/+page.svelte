@@ -1,10 +1,13 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
 	const po = $derived(data.po);
 	const openLines = $derived(data.openLines);
 	const doneLines = $derived(data.doneLines);
+	const returnTo = $derived(getReturnTo(page.url, '/receiving'));
 	let receiveDialog = $state(null);
 	let allowReceiveSubmit = $state(false);
 
@@ -38,8 +41,8 @@
 		<p class="text-sm text-gray-500 mt-0.5">{po.vendor_name}</p>
 	</div>
 	<div class="flex gap-2">
-		<a href="/po/{po.id}" class="btn-secondary btn-sm">Show PO</a>
-		<a href="/receiving" class="btn-secondary btn-sm">Back to Receiving</a>
+		<a href={withReturnTo(`/po/${po.id}`, returnTo)} class="btn-secondary btn-sm">Show PO</a>
+		<a href={returnTo} class="btn-secondary btn-sm">Back to Receiving</a>
 	</div>
 </header>
 <main class="p-6">
@@ -70,6 +73,7 @@
 		</div>
 
 		<form method="POST" onsubmit={handleReceiveSubmit} use:enhance={receiveEnhance}>
+			<input type="hidden" name="return_to" value={returnTo} />
 			<div class="card mb-4">
 				<div class="card-header">
 					<span class="text-sm font-semibold text-gray-700">Lines</span>

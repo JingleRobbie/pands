@@ -1,11 +1,14 @@
 <script>
+	import { page } from '$app/state';
 	import MatrixDrawer from '$lib/components/MatrixDrawer.svelte';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate } from '$lib/utils.js';
 	let { data } = $props();
 	const so = $derived(data.so);
 	const lineData = $derived(data.lineData);
 	const matrix = $derived(data.matrix);
 	const woId = $derived(data.woId);
+	const returnTo = $derived(getReturnTo(page.url, '/so'));
 	let outlookOpen = $state(false);
 </script>
 
@@ -15,15 +18,19 @@
 	<h1 class="text-lg font-semibold text-gray-900">SO {so.so_number} — {so.job_name}</h1>
 	<div class="flex gap-2">
 		{#if so.status === 'OPEN' || so.status === 'IN_PROGRESS'}
-			<a href="/so/{so.id}/edit" class="btn-secondary btn-sm">Edit</a>
+			<a href={withReturnTo(`/so/${so.id}/edit`, returnTo)} class="btn-secondary btn-sm"
+				>Edit</a
+			>
 		{/if}
 		{#if woId && (so.status === 'OPEN' || so.status === 'IN_PROGRESS')}
-			<a href="/wo/{woId}/schedule" class="btn-primary btn-sm">Schedule</a>
+			<a href={withReturnTo(`/wo/${woId}/schedule`, returnTo)} class="btn-primary btn-sm"
+				>Schedule</a
+			>
 		{/if}
 		<button onclick={() => (outlookOpen = !outlookOpen)} class="btn-secondary btn-sm"
 			>Inventory Outlook</button
 		>
-		<a href="/so" class="btn-secondary btn-sm">Back</a>
+		<a href={returnTo} class="btn-secondary btn-sm">Back</a>
 	</div>
 </header>
 <main class="p-6">

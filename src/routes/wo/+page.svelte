@@ -1,7 +1,10 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
+	import { pathWithSearch, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data } = $props();
+	const returnTo = $derived(pathWithSearch(page.url));
 
 	function statusBadge(s) {
 		if (s === 'OPEN') return 'badge-blue';
@@ -11,6 +14,11 @@
 	}
 	function statusLabel(s) {
 		return s.charAt(0) + s.slice(1).toLowerCase();
+	}
+	function tabClass(val) {
+		return data.status === val
+			? 'rounded-full px-3 py-1 text-sm font-medium bg-gray-800 text-white'
+			: 'rounded-full px-3 py-1 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900';
 	}
 </script>
 
@@ -22,7 +30,27 @@
 		<a href="/wo/import" class="btn-primary btn-sm">Import</a>
 	{/if}
 </header>
-<main class="p-6">
+<main class="p-6 space-y-4">
+	<div class="flex items-center justify-between gap-4">
+		<nav class="flex gap-1">
+			<a href="/wo" class={tabClass('open')}>Open</a>
+			<a href="/wo?status=complete" class={tabClass('complete')}>Complete</a>
+			<a href="/wo?status=all" class={tabClass('all')}>All</a>
+		</nav>
+		{#if data.status !== 'open'}
+			<form method="GET" class="flex items-end gap-2">
+				<input type="hidden" name="status" value={data.status} />
+				<div>
+					<label for="from" class="form-label">
+						{data.status === 'complete' ? 'Completed From' : 'Activity From'}
+					</label>
+					<input id="from" name="from" type="date" class="form-input" value={data.from} />
+				</div>
+				<button type="submit" class="btn-secondary">Apply</button>
+			</form>
+		{/if}
+	</div>
+
 	<div class="card">
 		<div class="card-header">
 			<span class="text-sm font-semibold text-gray-700">
@@ -38,6 +66,9 @@
 						<th class="px-4 py-3 text-left font-medium text-gray-500">Job</th>
 						<th class="px-4 py-3 text-left font-medium text-gray-500">Branch</th>
 						<th class="px-4 py-3 text-left font-medium text-gray-500">Ship Date</th>
+						{#if data.status !== 'open'}
+							<th class="px-4 py-3 text-left font-medium text-gray-500">Completed</th>
+						{/if}
 						<th class="px-4 py-3 text-right font-medium text-gray-500">Lines</th>
 						<th class="px-4 py-3 text-right font-medium text-gray-500">Sq Ft</th>
 						<th class="px-4 py-3 text-right font-medium text-gray-500">
@@ -62,13 +93,16 @@
 					{#each data.wos as wo (wo.id)}
 						<tr
 							class="hover:bg-gray-50 cursor-pointer"
-							onclick={() => goto(`/wo/${wo.id}`)}
+							onclick={() => goto(withReturnTo(`/wo/${wo.id}`, returnTo))}
 						>
 							<td class="px-4 py-3 font-medium text-gray-900">{wo.so_number}</td>
 							<td class="px-4 py-3 text-gray-700">{wo.customer_name}</td>
 							<td class="px-4 py-3 text-gray-700">{wo.job_name}</td>
 							<td class="px-4 py-3 text-gray-500">{wo.branch}</td>
 							<td class="px-4 py-3 text-gray-600">{fmtDate(wo.ship_date)}</td>
+							{#if data.status !== 'open'}
+								<td class="px-4 py-3 text-gray-600">{fmtDate(wo.completed_at)}</td>
+							{/if}
 							<td class="px-4 py-3 text-right text-gray-500">{wo.line_count}</td>
 							<td class="px-4 py-3 text-right font-mono text-gray-600"
 								>{fmtSqft(wo.total_sqft)}</td

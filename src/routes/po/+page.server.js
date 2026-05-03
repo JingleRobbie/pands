@@ -1,6 +1,14 @@
 import { db } from '$lib/db.js';
 import { localDate } from '$lib/utils.js';
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function defaultFromDate() {
+	const d = new Date();
+	d.setDate(d.getDate() - 90);
+	return localDate(d);
+}
+
 async function attachLines(pos) {
 	if (!pos.length) return;
 	const ids = pos.map((p) => p.id);
@@ -39,6 +47,8 @@ const RECV_JOIN = `
 export async function load({ url, locals }) {
 	const q = url.searchParams.get('q')?.trim() ?? '';
 	const status = url.searchParams.get('status') ?? '';
+	const requestedFrom = (url.searchParams.get('from') ?? '').trim();
+	const from = status ? (DATE_RE.test(requestedFrom) ? requestedFrom : defaultFromDate()) : '';
 	const isFiltered = q || status;
 
 	if (!isFiltered) {
@@ -71,6 +81,17 @@ export async function load({ url, locals }) {
 		where.push('po.status = ?');
 		params.push(status.toUpperCase());
 	}
+	if (from) {
+		where.push(
+			status === 'open' || status === 'cancelled'
+				? 'po.expected_date >= ?'
+				: `CASE
+				     WHEN po.status = 'RECEIVED' THEN COALESCE(recv.received_at, po.expected_date)
+				     ELSE po.expected_date
+				   END >= ?`
+		);
+		params.push(from);
+	}
 	if (q) {
 		where.push('(po.po_number LIKE ? OR po.vendor_name LIKE ?)');
 		params.push(`%${q}%`, `%${q}%`);
@@ -86,5 +107,5 @@ export async function load({ url, locals }) {
 		params
 	);
 	await attachLines(searchResults);
-	return { upcoming: [], searchResults, q, status, user: locals.appUser };
+	return { upcoming: [], searchResults, q, status, from, user: locals.appUser };
 }

@@ -1,11 +1,15 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { untrack } from 'svelte';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
 	const shipment = $derived(data.shipment);
 	const availableRuns = $derived(data.availableRuns);
+	const returnTo = $derived(getReturnTo(page.url, '/shipments'));
+	const shipmentHref = $derived(withReturnTo(`/shipments/${shipment.id}`, returnTo));
 
 	// Current lines — track which are kept and their roll counts
 	let keepLines = new SvelteSet(untrack(() => shipment.lines.map((l) => l.id)));
@@ -84,7 +88,7 @@
 
 <div class="p-6 max-w-5xl">
 	<div class="flex items-center gap-4 mb-6">
-		<a href="/shipments/{shipment.id}" class="text-gray-400 hover:text-gray-600 text-sm"
+		<a href={shipmentHref} class="text-gray-400 hover:text-gray-600 text-sm"
 			>← {shipment.shipment_number}</a
 		>
 		<h1 class="text-xl font-semibold text-gray-900">Edit Shipment</h1>
@@ -94,6 +98,7 @@
 	</div>
 
 	<form method="POST" use:enhance class="space-y-6">
+		<input type="hidden" name="return_to" value={returnTo} />
 		{#if form?.error}
 			<p class="text-red-600 text-sm">{form.error}</p>
 		{/if}
@@ -348,7 +353,8 @@
 
 		<div class="flex gap-3">
 			<button type="submit" class="btn-primary">Save Changes</button>
-			<a href="/shipments/{shipment.id}" class="btn-secondary">Cancel</a>
+			<a href={shipmentHref} class="btn-secondary">Cancel</a>
 		</div>
 	</form>
 </div>
+

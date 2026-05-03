@@ -3,6 +3,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { getMatrixDataForSkus } from '$lib/services/inventory.js';
 import { requireAdmin } from '$lib/auth.js';
 import { unreceivePoLines } from '$lib/services/purchasing.js';
+import { safeReturnTo, withReturnTo } from '$lib/navigation.js';
 
 export async function load({ params, locals }) {
 	const [[po]] = await db.query('SELECT * FROM purchase_orders WHERE id = ?', [params.id]);
@@ -37,21 +38,24 @@ export async function load({ params, locals }) {
 }
 
 export const actions = {
-	cancel: async ({ params, locals }) => {
+	cancel: async ({ request, params, locals }) => {
 		const denied = requireAdmin(locals);
 		if (denied) return denied;
+		const data = await request.formData();
+		const returnTo = safeReturnTo(data.get('return_to'), '/po');
 		await db.query('UPDATE purchase_orders SET status = "CANCELLED" WHERE id = ?', [params.id]);
 		await db.query(
 			'UPDATE purchase_order_lines SET status = "CANCELLED" WHERE po_id = ? AND status = "OPEN"',
 			[params.id]
 		);
-		redirect(303, '/po');
+		redirect(303, returnTo);
 	},
 	unreceive: async ({ request, params, locals }) => {
 		const denied = requireAdmin(locals);
 		if (denied) return denied;
 
 		const data = await request.formData();
+		const returnTo = safeReturnTo(data.get('return_to'), '/po');
 		const requestedLineIds = data.getAll('line_id').map(Number).filter(Boolean);
 
 		let lineIds = requestedLineIds;
@@ -72,6 +76,6 @@ export const actions = {
 			return fail(500, { error: err.message });
 		}
 
-		redirect(303, `/po/${params.id}`);
+		redirect(303, withReturnTo(`/po/${params.id}`, returnTo));
 	},
 };

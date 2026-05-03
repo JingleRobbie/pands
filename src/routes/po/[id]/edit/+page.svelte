@@ -1,10 +1,14 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { untrack } from 'svelte';
 	let { data, form } = $props();
 	const po = $derived(data.po);
 	const skus = $derived(data.skus);
 	const user = $derived(data.user);
+	const returnTo = $derived(getReturnTo(page.url, '/po'));
+	const detailHref = $derived(withReturnTo(`/po/${po.id}`, returnTo));
 
 	// Editable open lines — start from server data
 	let openLines = $state(
@@ -32,7 +36,7 @@
 	<h1 class="text-lg font-semibold text-gray-900">Edit PO {po.po_number}</h1>
 	<div class="flex gap-2">
 		<a href="/receiving/{po.id}" class="btn-secondary btn-sm">Record Receipt</a>
-		<a href="/po/{po.id}" class="btn-secondary btn-sm">Cancel</a>
+		<a href={detailHref} class="btn-secondary btn-sm">Cancel</a>
 	</div>
 </header>
 <main class="p-6">
@@ -46,6 +50,7 @@
 		{/if}
 
 		<form id="edit-form" method="POST" use:enhance>
+			<input type="hidden" name="return_to" value={returnTo} />
 			<div class="card mb-4">
 				<div class="card-header">
 					<span class="font-semibold text-sm text-gray-700">PO Details</span>
@@ -217,7 +222,7 @@
 		<div class="flex items-center justify-between">
 			<div class="flex gap-3">
 				<button type="submit" form="edit-form" class="btn-primary">Save Changes</button>
-				<a href="/po/{po.id}" class="btn-secondary">Cancel</a>
+				<a href={detailHref} class="btn-secondary">Cancel</a>
 			</div>
 			{#if user?.role === 'admin'}
 				<button
@@ -234,6 +239,7 @@
 	<p class="text-sm font-medium text-gray-900 mb-1">Cancel PO {po.po_number}?</p>
 	<p class="text-xs text-gray-500 mb-4">This will cancel all open lines and cannot be undone.</p>
 	<form method="POST" action="/po/{po.id}?/cancel" use:enhance>
+		<input type="hidden" name="return_to" value={returnTo} />
 		<div class="flex gap-2 justify-end">
 			<button type="button" class="btn-secondary btn-sm" onclick={() => cancelDialog.close()}
 				>Cancel</button

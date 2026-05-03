@@ -1,7 +1,14 @@
 import { db } from '$lib/db.js';
 import { localDate } from '$lib/utils.js';
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const STATUS_ORDER = { UNSCHEDULED: 0, SCHEDULED: 1, COMPLETED: 2 };
+
+function defaultFromDate() {
+	const d = new Date();
+	d.setDate(d.getDate() - 90);
+	return localDate(d);
+}
 
 function worstStatus(a, b) {
 	return STATUS_ORDER[a] <= STATUS_ORDER[b] ? a : b;
@@ -81,6 +88,8 @@ function groupRunsByWo(runRows, today) {
 export async function load({ url, locals }) {
 	const q = url.searchParams.get('q')?.trim() ?? '';
 	const status = url.searchParams.get('status') ?? '';
+	const requestedFrom = (url.searchParams.get('from') ?? '').trim();
+	const from = status ? (DATE_RE.test(requestedFrom) ? requestedFrom : defaultFromDate()) : '';
 
 	const today = localDate();
 
@@ -100,6 +109,22 @@ export async function load({ url, locals }) {
 		where.push('(pr.run_number LIKE ? OR wo.job_name LIKE ? OR wo.so_number LIKE ?)');
 		params.push(`%${q}%`, `%${q}%`, `%${q}%`);
 	}
+	if (from) {
+		where.push(
+			status === 'unscheduled'
+				? 'DATE(pr.created_at) >= ?'
+				: status === 'scheduled'
+					? 'pr.run_date >= ?'
+					: status === 'completed'
+						? 'COALESCE(DATE(pr.confirmed_at), pr.run_date) >= ?'
+						: `CASE
+						     WHEN pr.status = 'UNSCHEDULED' THEN DATE(pr.created_at)
+						     WHEN pr.status = 'COMPLETED' THEN COALESCE(DATE(pr.confirmed_at), pr.run_date)
+						     ELSE pr.run_date
+						   END >= ?`
+		);
+		params.push(from);
+	}
 
 	const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
@@ -117,5 +142,5 @@ export async function load({ url, locals }) {
 	);
 
 	const woGroups = groupRunsByWo(runRows, today);
-	return { woGroups, today, q, status, user: locals.appUser };
+	return { woGroups, today, q, status, from, user: locals.appUser };
 }

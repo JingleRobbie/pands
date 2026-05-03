@@ -1,10 +1,14 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { untrack } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
 	const shipment = $derived(data.shipment);
+	const returnTo = $derived(getReturnTo(page.url, '/shipments'));
+	const shipmentHref = $derived(withReturnTo(`/shipments/${shipment.id}`, returnTo));
 
 	let lineRolls = new SvelteMap(untrack(() => shipment.lines.map((l) => [l.id, l.rolls])));
 	let confirmDialog = $state(null);
@@ -37,7 +41,7 @@
 
 <div class="p-6 max-w-5xl">
 	<div class="flex items-center gap-4 mb-6">
-		<a href="/shipments/{shipment.id}" class="text-gray-400 hover:text-gray-600 text-sm"
+		<a href={shipmentHref} class="text-gray-400 hover:text-gray-600 text-sm"
 			>← {shipment.shipment_number}</a
 		>
 		<h1 class="text-xl font-semibold text-gray-900">Mark Shipped</h1>
@@ -53,6 +57,7 @@
 			}}
 		class="space-y-6"
 	>
+		<input type="hidden" name="return_to" value={returnTo} />
 		{#if form?.error}
 			<p class="text-red-600 text-sm">{form.error}</p>
 		{/if}
@@ -158,7 +163,7 @@
 			>
 				One or more lines has an invalid roll count (must be between 1 and the line
 				maximum). To remove a line entirely, go back and
-				<a href="/shipments/{shipment.id}/edit" class="underline font-medium"
+				<a href={withReturnTo(`/shipments/${shipment.id}/edit`, returnTo)} class="underline font-medium"
 					>edit the shipment</a
 				>
 				to remove that line before marking as shipped.
@@ -169,7 +174,7 @@
 			<button type="button" class="btn-primary" onclick={openConfirm} disabled={anyInvalid}
 				>Confirm &amp; Mark Shipped</button
 			>
-			<a href="/shipments/{shipment.id}" class="btn-secondary">Cancel</a>
+			<a href={shipmentHref} class="btn-secondary">Cancel</a>
 		</div>
 
 		<dialog
@@ -192,3 +197,4 @@
 		</dialog>
 	</form>
 </div>
+

@@ -1,11 +1,15 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	import { untrack } from 'svelte';
 	let { data, form } = $props();
 	const wo = $derived(data.wo);
 	const schedulableLines = $derived(data.schedulableLines);
 	const doneLines = $derived(data.doneLines);
+	const returnTo = $derived(getReturnTo(page.url, `/wo/${wo.id}`));
+	const woHref = $derived(withReturnTo(`/wo/${wo.id}`, returnTo));
 
 	let rolls = $state(
 		untrack(() =>
@@ -20,7 +24,7 @@
 <svelte:head><title>Schedule WO {wo.so_number} — PandS</title></svelte:head>
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
-	<a href="/wo/{wo.id}" class="text-gray-400 hover:text-gray-600 text-sm">← WO {wo.so_number}</a>
+	<a href={woHref} class="text-gray-400 hover:text-gray-600 text-sm">Back to WO {wo.so_number}</a>
 	<h1 class="text-lg font-semibold text-gray-900">Schedule Production</h1>
 </header>
 
@@ -47,6 +51,7 @@
 	</div>
 
 	<form method="POST" use:enhance>
+		<input type="hidden" name="return_to" value={returnTo} />
 		<div class="card">
 			<div class="card-header flex items-center justify-between">
 				<div class="flex items-center gap-3">
@@ -138,7 +143,9 @@
 
 		<div class="flex items-center gap-4 mt-4">
 			<button type="submit" class="btn-primary">Schedule runs</button>
-			<a href="/wo/{wo.id}" class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
+			<a href={woHref} class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
 		</div>
 	</form>
 </main>
+
+

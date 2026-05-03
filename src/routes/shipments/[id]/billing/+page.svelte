@@ -1,8 +1,12 @@
 <script>
+	import { page } from '$app/state';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data } = $props();
 	const shipment = $derived(data.shipment);
 	const skuLines = $derived(data.skuLines);
+	const returnTo = $derived(getReturnTo(page.url, '/shipments'));
+	const shipmentHref = $derived(withReturnTo(`/shipments/${shipment.id}`, returnTo));
 
 	const totalSqft = $derived(skuLines.reduce((s, l) => s + l.sqft, 0));
 </script>
@@ -23,7 +27,7 @@
 
 <div class="no-print bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
 	<div class="flex items-center gap-4">
-		<a href="/shipments/{shipment.id}" class="text-gray-400 hover:text-gray-600 text-sm"
+		<a href={shipmentHref} class="text-gray-400 hover:text-gray-600 text-sm"
 			>← Packing Slip</a
 		>
 		<span class="font-semibold text-gray-800">Billing Summary</span>
@@ -83,3 +87,4 @@
 		</tfoot>
 	</table>
 </div>
+

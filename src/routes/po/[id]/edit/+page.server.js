@@ -1,4 +1,5 @@
 import { db } from '$lib/db.js';
+import { safeReturnTo, withReturnTo } from '$lib/navigation.js';
 import { error, fail, redirect } from '@sveltejs/kit';
 
 export async function load({ params, locals }) {
@@ -23,6 +24,7 @@ export async function load({ params, locals }) {
 export const actions = {
 	default: async ({ request, params }) => {
 		const data = await request.formData();
+		const returnTo = safeReturnTo(data.get('return_to'), '/po');
 
 		const [[po]] = await db.query('SELECT * FROM purchase_orders WHERE id = ?', [params.id]);
 		if (!po) return fail(404, { error: 'PO not found.' });
@@ -109,6 +111,6 @@ export const actions = {
 			conn.release();
 		}
 
-		redirect(303, `/po/${params.id}`);
+		redirect(303, withReturnTo(`/po/${params.id}`, returnTo));
 	},
 };

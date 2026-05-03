@@ -1,4 +1,5 @@
 import { db } from '$lib/db.js';
+import { safeReturnTo, withReturnTo } from '$lib/navigation.js';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { scheduleGroup } from '$lib/services/production.js';
 
@@ -41,6 +42,7 @@ export async function load({ params }) {
 export const actions = {
 	default: async ({ request, params, locals }) => {
 		const data = await request.formData();
+		const returnTo = safeReturnTo(data.get('return_to'), `/wo/${params.id}`);
 
 		const lineIds = data.getAll('line_id').map(Number);
 		const rolls = data.getAll('rolls').map((v) => parseInt(v) || 0);
@@ -60,6 +62,6 @@ export const actions = {
 			return fail(500, { error: err.message });
 		}
 
-		redirect(303, `/wo/${params.id}`);
+		redirect(303, withReturnTo(`/wo/${params.id}`, returnTo));
 	},
 };

@@ -1,6 +1,8 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
 	import MatrixDrawer from '$lib/components/MatrixDrawer.svelte';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
 	const po = $derived(data.po);
@@ -9,6 +11,7 @@
 	const matrix = $derived(data.matrix);
 	const receivedAt = $derived(data.receivedAt);
 	const user = $derived(data.user);
+	const returnTo = $derived(getReturnTo(page.url, '/po'));
 	let outlookOpen = $state(false);
 	let cancelDialog = $state(null);
 	let unreceiveDialog = $state(null);
@@ -41,7 +44,9 @@
 	<div class="flex gap-2">
 		{#if po.status === 'OPEN'}
 			<a href="/receiving/{po.id}" class="btn-secondary btn-sm">Record Receipt</a>
-			<a href="/po/{po.id}/edit" class="btn-secondary btn-sm">Edit</a>
+			<a href={withReturnTo(`/po/${po.id}/edit`, returnTo)} class="btn-secondary btn-sm"
+				>Edit</a
+			>
 			{#if user?.role === 'admin'}
 				<button
 					type="button"
@@ -60,7 +65,7 @@
 		<button onclick={() => (outlookOpen = !outlookOpen)} class="btn-secondary btn-sm"
 			>Inventory Outlook</button
 		>
-		<a href="/po" class="btn-secondary btn-sm">Back</a>
+		<a href={returnTo} class="btn-secondary btn-sm">Back</a>
 	</div>
 </header>
 <main class="p-6">
@@ -167,6 +172,7 @@
 	<p class="text-sm font-medium text-gray-900 mb-1">Cancel PO {po.po_number}?</p>
 	<p class="text-xs text-gray-500 mb-4">This will cancel all open lines and cannot be undone.</p>
 	<form method="POST" action="?/cancel" use:enhance>
+		<input type="hidden" name="return_to" value={returnTo} />
 		<div class="flex gap-2 justify-end">
 			<button type="button" class="btn-secondary btn-sm" onclick={() => cancelDialog.close()}
 				>Cancel</button
@@ -192,6 +198,7 @@
 		</p>
 	{/if}
 	<form method="POST" action="?/unreceive" use:enhance={unreceiveEnhance}>
+		<input type="hidden" name="return_to" value={returnTo} />
 		{#if pendingUnreceive}
 			<input type="hidden" name="line_id" value={pendingUnreceive.id} />
 		{/if}

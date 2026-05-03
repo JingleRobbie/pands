@@ -1,5 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { getShipment, confirmShipment } from '$lib/services/shipping.js';
+import { safeReturnTo, withReturnTo } from '$lib/navigation.js';
 
 export async function load({ params }) {
 	const shipment = await getShipment(params.id);
@@ -11,6 +12,7 @@ export async function load({ params }) {
 export const actions = {
 	default: async ({ params, request, locals }) => {
 		const data = await request.formData();
+		const returnTo = safeReturnTo(data.get('return_to'), '/shipments');
 
 		const lineRolls = {};
 		const invalidLines = [];
@@ -37,6 +39,6 @@ export const actions = {
 		} catch (err) {
 			return fail(500, { error: err.message });
 		}
-		redirect(303, `/shipments/${params.id}?shipped=1`);
+		redirect(303, withReturnTo(`/shipments/${params.id}?shipped=1`, returnTo));
 	},
 };

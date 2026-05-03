@@ -1,8 +1,11 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data } = $props();
 	const shipment = $derived(data.shipment);
+	const returnTo = $derived(getReturnTo(page.url, '/shipments'));
 
 	const totalRolls = $derived(shipment.lines.reduce((s, l) => s + l.rolls, 0));
 	const totalSqft = $derived(shipment.lines.reduce((s, l) => s + l.sqft, 0));
@@ -36,7 +39,7 @@
 				>← WO #{shipment.so_number}</a
 			>
 		{:else}
-			<a href="/shipments" class="text-gray-400 hover:text-gray-600 text-sm">← Shipments</a>
+			<a href={returnTo} class="text-gray-400 hover:text-gray-600 text-sm">← Shipments</a>
 		{/if}
 		<span class="font-semibold text-gray-800">{shipment.shipment_number}</span>
 		<span class="badge-{shipment.status === 'SHIPPED' ? 'green' : 'amber'}"
@@ -44,10 +47,10 @@
 		>
 	</div>
 	<div class="flex items-center gap-2">
-		<a href="/shipments/{shipment.id}/billing" class="btn-secondary btn-sm">Billing Summary</a>
+		<a href={withReturnTo(`/shipments/${shipment.id}/billing`, returnTo)} class="btn-secondary btn-sm">Billing Summary</a>
 		{#if shipment.status === 'DRAFT'}
-			<a href="/shipments/{shipment.id}/edit" class="btn-secondary btn-sm">Edit</a>
-			<a href="/shipments/{shipment.id}/ship" class="btn-primary btn-sm">Mark Shipped</a>
+			<a href={withReturnTo(`/shipments/${shipment.id}/edit`, returnTo)} class="btn-secondary btn-sm">Edit</a>
+			<a href={withReturnTo(`/shipments/${shipment.id}/ship`, returnTo)} class="btn-primary btn-sm">Mark Shipped</a>
 		{/if}
 		{#if shipment.status === 'SHIPPED' && data.user?.role === 'admin'}
 			<button
@@ -112,6 +115,7 @@
 				await update();
 			}}
 	>
+		<input type="hidden" name="return_to" value={returnTo} />
 		<div class="flex gap-2 justify-end">
 			<button type="button" class="btn-secondary btn-sm" onclick={() => revertDialog.close()}
 				>Cancel</button
@@ -196,3 +200,4 @@
 		</tfoot>
 	</table>
 </div>
+

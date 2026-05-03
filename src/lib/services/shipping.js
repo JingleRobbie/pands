@@ -270,7 +270,19 @@ export async function revertShipment(shipmentId) {
 	await db.query("UPDATE shipments SET status = 'DRAFT' WHERE id = ?", [shipmentId]);
 }
 
-export async function getAllShipments() {
+export async function getAllShipments({ status = 'draft', from = '' } = {}) {
+	const where = [];
+	const params = [];
+	if (status === 'draft') {
+		where.push("s.status = 'DRAFT'");
+	} else if (status === 'shipped') {
+		where.push("s.status = 'SHIPPED'");
+	}
+	if (from) {
+		where.push('s.ship_date >= ?');
+		params.push(from);
+	}
+
 	const [rows] = await db.query(
 		`SELECT s.id, s.shipment_number, s.ship_date, s.status,
 		        wo.id AS wo_id, wo.so_number, wo.job_name,
@@ -294,9 +306,10 @@ export async function getAllShipments() {
 		 JOIN work_orders wo ON wo.id = s.wo_id
 		 JOIN customers c ON c.id = s.customer_id
 		 LEFT JOIN shipment_lines sl ON sl.shipment_id = s.id
+		 ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
 		 GROUP BY s.id
 		 ORDER BY s.ship_date DESC, s.id DESC`,
-		[]
+		params
 	);
 	return rows;
 }

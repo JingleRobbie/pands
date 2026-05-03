@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	import { untrack } from 'svelte';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
@@ -9,6 +10,7 @@
 	const wo = $derived(data.wo);
 	const matrix = $derived(data.matrix);
 	const user = $derived(data.user);
+	const returnTo = $derived(getReturnTo($page.url, '/production'));
 
 	const highlightId = $derived(parseInt($page.url.searchParams.get('highlight')) || null);
 	$effect(() => {
@@ -121,7 +123,7 @@
 		<h1 class="text-lg font-semibold text-gray-900">Record Production — {wo.so_number}</h1>
 		<p class="text-sm text-gray-500 mt-0.5">{wo.customer_name} · {wo.job_name}</p>
 	</div>
-	<a href="/production" class="btn-secondary btn-sm">Back</a>
+	<a href={returnTo} class="btn-secondary btn-sm">Back</a>
 </header>
 
 <main class="p-6">
@@ -171,7 +173,7 @@
 							{/each}
 						</ul>
 					{/if}
-					<a href="/wo/{wo.id}" class="btn-secondary btn-sm inline-block mt-2"
+					<a href={returnTo} class="btn-secondary btn-sm inline-block mt-2"
 						>Back to Work Order</a
 					>
 				</div>
@@ -318,7 +320,10 @@
 											<td class="px-4 py-2 text-right">
 												<div class="flex items-center justify-end gap-2">
 													<a
-														href="/production/{run.id}/edit"
+														href={withReturnTo(
+															`/production/${run.id}/edit`,
+															returnTo
+														)}
 														class="text-gray-400 hover:text-blue-600 text-xs"
 														>Edit</a
 													>
@@ -351,7 +356,7 @@
 								Admin access required to confirm runs.
 							</p>
 						{/if}
-						<a href="/wo/{wo.id}" class="btn-secondary">Cancel</a>
+						<a href={returnTo} class="btn-secondary">Cancel</a>
 					</div>
 					<dialog
 						bind:this={confirmDialog}

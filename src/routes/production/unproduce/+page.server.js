@@ -1,4 +1,5 @@
 import { db } from '$lib/db.js';
+import { safeReturnTo, withReturnTo } from '$lib/navigation.js';
 import { unproduceRun } from '$lib/services/production.js';
 import { error, fail, redirect } from '@sveltejs/kit';
 
@@ -78,6 +79,7 @@ export const actions = {
 		const runId = Number(data.get('run_id'));
 		const rollsToUnproduce = Number(data.get('rolls_to_unproduce'));
 		const selectedDate = data.get('selected_date') || '';
+		const returnTo = safeReturnTo(data.get('return_to'), '/production');
 
 		if (!Number.isInteger(runId) || runId < 1) {
 			return fail(400, { error: 'Select a valid production run.' });
@@ -94,7 +96,10 @@ export const actions = {
 
 		redirect(
 			303,
-			selectedDate ? `/production/unproduce?date=${selectedDate}` : '/production/unproduce'
+			withReturnTo(
+				selectedDate ? `/production/unproduce?date=${selectedDate}` : '/production/unproduce',
+				returnTo
+			)
 		);
 	},
 };

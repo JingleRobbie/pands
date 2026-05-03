@@ -1,5 +1,7 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate } from '$lib/utils.js';
 	import { untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -7,6 +9,8 @@
 	const run = $derived(data.run);
 	const maxRolls = $derived(data.maxRolls);
 	const peers = $derived(data.peers);
+	const returnTo = $derived(getReturnTo(page.url, '/production'));
+	const confirmHref = $derived(withReturnTo(`/production/${run.id}/confirm`, returnTo));
 
 	const checkedPeerIds = new SvelteSet(untrack(() => data.peers.map((p) => p.id)));
 	const allPeersChecked = $derived(peers.every((p) => checkedPeerIds.has(p.id)));
@@ -43,7 +47,7 @@
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Edit Run {run.run_number}</h1>
-	<a href="/production/{run.id}/confirm" class="btn-secondary btn-sm">Cancel</a>
+	<a href={confirmHref} class="btn-secondary btn-sm">Cancel</a>
 </header>
 <main class="p-6">
 	<div class="max-w-lg">
@@ -80,6 +84,7 @@
 		</div>
 
 		<form method="POST" use:enhance>
+			<input type="hidden" name="return_to" value={returnTo} />
 			<div class="card mb-4">
 				<div class="card-header">
 					<span class="font-semibold text-sm text-gray-700">Schedule</span>
@@ -180,7 +185,7 @@
 
 			<div class="flex gap-3">
 				<button type="submit" class="btn-primary">Save Changes</button>
-				<a href="/production/{run.id}/confirm" class="btn-secondary">Cancel</a>
+				<a href={confirmHref} class="btn-secondary">Cancel</a>
 			</div>
 		</form>
 	</div>

@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { getShipment, revertShipment } from '$lib/services/shipping.js';
 import { requireAdmin } from '$lib/auth.js';
+import { safeReturnTo, withReturnTo } from '$lib/navigation.js';
 
 export async function load({ params, url, locals }) {
 	const shipment = await getShipment(params.id);
@@ -16,14 +17,16 @@ export async function load({ params, url, locals }) {
 }
 
 export const actions = {
-	revert: async ({ params, locals }) => {
+	revert: async ({ request, params, locals }) => {
 		const denied = requireAdmin(locals);
 		if (denied) return denied;
+		const data = await request.formData();
+		const returnTo = safeReturnTo(data.get('return_to'), '/shipments');
 		try {
 			await revertShipment(params.id);
 		} catch (err) {
 			return fail(500, { error: err.message });
 		}
-		redirect(303, `/shipments/${params.id}?reverted=1`);
+		redirect(303, withReturnTo(`/shipments/${params.id}?reverted=1`, returnTo));
 	},
 };

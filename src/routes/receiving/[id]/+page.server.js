@@ -1,5 +1,6 @@
 import { db } from '$lib/db.js';
 import { error, fail, redirect } from '@sveltejs/kit';
+import { safeReturnTo } from '$lib/navigation.js';
 import { receivePoLines } from '$lib/services/purchasing.js';
 
 export async function load({ params }) {
@@ -25,6 +26,7 @@ export async function load({ params }) {
 export const actions = {
 	default: async ({ request, params, locals }) => {
 		const data = await request.formData();
+		const returnTo = safeReturnTo(data.get('return_to'), '/receiving');
 
 		const [[po]] = await db.query('SELECT status FROM purchase_orders WHERE id = ?', [
 			params.id,
@@ -48,6 +50,6 @@ export const actions = {
 			return fail(500, { error: err.message });
 		}
 
-		redirect(303, '/receiving');
+		redirect(303, returnTo);
 	},
 };

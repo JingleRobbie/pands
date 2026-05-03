@@ -1,9 +1,13 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { untrack } from 'svelte';
 	let { data, form } = $props();
 	const so = $derived(data.so);
 	const skus = $derived(data.skus);
+	const returnTo = $derived(getReturnTo(page.url, '/so'));
+	const detailHref = $derived(withReturnTo(`/so/${so.id}`, returnTo));
 
 	// Editable lines = no production runs
 	let editableLines = $state(
@@ -27,7 +31,7 @@
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Edit SO {so.so_number}</h1>
-	<a href="/so/{so.id}" class="btn-secondary btn-sm">Cancel</a>
+	<a href={detailHref} class="btn-secondary btn-sm">Cancel</a>
 </header>
 <main class="p-6">
 	<div class="max-w-2xl">
@@ -40,6 +44,7 @@
 		{/if}
 
 		<form method="POST" use:enhance>
+			<input type="hidden" name="return_to" value={returnTo} />
 			<div class="card mb-4">
 				<div class="card-header">
 					<span class="font-semibold text-sm text-gray-700">Order Details</span>
@@ -249,7 +254,7 @@
 
 			<div class="flex gap-3">
 				<button type="submit" class="btn-primary">Save Changes</button>
-				<a href="/so/{so.id}" class="btn-secondary">Cancel</a>
+				<a href={detailHref} class="btn-secondary">Cancel</a>
 			</div>
 		</form>
 	</div>

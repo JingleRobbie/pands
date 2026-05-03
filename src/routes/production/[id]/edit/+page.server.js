@@ -1,4 +1,5 @@
 import { db } from '$lib/db.js';
+import { safeReturnTo, withReturnTo } from '$lib/navigation.js';
 import { error, fail, redirect } from '@sveltejs/kit';
 
 export async function load({ params }) {
@@ -56,6 +57,7 @@ export async function load({ params }) {
 export const actions = {
 	default: async ({ request, params }) => {
 		const data = await request.formData();
+		const returnTo = safeReturnTo(data.get('return_to'), '/production');
 		const runDate = data.get('run_date')?.trim() || null;
 		const rollsScheduled = parseInt(data.get('rolls_scheduled'));
 		const peerIds = data.getAll('peer_id').map(Number);
@@ -149,6 +151,6 @@ export const actions = {
 			conn.release();
 		}
 
-		redirect(303, `/production/${params.id}/confirm`);
+		redirect(303, withReturnTo(`/production/${params.id}/confirm`, returnTo));
 	},
 };
