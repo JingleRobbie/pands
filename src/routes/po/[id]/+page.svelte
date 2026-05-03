@@ -13,6 +13,7 @@
 	let cancelDialog = $state(null);
 	let unreceiveDialog = $state(null);
 	let pendingUnreceive = $state(null);
+	let unreceiveSubmitting = $state(false);
 
 	function requestUnreceive(line = null) {
 		pendingUnreceive = line;
@@ -20,9 +21,11 @@
 	}
 
 	function unreceiveEnhance() {
+		unreceiveSubmitting = true;
 		return async ({ update }) => {
 			unreceiveDialog.close();
 			pendingUnreceive = null;
+			unreceiveSubmitting = false;
 			await update({ invalidateAll: true });
 		};
 	}
@@ -201,7 +204,9 @@
 					pendingUnreceive = null;
 				}}>Cancel</button
 			>
-			<button type="submit" class="btn-danger btn-sm">Unreceive</button>
+			<button type="submit" class="btn-danger btn-sm" disabled={unreceiveSubmitting}
+				>Unreceive</button
+			>
 		</div>
 	</form>
 </dialog>

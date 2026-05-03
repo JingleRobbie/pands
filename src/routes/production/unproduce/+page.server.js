@@ -89,7 +89,7 @@ export const actions = {
 		try {
 			await unproduceRun(runId, rollsToUnproduce, locals.appUser.id);
 		} catch (err) {
-			return fail(400, { error: err.message });
+			return fail(500, { error: err.message });
 		}
 
 		redirect(
