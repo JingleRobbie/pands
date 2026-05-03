@@ -121,7 +121,7 @@
 		<h1 class="text-lg font-semibold text-gray-900">Record Production — {wo.so_number}</h1>
 		<p class="text-sm text-gray-500 mt-0.5">{wo.customer_name} · {wo.job_name}</p>
 	</div>
-	<a href="/wo/{wo.id}" class="btn-secondary btn-sm">Back</a>
+	<a href="/production" class="btn-secondary btn-sm">Back</a>
 </header>
 
 <main class="p-6">
