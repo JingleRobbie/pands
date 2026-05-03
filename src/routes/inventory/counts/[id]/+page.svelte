@@ -4,7 +4,7 @@
 	let { data, form } = $props();
 	const count = $derived(data.count);
 	const lines = $derived(data.lines);
-	let confirming = $state(false);
+	let deleteDialog = $state(null);
 </script>
 
 <svelte:head><title>Count {fmtDate(count.count_date)} — PandS</title></svelte:head>
@@ -14,7 +14,7 @@
 		<a href="/inventory/counts" class="text-gray-400 hover:text-gray-600 text-sm">← Counts</a>
 		<h1 class="text-lg font-semibold text-gray-900">Count — {fmtDate(count.count_date)}</h1>
 	</div>
-	<button onclick={() => (confirming = true)} class="btn-danger btn-sm">Delete</button>
+	<button onclick={() => deleteDialog.showModal()} class="btn-danger btn-sm">Delete</button>
 </header>
 
 <main class="p-6 max-w-2xl space-y-6">
@@ -79,23 +79,18 @@
 	</div>
 </main>
 
-{#if confirming}
-	<div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-		<div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4 space-y-4">
-			<h2 class="text-base font-semibold text-gray-900">Delete this count?</h2>
-			<p class="text-sm text-gray-600">
-				This will permanently remove the <strong>{fmtDate(count.count_date)}</strong> count
-				and reverse all {lines.length} adjustment{lines.length === 1 ? '' : 's'}. This
-				cannot be undone.
-			</p>
-			<div class="flex gap-3">
-				<form method="POST" action="?/delete" use:enhance>
-					<button type="submit" class="btn-danger btn-sm">Yes, delete</button>
-				</form>
-				<button onclick={() => (confirming = false)} class="btn-secondary btn-sm"
-					>Cancel</button
-				>
-			</div>
-		</div>
+<dialog bind:this={deleteDialog} class="rounded-lg shadow-xl p-6 w-96 backdrop:bg-black/30">
+	<p class="text-sm font-medium text-gray-900 mb-1">Delete this count?</p>
+	<p class="text-xs text-gray-500 mb-4">
+		This will permanently remove the <strong>{fmtDate(count.count_date)}</strong> count and
+		reverse all {lines.length} adjustment{lines.length === 1 ? '' : 's'}. This cannot be undone.
+	</p>
+	<div class="flex gap-2 justify-end">
+		<button type="button" class="btn-secondary btn-sm" onclick={() => deleteDialog.close()}
+			>Cancel</button
+		>
+		<form method="POST" action="?/delete" use:enhance={() => () => deleteDialog.close()}>
+			<button type="submit" class="btn-danger btn-sm">Yes, delete</button>
+		</form>
 	</div>
-{/if}
+</dialog>

@@ -1,14 +1,31 @@
 <script>
 	import { enhance } from '$app/forms';
 	import MatrixDrawer from '$lib/components/MatrixDrawer.svelte';
-	import { fmtDate } from '$lib/utils.js';
-	let { data } = $props();
+	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	let { data, form } = $props();
 	const po = $derived(data.po);
 	const lines = $derived(data.lines);
+	const receivedLines = $derived(lines.filter((line) => line.status === 'RECEIVED'));
 	const matrix = $derived(data.matrix);
 	const receivedAt = $derived(data.receivedAt);
 	const user = $derived(data.user);
 	let outlookOpen = $state(false);
+	let cancelDialog = $state(null);
+	let unreceiveDialog = $state(null);
+	let pendingUnreceive = $state(null);
+
+	function requestUnreceive(line = null) {
+		pendingUnreceive = line;
+		unreceiveDialog.showModal();
+	}
+
+	function unreceiveEnhance() {
+		return async ({ update }) => {
+			unreceiveDialog.close();
+			pendingUnreceive = null;
+			await update();
+		};
+	}
 </script>
 
 <svelte:head><title>PO {po.po_number} — PandS</title></svelte:head>
@@ -23,10 +40,19 @@
 			<a href="/receiving/{po.id}" class="btn-secondary btn-sm">Record Receipt</a>
 			<a href="/po/{po.id}/edit" class="btn-secondary btn-sm">Edit</a>
 			{#if user?.role === 'admin'}
-				<form method="POST" action="?/cancel" use:enhance>
-					<button type="submit" class="btn-danger btn-sm">Cancel PO</button>
-				</form>
+				<button
+					type="button"
+					class="btn-danger btn-sm"
+					onclick={() => cancelDialog.showModal()}>Cancel PO</button
+				>
 			{/if}
+		{/if}
+		{#if receivedLines.length > 0 && user?.role === 'admin'}
+			<button
+				type="button"
+				class="btn-secondary btn-sm text-amber-700 border-amber-300 hover:border-amber-400"
+				onclick={() => requestUnreceive()}>Unreceive PO</button
+			>
 		{/if}
 		<button onclick={() => (outlookOpen = !outlookOpen)} class="btn-secondary btn-sm"
 			>Inventory Outlook</button
@@ -36,6 +62,14 @@
 </header>
 <main class="p-6">
 	<div class="max-w-2xl">
+		{#if form?.error}
+			<div
+				class="mb-4 px-4 py-3 rounded-md text-sm bg-red-50 text-red-800 border border-red-200"
+			>
+				{form.error}
+			</div>
+		{/if}
+
 		<div class="card mb-4">
 			<div class="card-body grid grid-cols-3 gap-4 text-sm">
 				<div>
@@ -79,6 +113,11 @@
 					><tr class="border-b border-gray-100">
 						<th class="px-4 py-2 text-left text-gray-600">SKU</th>
 						<th class="px-4 py-2 text-right text-gray-600">Ordered (sqft)</th>
+						<th class="px-4 py-2 text-right text-gray-600">Received (sqft)</th>
+						<th class="px-4 py-2 text-left text-gray-600">Status</th>
+						{#if user?.role === 'admin'}
+							<th class="px-4 py-2 text-right text-gray-600"></th>
+						{/if}
 					</tr></thead
 				>
 				<tbody>
@@ -86,8 +125,31 @@
 						<tr class="border-b border-gray-50">
 							<td class="px-4 py-2 font-medium">{line.display_label}</td>
 							<td class="px-4 py-2 text-right font-mono"
-								>{Math.round(line.sqft_ordered).toLocaleString()}</td
+								>{fmtSqft(line.sqft_ordered)}</td
 							>
+							<td class="px-4 py-2 text-right font-mono text-gray-600">
+								{line.sqft_received ? fmtSqft(line.sqft_received) : '—'}
+							</td>
+							<td class="px-4 py-2">
+								{#if line.status === 'RECEIVED'}
+									<span class="badge-green">Received</span>
+								{:else if line.status === 'CANCELLED'}
+									<span class="badge-red">Cancelled</span>
+								{:else}
+									<span class="badge-blue">Open</span>
+								{/if}
+							</td>
+							{#if user?.role === 'admin'}
+								<td class="px-4 py-2 text-right">
+									{#if line.status === 'RECEIVED'}
+										<button
+											type="button"
+											class="btn-secondary btn-sm text-amber-700 border-amber-300 hover:border-amber-400"
+											onclick={() => requestUnreceive(line)}>Unreceive</button
+										>
+									{/if}
+								</td>
+							{/if}
 						</tr>
 					{/each}
 				</tbody>
@@ -97,3 +159,49 @@
 
 	<MatrixDrawer {matrix} bind:open={outlookOpen} />
 </main>
+
+<dialog bind:this={cancelDialog} class="rounded-lg shadow-xl p-6 w-80 backdrop:bg-black/30">
+	<p class="text-sm font-medium text-gray-900 mb-1">Cancel PO {po.po_number}?</p>
+	<p class="text-xs text-gray-500 mb-4">This will cancel all open lines and cannot be undone.</p>
+	<form method="POST" action="?/cancel" use:enhance>
+		<div class="flex gap-2 justify-end">
+			<button type="button" class="btn-secondary btn-sm" onclick={() => cancelDialog.close()}
+				>Cancel</button
+			>
+			<button type="submit" class="btn-danger btn-sm">Cancel PO</button>
+		</div>
+	</form>
+</dialog>
+
+<dialog bind:this={unreceiveDialog} class="rounded-lg shadow-xl p-6 w-96 backdrop:bg-black/30">
+	<p class="text-sm font-medium text-gray-900 mb-1">
+		{pendingUnreceive ? 'Unreceive PO line?' : `Unreceive PO ${po.po_number}?`}
+	</p>
+	{#if pendingUnreceive}
+		<p class="text-xs text-gray-500 mb-4">
+			{pendingUnreceive.display_label} will be reopened and
+			{fmtSqft(pendingUnreceive.sqft_received)} sq ft will be removed from inventory.
+		</p>
+	{:else}
+		<p class="text-xs text-gray-500 mb-4">
+			All {receivedLines.length} received line{receivedLines.length === 1 ? '' : 's'} will be reopened
+			and their received quantities will be removed from inventory.
+		</p>
+	{/if}
+	<form method="POST" action="?/unreceive" use:enhance={unreceiveEnhance}>
+		{#if pendingUnreceive}
+			<input type="hidden" name="line_id" value={pendingUnreceive.id} />
+		{/if}
+		<div class="flex gap-2 justify-end">
+			<button
+				type="button"
+				class="btn-secondary btn-sm"
+				onclick={() => {
+					unreceiveDialog.close();
+					pendingUnreceive = null;
+				}}>Cancel</button
+			>
+			<button type="submit" class="btn-danger btn-sm">Unreceive</button>
+		</div>
+	</form>
+</dialog>

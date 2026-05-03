@@ -480,7 +480,7 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 			(adjRowMap[t.count_id].deltas[t.sku_id] ?? 0) + sign * Number(t.sqft_quantity);
 	}
 
-	const typeOrder = { po: 0, adjustment: 1, production: 2 };
+	const typeOrder = { adjustment: 0, po: 1, production: 2 };
 	const rows = [
 		...Object.values(poRowMap),
 		...Object.values(adjRowMap),

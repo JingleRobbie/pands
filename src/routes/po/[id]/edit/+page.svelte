@@ -14,6 +14,7 @@
 
 	// New lines to add
 	let newLines = $state([]);
+	let cancelDialog = $state(null);
 	function addLine() {
 		newLines = [...newLines, { sku_id: '', sqft: '' }];
 	}
@@ -219,20 +220,25 @@
 				<a href="/po/{po.id}" class="btn-secondary">Cancel</a>
 			</div>
 			{#if user?.role === 'admin'}
-				<form
-					method="POST"
-					action="/po/{po.id}?/cancel"
-					use:enhance={({ cancel }) => {
-						if (!confirm(`Cancel PO ${po.po_number}?`)) cancel();
-					}}
+				<button
+					type="button"
+					class="rounded-md px-3 py-1.5 text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 border border-red-200 transition-colors"
+					onclick={() => cancelDialog.showModal()}>Cancel PO</button
 				>
-					<button
-						type="submit"
-						class="rounded-md px-3 py-1.5 text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 border border-red-200 transition-colors"
-						>Cancel PO</button
-					>
-				</form>
 			{/if}
 		</div>
 	</div>
 </main>
+
+<dialog bind:this={cancelDialog} class="rounded-lg shadow-xl p-6 w-80 backdrop:bg-black/30">
+	<p class="text-sm font-medium text-gray-900 mb-1">Cancel PO {po.po_number}?</p>
+	<p class="text-xs text-gray-500 mb-4">This will cancel all open lines and cannot be undone.</p>
+	<form method="POST" action="/po/{po.id}?/cancel" use:enhance>
+		<div class="flex gap-2 justify-end">
+			<button type="button" class="btn-secondary btn-sm" onclick={() => cancelDialog.close()}
+				>Cancel</button
+			>
+			<button type="submit" class="btn-danger btn-sm">Cancel PO</button>
+		</div>
+	</form>
+</dialog>

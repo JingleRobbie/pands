@@ -55,3 +55,48 @@ export async function receivePoLines(poId, receipts, userId) {
 		conn.release();
 	}
 }
+
+/**
+ * Reverse received PO lines by reopening the lines and reopening the PO.
+ *
+ * @param {number} poId
+ * @param {number[]} lineIds
+ * @param {number} _userId
+ */
+export async function unreceivePoLines(poId, lineIds, _userId) {
+	if (lineIds.length === 0) throw new Error('No received PO lines were selected.');
+
+	const conn = await db.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		for (const lineId of lineIds) {
+			const [[line]] = await conn.query(
+				`SELECT id, sku_id, sqft_received
+				 FROM purchase_order_lines
+				 WHERE id = ? AND po_id = ? AND status = 'RECEIVED'`,
+				[lineId, poId]
+			);
+			if (!line) throw new Error(`Line ${lineId} is not a received line on PO ${poId}`);
+			if (!line.sqft_received || line.sqft_received < 1) {
+				throw new Error(`Line ${lineId} does not have a received quantity to reverse.`);
+			}
+
+			await conn.query(
+				`UPDATE purchase_order_lines
+				 SET status = 'OPEN', sqft_received = NULL
+				 WHERE id = ? AND po_id = ?`,
+				[lineId, poId]
+			);
+		}
+
+		await conn.query(`UPDATE purchase_orders SET status = 'OPEN' WHERE id = ?`, [poId]);
+
+		await conn.commit();
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+}

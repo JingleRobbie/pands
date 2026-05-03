@@ -16,10 +16,12 @@
 	}
 
 	let pendingDelete = $state(null);
+	let deleteDialog = $state(null);
 
 	function deleteEnhance() {
 		return async ({ update }) => {
 			await update();
+			deleteDialog.close();
 			pendingDelete = null;
 		};
 	}
@@ -81,7 +83,10 @@
 									<button
 										type="button"
 										class="btn-danger btn-sm"
-										onclick={() => (pendingDelete = run)}
+										onclick={() => {
+											pendingDelete = run;
+											deleteDialog.showModal();
+										}}
 									>
 										Delete
 									</button>
@@ -154,32 +159,33 @@
 	</section>
 </main>
 
-{#if pendingDelete}
-	<div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-		<div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
-			<h3 class="text-base font-semibold text-gray-900 mb-1">Delete run?</h3>
-			<p class="text-sm text-gray-600 mb-1">
-				{pendingDelete.so_number} — {pendingDelete.customer_name}
-			</p>
-			<p class="text-sm text-gray-500 mb-6">
-				{pendingDelete.sku_label} · {pendingDelete.rolls_scheduled} roll{pendingDelete.rolls_scheduled ===
-				1
-					? ''
-					: 's'} will be unscheduled.
-			</p>
-			<div class="flex justify-end gap-3">
-				<button
-					type="button"
-					class="btn-secondary btn-sm"
-					onclick={() => (pendingDelete = null)}
-				>
-					Cancel
-				</button>
-				<form method="POST" action="?/delete" use:enhance={deleteEnhance}>
-					<input type="hidden" name="run_id" value={pendingDelete.id} />
-					<button type="submit" class="btn-danger btn-sm">Delete</button>
-				</form>
-			</div>
-		</div>
+<dialog bind:this={deleteDialog} class="rounded-lg shadow-xl p-6 w-80 backdrop:bg-black/30">
+	<p class="text-sm font-medium text-gray-900 mb-1">Delete run?</p>
+	{#if pendingDelete}
+		<p class="text-xs text-gray-600 mb-1">
+			{pendingDelete.so_number} — {pendingDelete.customer_name}
+		</p>
+		<p class="text-xs text-gray-500 mb-4">
+			{pendingDelete.sku_label} · {pendingDelete.rolls_scheduled} roll{pendingDelete.rolls_scheduled ===
+			1
+				? ''
+				: 's'} will be unscheduled.
+		</p>
+	{/if}
+	<div class="flex justify-end gap-2">
+		<button
+			type="button"
+			class="btn-secondary btn-sm"
+			onclick={() => {
+				deleteDialog.close();
+				pendingDelete = null;
+			}}
+		>
+			Cancel
+		</button>
+		<form method="POST" action="?/delete" use:enhance={deleteEnhance}>
+			<input type="hidden" name="run_id" value={pendingDelete?.id} />
+			<button type="submit" class="btn-danger btn-sm">Delete</button>
+		</form>
 	</div>
-{/if}
+</dialog>

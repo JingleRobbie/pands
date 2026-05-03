@@ -5,6 +5,29 @@
 	const po = $derived(data.po);
 	const openLines = $derived(data.openLines);
 	const doneLines = $derived(data.doneLines);
+	let receiveDialog = $state(null);
+	let allowReceiveSubmit = $state(false);
+
+	function requestReceive(formElement) {
+		if (formElement && !formElement.reportValidity()) return;
+		receiveDialog.showModal();
+	}
+
+	function handleReceiveSubmit(event) {
+		if (!allowReceiveSubmit) {
+			event.preventDefault();
+			requestReceive(event.currentTarget);
+			return;
+		}
+		allowReceiveSubmit = false;
+	}
+
+	function receiveEnhance() {
+		return async ({ update }) => {
+			receiveDialog?.close();
+			await update();
+		};
+	}
 </script>
 
 <svelte:head><title>Receive PO {po.po_number} — PandS</title></svelte:head>
@@ -46,7 +69,7 @@
 			</div>
 		</div>
 
-		<form method="POST" use:enhance>
+		<form method="POST" onsubmit={handleReceiveSubmit} use:enhance={receiveEnhance}>
 			<div class="card mb-4">
 				<div class="card-header">
 					<span class="text-sm font-semibold text-gray-700">Lines</span>
@@ -107,8 +130,34 @@
 			</div>
 
 			{#if openLines.length}
-				<button type="submit" class="btn-primary">Record Receipt</button>
+				<button
+					type="button"
+					class="btn-primary"
+					onclick={(e) => requestReceive(e.currentTarget.form)}>Record Receipt</button
+				>
 			{/if}
+			<dialog
+				bind:this={receiveDialog}
+				class="rounded-lg shadow-xl p-6 w-96 backdrop:bg-black/30"
+			>
+				<p class="text-sm font-medium text-gray-900 mb-1">Record receipt?</p>
+				<p class="text-xs text-gray-500 mb-4">
+					{openLines.length} line{openLines.length === 1 ? '' : 's'} will be received and added
+					to inventory.
+				</p>
+				<div class="flex gap-2 justify-end">
+					<button
+						type="button"
+						class="btn-secondary btn-sm"
+						onclick={() => receiveDialog.close()}>Cancel</button
+					>
+					<button
+						type="submit"
+						class="btn-primary btn-sm"
+						onclick={() => (allowReceiveSubmit = true)}>Confirm</button
+					>
+				</div>
+			</dialog>
 		</form>
 	</div>
 </main>

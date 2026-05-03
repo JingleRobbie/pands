@@ -1,7 +1,8 @@
 import { db } from '$lib/db.js';
-import { error, redirect } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { getMatrixDataForSkus } from '$lib/services/inventory.js';
 import { requireAdmin } from '$lib/auth.js';
+import { unreceivePoLines } from '$lib/services/purchasing.js';
 
 export async function load({ params, locals }) {
 	const [[po]] = await db.query('SELECT * FROM purchase_orders WHERE id = ?', [params.id]);
@@ -39,5 +40,32 @@ export const actions = {
 			[params.id]
 		);
 		redirect(303, '/po');
+	},
+	unreceive: async ({ request, params, locals }) => {
+		const denied = requireAdmin(locals);
+		if (denied) return denied;
+
+		const data = await request.formData();
+		const requestedLineIds = data.getAll('line_id').map(Number).filter(Boolean);
+
+		let lineIds = requestedLineIds;
+		if (lineIds.length === 0) {
+			const [rows] = await db.query(
+				`SELECT id
+				 FROM purchase_order_lines
+				 WHERE po_id = ? AND status = 'RECEIVED'
+				 ORDER BY id`,
+				[params.id]
+			);
+			lineIds = rows.map((row) => row.id);
+		}
+
+		try {
+			await unreceivePoLines(Number(params.id), lineIds, locals.appUser.id);
+		} catch (err) {
+			return fail(500, { error: err.message });
+		}
+
+		redirect(303, `/po/${params.id}`);
 	},
 };

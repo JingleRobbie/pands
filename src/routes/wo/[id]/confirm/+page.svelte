@@ -41,6 +41,8 @@
 	const checkedRunIds = new SvelteSet(untrack(() => data.runs.map((r) => r.id)));
 	const allChecked = $derived(scheduledRuns.every((r) => checkedRunIds.has(r.id)));
 	const someChecked = $derived(scheduledRuns.some((r) => checkedRunIds.has(r.id)) && !allChecked);
+	const anyChecked = $derived(scheduledRuns.some((r) => checkedRunIds.has(r.id)));
+	const selectedRuns = $derived(scheduledRuns.filter((r) => checkedRunIds.has(r.id)));
 	function toggleAllRuns() {
 		checkedRunIds.clear();
 		if (!allChecked) {
@@ -57,11 +59,35 @@
 
 	let confirmDeleteId = $state(null);
 	let deleteDialog = $state(null);
+	let confirmDialog = $state(null);
+	let allowConfirmSubmit = $state(false);
 	let justDeleted = $state(false);
 
 	function requestDelete(runId) {
 		confirmDeleteId = runId;
 		deleteDialog.showModal();
+	}
+
+	function requestConfirm(formElement) {
+		if (!anyChecked) return;
+		if (formElement && !formElement.reportValidity()) return;
+		confirmDialog.showModal();
+	}
+
+	function handleConfirmSubmit(event) {
+		if (!allowConfirmSubmit) {
+			event.preventDefault();
+			requestConfirm(event.currentTarget);
+			return;
+		}
+		allowConfirmSubmit = false;
+	}
+
+	function confirmEnhance() {
+		return async ({ update }) => {
+			confirmDialog?.close();
+			await update();
+		};
 	}
 
 	function toDateInput(d) {
@@ -72,11 +98,19 @@
 	let dates = $state(
 		untrack(() => Object.fromEntries(data.runs.map((r) => [r.id, toDateInput(r.run_date)])))
 	);
+	let actualRolls = new SvelteMap(untrack(() => data.runs.map((r) => [r.id, r.rolls_scheduled])));
+	const selectedRolls = $derived(
+		selectedRuns.reduce((sum, run) => sum + (actualRolls.get(run.id) ?? run.rolls_scheduled), 0)
+	);
 	let fillDate = $state('');
 
 	function applyDateToAll() {
 		if (!fillDate) return;
 		for (const key in dates) dates[key] = fillDate;
+	}
+
+	function setActualRolls(id, val) {
+		actualRolls.set(id, val);
 	}
 </script>
 
@@ -152,7 +186,12 @@
 					</div>
 				</div>
 			{:else}
-				<form method="POST" action="?/confirm" use:enhance>
+				<form
+					method="POST"
+					action="?/confirm"
+					onsubmit={handleConfirmSubmit}
+					use:enhance={confirmEnhance}
+				>
 					<div class="card mb-4">
 						<div class="card-header">
 							<span class="font-semibold text-sm text-gray-700">Runs to Produce</span>
@@ -260,11 +299,20 @@
 												<input
 													type="number"
 													name="rolls_{run.id}"
-													value={run.rolls_scheduled}
+													value={actualRolls.get(run.id) ??
+														run.rolls_scheduled}
 													min="1"
 													max={run.rolls_scheduled}
 													step="1"
 													class="form-input w-20 text-right tabular-nums"
+													oninput={(e) =>
+														setActualRolls(
+															run.id,
+															Math.max(
+																0,
+																parseInt(e.target.value) || 0
+															)
+														)}
 												/>
 											</td>
 											<td class="px-4 py-2 text-right">
@@ -292,8 +340,11 @@
 					</div>
 					<div class="flex gap-3">
 						{#if user?.role === 'admin'}
-							<button type="submit" class="btn-primary"
-								>Mark Produced &amp; Deduct Inventory</button
+							<button
+								type="button"
+								class="btn-primary"
+								onclick={(e) => requestConfirm(e.currentTarget.form)}
+								disabled={!anyChecked}>Mark Produced &amp; Deduct Inventory</button
 							>
 						{:else}
 							<p class="text-sm text-amber-700">
@@ -302,6 +353,29 @@
 						{/if}
 						<a href="/wo/{wo.id}" class="btn-secondary">Cancel</a>
 					</div>
+					<dialog
+						bind:this={confirmDialog}
+						class="rounded-lg shadow-xl p-6 w-96 backdrop:bg-black/30"
+					>
+						<p class="text-sm font-medium text-gray-900 mb-1">Confirm production?</p>
+						<p class="text-xs text-gray-500 mb-4">
+							{selectedRuns.length} run{selectedRuns.length === 1 ? '' : 's'} and
+							{selectedRolls} roll{selectedRolls === 1 ? '' : 's'} will be marked produced.
+							This deducts inventory and cannot be undone.
+						</p>
+						<div class="flex gap-2 justify-end">
+							<button
+								type="button"
+								class="btn-secondary btn-sm"
+								onclick={() => confirmDialog.close()}>Cancel</button
+							>
+							<button
+								type="submit"
+								class="btn-primary btn-sm"
+								onclick={() => (allowConfirmSubmit = true)}>Confirm</button
+							>
+						</div>
+					</dialog>
 				</form>
 			{/if}
 		{/if}

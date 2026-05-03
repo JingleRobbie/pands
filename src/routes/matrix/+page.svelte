@@ -56,7 +56,13 @@
 	const cutoffDays = { '7d': 7, '30d': 30, '365d': 365 };
 	const visibleHistoryRows = $derived(
 		historyRange === 'current'
-			? []
+			? matrix.historyRows.filter((r) => {
+					const rowDate =
+						typeof r.eventDate === 'string'
+							? r.eventDate
+							: r.eventDate.toISOString().slice(0, 10);
+					return rowDate === today;
+				})
 			: matrix.historyRows.filter((r) => {
 					const cutoff = new SvelteDate(today);
 					cutoff.setDate(cutoff.getDate() - cutoffDays[historyRange]);
@@ -146,7 +152,14 @@
 							: row.subType === 'adjustment'
 								? `/inventory/counts/${row.objectId}`
 								: `/wo/${row.objectId}/confirm`}
-					<tr class="row-historical cursor-pointer" onclick={() => goto(href)}>
+					<tr
+						class="{historyRange === 'current'
+							? row.subType === 'production'
+								? 'row-production'
+								: 'row-po'
+							: 'row-historical'} cursor-pointer"
+						onclick={() => goto(href)}
+					>
 						<td>
 							{#if row.subType === 'adjustment'}
 								{row.description}
