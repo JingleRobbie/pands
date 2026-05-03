@@ -1,35 +1,42 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { fmtDate } from '$lib/utils.js';
+	import { untrack } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	let { data, form } = $props();
-	const { run, maxRolls, peers } = data;
+	const run = $derived(data.run);
+	const maxRolls = $derived(data.maxRolls);
+	const peers = $derived(data.peers);
 
-	let checkedPeerIds = $state(new Set(peers.map((p) => p.id)));
+	const checkedPeerIds = new SvelteSet(untrack(() => data.peers.map((p) => p.id)));
 	const allPeersChecked = $derived(peers.every((p) => checkedPeerIds.has(p.id)));
 	const somePeersChecked = $derived(
 		peers.some((p) => checkedPeerIds.has(p.id)) && !allPeersChecked
 	);
 	function toggleAllPeers() {
-		checkedPeerIds = allPeersChecked ? new Set() : new Set(peers.map((p) => p.id));
+		checkedPeerIds.clear();
+		if (!allPeersChecked) {
+			for (const peer of peers) checkedPeerIds.add(peer.id);
+		}
 	}
 	function togglePeer(id) {
-		const next = new Set(checkedPeerIds);
-		next.has(id) ? next.delete(id) : next.add(id);
-		checkedPeerIds = next;
+		checkedPeerIds.has(id) ? checkedPeerIds.delete(id) : checkedPeerIds.add(id);
 	}
-	let masterPeersCb;
+	let masterPeersCb = $state(null);
 	$effect(() => {
 		if (masterPeersCb) masterPeersCb.indeterminate = somePeersChecked;
 	});
 
 	let runDate = $state(
-		run.run_date instanceof Date
-			? run.run_date.toISOString().slice(0, 10)
-			: run.run_date
-				? String(run.run_date).slice(0, 10)
-				: ''
+		untrack(() =>
+			data.run.run_date instanceof Date
+				? data.run.run_date.toISOString().slice(0, 10)
+				: data.run.run_date
+					? String(data.run.run_date).slice(0, 10)
+					: ''
+		)
 	);
-	let rollsScheduled = $state(run.rolls_scheduled);
+	let rollsScheduled = $state(untrack(() => data.run.rolls_scheduled));
 </script>
 
 <svelte:head><title>Edit Run {run.run_number} — PandS</title></svelte:head>

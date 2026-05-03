@@ -2,8 +2,9 @@
 	import '../app.css';
 	import { page } from '$app/stores';
 	import SearchOverlay from '$lib/components/SearchOverlay.svelte';
+	import { untrack } from 'svelte';
 	let { data, children } = $props();
-	let collapsed = $state(data.appUser?.sidebar_collapsed ?? false);
+	let collapsed = $state(untrack(() => data.appUser?.sidebar_collapsed ?? false));
 	let searchOpen = $state(false);
 
 	const navItems = [

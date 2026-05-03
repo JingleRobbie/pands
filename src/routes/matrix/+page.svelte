@@ -3,8 +3,10 @@
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
 	import { localDate } from '$lib/utils.js';
+	import { SvelteDate, SvelteSet, SvelteURLSearchParams } from 'svelte/reactivity';
 	let { data } = $props();
-	const { matrix } = data;
+	const matrix = $derived(data.matrix);
+	const appUser = $derived(data.appUser);
 
 	function fmtDate(d) {
 		if (!d) return null;
@@ -23,8 +25,8 @@
 	);
 
 	const _init = get(page).url.searchParams;
-	let selectedThicknesses = $state(
-		new Set((_init.get('thickness') ?? '').split(',').filter(Boolean).map(Number))
+	const selectedThicknesses = new SvelteSet(
+		(_init.get('thickness') ?? '').split(',').filter(Boolean).map(Number)
 	);
 
 	const visibleSkus = $derived(
@@ -34,16 +36,14 @@
 	);
 
 	function toggleThickness(t) {
-		const next = new Set(selectedThicknesses);
-		next.has(t) ? next.delete(t) : next.add(t);
-		selectedThicknesses = next;
+		selectedThicknesses.has(t) ? selectedThicknesses.delete(t) : selectedThicknesses.add(t);
 	}
 
 	let historyRange = $state(_init.get('history') ?? 'current');
 	const today = localDate();
 
 	$effect(() => {
-		const p = new URLSearchParams();
+		const p = new SvelteURLSearchParams();
 		if (historyRange !== 'current') p.set('history', historyRange);
 		if (selectedThicknesses.size > 0) p.set('thickness', [...selectedThicknesses].join(','));
 		const qs = p.toString();
@@ -58,7 +58,7 @@
 		historyRange === 'current'
 			? []
 			: matrix.historyRows.filter((r) => {
-					const cutoff = new Date(today);
+					const cutoff = new SvelteDate(today);
 					cutoff.setDate(cutoff.getDate() - cutoffDays[historyRange]);
 					const rowDate =
 						typeof r.eventDate === 'string'
@@ -84,9 +84,9 @@
 		<a
 			href="/inventory/count"
 			class="btn-secondary btn-sm"
-			class:opacity-40={data.appUser?.role !== 'admin'}
-			class:pointer-events-none={data.appUser?.role !== 'admin'}
-			title={data.appUser?.role !== 'admin' ? 'Admin only' : 'Record inventory count'}
+			class:opacity-40={appUser?.role !== 'admin'}
+			class:pointer-events-none={appUser?.role !== 'admin'}
+			title={appUser?.role !== 'admin' ? 'Admin only' : 'Record inventory count'}
 			>Record Count</a
 		>
 		<a href="/po/new" class="btn-secondary btn-sm">+ PO</a>
@@ -105,7 +105,7 @@
 	{/each}
 	{#if selectedThicknesses.size > 0}
 		<button
-			onclick={() => (selectedThicknesses = new Set())}
+			onclick={() => selectedThicknesses.clear()}
 			class="btn-sm btn-secondary text-gray-500"
 		>
 			Clear
@@ -166,9 +166,7 @@
 						<td>
 							{#if row.subType === 'po'}
 								{row.poNumber}
-							{:else if row.subType === 'adjustment'}
-								{''}
-							{:else}
+							{:else if row.subType === 'adjustment'}{:else}
 								{row.soNumber || row.poNumber}
 							{/if}
 						</td>

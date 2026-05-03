@@ -1,7 +1,7 @@
 <script>
 	import { enhance } from '$app/forms';
 	let { data, form } = $props();
-	const woId = form?.woId ?? data.woId;
+	const woId = $derived(form?.woId ?? data.woId);
 </script>
 
 <div class="p-6 max-w-md">

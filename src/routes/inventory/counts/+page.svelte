@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { fmtDate } from '$lib/utils.js';
 	let { data } = $props();
-	const { counts } = data;
+	const counts = $derived(data.counts);
 </script>
 
 <svelte:head><title>Inventory Counts — PandS</title></svelte:head>

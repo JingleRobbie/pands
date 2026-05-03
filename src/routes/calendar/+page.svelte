@@ -1,7 +1,7 @@
 <script>
 	let { data } = $props();
-	const { user } = data;
-	let today = new Date();
+	const user = $derived(data.user);
+	const today = new Date();
 	let year = $state(today.getFullYear());
 	let month = $state(today.getMonth() + 1); // 1-based
 	let status = $state('');

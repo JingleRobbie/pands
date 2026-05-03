@@ -2,11 +2,16 @@
 	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { wo, lines, contacts, customers } = data;
+	const wo = $derived(data.wo);
+	const lines = $derived(data.lines);
+	const contacts = $derived(data.contacts);
+	const customers = $derived(data.customers);
+	const justCreatedShipmentId = $derived(data.justCreatedShipmentId);
+	const justCreatedCustomer = $derived(data.justCreatedCustomer);
 	let addingContact = $state(false);
 	let dismissed = $state(false);
 
-	const totalSqft = lines.reduce((s, l) => s + l.sqft, 0);
+	const totalSqft = $derived(lines.reduce((s, l) => s + l.sqft, 0));
 </script>
 
 <svelte:head><title>WO {wo.so_number} — PandS</title></svelte:head>
@@ -17,8 +22,9 @@
 		<h1 class="text-lg font-semibold text-gray-900">
 			WO #{wo.so_number}{#if wo.customer_id}
 				— {wo.customer_display_name}{:else if wo.customer_name}
-				— <span class="text-amber-600 font-normal text-base italic">{wo.customer_name}</span>
-  <span class="text-amber-500 text-sm font-normal"> (not linked)</span>
+				— <span class="text-amber-600 font-normal text-base italic">{wo.customer_name}</span
+				>
+				<span class="text-amber-500 text-sm font-normal"> (not linked)</span>
 			{/if}
 		</h1>
 	</div>
@@ -33,13 +39,13 @@
 	</div>
 </header>
 
-{#if data.justCreatedShipmentId && !dismissed}
+{#if justCreatedShipmentId && !dismissed}
 	<div
 		class="mx-6 mt-4 px-4 py-3 rounded-md text-sm bg-green-50 text-green-800 border border-green-200 flex items-center justify-between"
 	>
 		<span
 			>Shipment created. <a
-				href="/shipments/{data.justCreatedShipmentId}"
+				href="/shipments/{justCreatedShipmentId}"
 				class="underline font-medium">View packing slip →</a
 			></span
 		>
@@ -50,7 +56,7 @@
 		>
 	</div>
 {/if}
-{#if data.justCreatedCustomer && !dismissed}
+{#if justCreatedCustomer && !dismissed}
 	<div
 		class="mx-6 mt-4 px-4 py-3 rounded-md text-sm bg-green-50 text-green-800 border border-green-200 flex items-center justify-between"
 	>

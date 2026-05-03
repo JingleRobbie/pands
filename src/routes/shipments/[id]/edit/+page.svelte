@@ -1,16 +1,17 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { shipment, availableRuns } = data;
+	const shipment = $derived(data.shipment);
+	const availableRuns = $derived(data.availableRuns);
 
 	// Current lines — track which are kept and their roll counts
-	let keepLines = $state(new Set(shipment.lines.map((l) => l.id)));
-	let lineRolls = $state(new Map(shipment.lines.map((l) => [l.id, l.rolls])));
+	let keepLines = new SvelteSet(untrack(() => shipment.lines.map((l) => l.id)));
+	let lineRolls = new SvelteMap(untrack(() => shipment.lines.map((l) => [l.id, l.rolls])));
 	function setLineRolls(id, val) {
-		const next = new Map(lineRolls);
-		next.set(id, val);
-		lineRolls = next;
+		lineRolls.set(id, val);
 	}
 	const allLinesKept = $derived(
 		shipment.lines.length > 0 && shipment.lines.every((l) => keepLines.has(l.id))
@@ -19,25 +20,24 @@
 		shipment.lines.some((l) => keepLines.has(l.id)) && !allLinesKept
 	);
 	function toggleAllLines() {
-		keepLines = allLinesKept ? new Set() : new Set(shipment.lines.map((l) => l.id));
+		keepLines.clear();
+		if (!allLinesKept) {
+			for (const line of shipment.lines) keepLines.add(line.id);
+		}
 	}
-	let masterLinesCb;
+	let masterLinesCb = $state(null);
 	$effect(() => {
 		if (masterLinesCb) masterLinesCb.indeterminate = someLinesKept;
 	});
 
 	// Available runs to add
-	let addSelected = $state(new Set());
-	let addRolls = $state(new Map(availableRuns.map((r) => [r.id, r.rolls_actual])));
+	let addSelected = new SvelteSet();
+	let addRolls = new SvelteMap(untrack(() => availableRuns.map((r) => [r.id, r.rolls_actual])));
 	function setAddRolls(id, val) {
-		const next = new Map(addRolls);
-		next.set(id, val);
-		addRolls = next;
+		addRolls.set(id, val);
 	}
 	function toggleAdd(id) {
-		const next = new Set(addSelected);
-		next.has(id) ? next.delete(id) : next.add(id);
-		addSelected = next;
+		addSelected.has(id) ? addSelected.delete(id) : addSelected.add(id);
 	}
 	const allAddsSelected = $derived(
 		availableRuns.length > 0 && availableRuns.every((r) => addSelected.has(r.id))
@@ -46,17 +46,15 @@
 		availableRuns.some((r) => addSelected.has(r.id)) && !allAddsSelected
 	);
 	function toggleAllAdds() {
-		addSelected = allAddsSelected ? new Set() : new Set(availableRuns.map((r) => r.id));
+		addSelected.clear();
+		if (!allAddsSelected) {
+			for (const run of availableRuns) addSelected.add(run.id);
+		}
 	}
-	let masterAddsCb;
+	let masterAddsCb = $state(null);
 	$effect(() => {
 		if (masterAddsCb) masterAddsCb.indeterminate = someAddsSelected;
 	});
-
-	const allRuns = $derived([
-		...shipment.lines.map((l) => ({ ...l, _type: 'line', rolls_actual: l.rolls })),
-		...availableRuns.map((r) => ({ ...r, _type: 'run' })),
-	]);
 
 	const totalRolls = $derived(
 		shipment.lines
@@ -176,9 +174,9 @@
 									? 'bg-blue-50 hover:bg-blue-100'
 									: 'opacity-40 hover:opacity-60'}"
 								onclick={() => {
-									const next = new Set(keepLines);
-									next.has(line.id) ? next.delete(line.id) : next.add(line.id);
-									keepLines = next;
+									keepLines.has(line.id)
+										? keepLines.delete(line.id)
+										: keepLines.add(line.id);
 								}}
 							>
 								<td class="px-4 py-3">
@@ -189,11 +187,9 @@
 										type="checkbox"
 										checked={kept}
 										onchange={() => {
-											const next = new Set(keepLines);
-											next.has(line.id)
-												? next.delete(line.id)
-												: next.add(line.id);
-											keepLines = next;
+											keepLines.has(line.id)
+												? keepLines.delete(line.id)
+												: keepLines.add(line.id);
 										}}
 										onclick={(e) => e.stopPropagation()}
 									/>

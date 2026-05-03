@@ -1,15 +1,17 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
 	let { data, form } = $props();
-	const { wo, savedAddresses } = data;
+	const wo = $derived(data.wo);
+	const savedAddresses = $derived(data.savedAddresses);
 
 	// Current field values — initialized from WO's saved address
-	let ship_to_name = $state(wo.ship_to_name ?? '');
-	let ship_addr1 = $state(wo.ship_addr1 ?? '');
-	let ship_addr2 = $state(wo.ship_addr2 ?? '');
-	let ship_city = $state(wo.ship_city ?? '');
-	let ship_state = $state(wo.ship_state ?? '');
-	let ship_zip = $state(wo.ship_zip ?? '');
+	let ship_to_name = $state(untrack(() => data.wo.ship_to_name ?? ''));
+	let ship_addr1 = $state(untrack(() => data.wo.ship_addr1 ?? ''));
+	let ship_addr2 = $state(untrack(() => data.wo.ship_addr2 ?? ''));
+	let ship_city = $state(untrack(() => data.wo.ship_city ?? ''));
+	let ship_state = $state(untrack(() => data.wo.ship_state ?? ''));
+	let ship_zip = $state(untrack(() => data.wo.ship_zip ?? ''));
 
 	let selectedAddressId = $state('');
 	let saveToBook = $state(false);

@@ -34,7 +34,7 @@ export async function load({ url }) {
 }
 
 export const actions = {
-	default: async ({ request, locals, url }) => {
+	default: async ({ request, locals }) => {
 		const data = await request.formData();
 		const woId = parseInt(data.get('wo_id'));
 		const customerId = parseInt(data.get('customer_id'));

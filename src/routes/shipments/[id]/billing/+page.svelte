@@ -1,9 +1,10 @@
 <script>
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data } = $props();
-	const { shipment, skuLines } = data;
+	const shipment = $derived(data.shipment);
+	const skuLines = $derived(data.skuLines);
 
-	const totalSqft = skuLines.reduce((s, l) => s + l.sqft, 0);
+	const totalSqft = $derived(skuLines.reduce((s, l) => s + l.sqft, 0));
 </script>
 
 <svelte:head>

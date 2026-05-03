@@ -12,13 +12,90 @@ async function nextRunNumber(conn) {
 	return `${prefix}${String(seq).padStart(3, '0')}`;
 }
 
-// rollsMap: { [runId]: rollsToShip } — omit a key to ship all rolls for that run
+function prorateSqft(partRolls, totalRolls, totalSqft) {
+	return partRolls === totalRolls
+		? Number(totalSqft)
+		: Math.round((Number(partRolls) / Number(totalRolls)) * Number(totalSqft));
+}
+
+function validateRollsToShip(rollsToShip, availableRolls) {
+	if (!Number.isInteger(rollsToShip) || rollsToShip < 1) {
+		throw new Error('Rolls to ship must be greater than zero.');
+	}
+	if (rollsToShip > availableRolls) {
+		throw new Error(
+			`Cannot ship ${rollsToShip} rolls - only ${availableRolls} rolls are available.`
+		);
+	}
+}
+
+async function createRemainderRun(conn, sourceRunId, remainderRolls, remainderSqft, userId) {
+	const remainderNumber = await nextRunNumber(conn);
+	await conn.query(
+		`INSERT INTO production_runs
+		 (run_number, group_id, wo_line_id, sku_id, run_date,
+		  rolls_scheduled, sqft_scheduled, rolls_actual, sqft_actual, status, confirmed_at, created_by)
+		 SELECT ?, group_id, wo_line_id, sku_id, run_date,
+		        ?, ?, ?, ?, 'COMPLETED', confirmed_at, ?
+		 FROM production_runs WHERE id = ?`,
+		[
+			remainderNumber,
+			remainderRolls,
+			remainderSqft,
+			remainderRolls,
+			remainderSqft,
+			userId,
+			sourceRunId,
+		]
+	);
+}
+
+async function splitRunForShipment(conn, run, rollsToShip, userId) {
+	const availableRolls = Number(run.rolls_actual);
+	const availableSqft = Number(run.sqft_actual);
+	validateRollsToShip(rollsToShip, availableRolls);
+
+	const sqftToShip = prorateSqft(rollsToShip, availableRolls, availableSqft);
+	if (rollsToShip < availableRolls) {
+		const remainderRolls = availableRolls - rollsToShip;
+		const remainderSqft = availableSqft - sqftToShip;
+
+		await conn.query(
+			`UPDATE production_runs SET rolls_actual = ?, sqft_actual = ? WHERE id = ?`,
+			[rollsToShip, sqftToShip, run.id]
+		);
+		await createRemainderRun(conn, run.id, remainderRolls, remainderSqft, userId);
+	}
+
+	return { rolls: rollsToShip, sqft: sqftToShip };
+}
+
+async function reduceShipmentLine(conn, line, newRolls, userId) {
+	const originalRolls = Number(line.rolls);
+	if (!newRolls || newRolls >= originalRolls) return null;
+	validateRollsToShip(newRolls, originalRolls);
+
+	const originalSqft = Number(line.sqft);
+	const newSqft = prorateSqft(newRolls, originalRolls, originalSqft);
+	const remainderRolls = originalRolls - newRolls;
+	const remainderSqft = originalSqft - newSqft;
+
+	await conn.query(`UPDATE shipment_lines SET rolls = ?, sqft = ? WHERE id = ?`, [
+		newRolls,
+		newSqft,
+		line.id,
+	]);
+	await createRemainderRun(conn, line.production_run_id, remainderRolls, remainderSqft, userId);
+
+	return { rolls: newRolls, sqft: newSqft };
+}
+
+// rollsMap: { [runId]: rollsToShip } - omit a key to ship all rolls for that run
 export async function createShipment(woId, customerId, shipDate, runIds, userId, rollsMap = {}) {
 	const conn = await db.getConnection();
 	try {
 		await conn.beginTransaction();
 
-		// Validate all runs are COMPLETED and belong to this WO
 		const ph = runIds.map(() => '?').join(',');
 		const [runs] = await conn.query(
 			`SELECT pr.id, pr.run_number, pr.sku_id, pr.wo_line_id, pr.group_id,
@@ -37,7 +114,6 @@ export async function createShipment(woId, customerId, shipDate, runIds, userId,
 			throw new Error('All runs must belong to the selected work order.');
 		}
 
-		// Generate shipment number: {so_number}-S{N}
 		const [[wo]] = await conn.query('SELECT so_number FROM work_orders WHERE id = ?', [woId]);
 		const [[{ n }]] = await conn.query('SELECT COUNT(*) AS n FROM shipments WHERE wo_id = ?', [
 			woId,
@@ -52,45 +128,13 @@ export async function createShipment(woId, customerId, shipDate, runIds, userId,
 		const shipmentId = result.insertId;
 
 		for (const run of runs) {
-			const rollsToShip = rollsMap[run.id] ?? run.rolls_actual;
-			const sqftToShip =
-				rollsToShip === run.rolls_actual
-					? run.sqft_actual
-					: Math.round((rollsToShip / run.rolls_actual) * run.sqft_actual);
-
-			// Split: shrink original run, create a remainder run for the leftover rolls
-			if (rollsToShip < run.rolls_actual) {
-				const remainderRolls = run.rolls_actual - rollsToShip;
-				const remainderSqft = run.sqft_actual - sqftToShip;
-				const remainderNumber = await nextRunNumber(conn);
-
-				await conn.query(
-					`UPDATE production_runs SET rolls_actual = ?, sqft_actual = ? WHERE id = ?`,
-					[rollsToShip, sqftToShip, run.id]
-				);
-				await conn.query(
-					`INSERT INTO production_runs
-					 (run_number, group_id, wo_line_id, sku_id, run_date,
-					  rolls_scheduled, sqft_scheduled, rolls_actual, sqft_actual, status, confirmed_at, created_by)
-					 SELECT ?, group_id, wo_line_id, sku_id, run_date,
-					        ?, ?, ?, ?, 'COMPLETED', confirmed_at, ?
-					 FROM production_runs WHERE id = ?`,
-					[
-						remainderNumber,
-						remainderRolls,
-						remainderSqft,
-						remainderRolls,
-						remainderSqft,
-						userId,
-						run.id,
-					]
-				);
-			}
+			const rollsToShip = Number(rollsMap[run.id] ?? run.rolls_actual);
+			const shipped = await splitRunForShipment(conn, run, rollsToShip, userId);
 
 			await conn.query(
 				`INSERT INTO shipment_lines (shipment_id, production_run_id, sku_id, rolls, sqft)
 				 VALUES (?, ?, ?, ?, ?)`,
-				[shipmentId, run.id, run.sku_id, rollsToShip, sqftToShip]
+				[shipmentId, run.id, run.sku_id, shipped.rolls, shipped.sqft]
 			);
 		}
 
@@ -121,7 +165,6 @@ export async function updateShipment(
 			]);
 		}
 
-		// Load existing lines with their production run details
 		const [lines] = await conn.query(
 			`SELECT sl.id, sl.production_run_id, sl.sku_id, sl.rolls, sl.sqft,
 			        pr.rolls_actual, pr.sqft_actual
@@ -131,7 +174,6 @@ export async function updateShipment(
 			[shipmentId]
 		);
 
-		// Remove lines
 		if (removeLineIds.length > 0) {
 			const ph = removeLineIds.map(() => '?').join(',');
 			await conn.query(`DELETE FROM shipment_lines WHERE id IN (${ph}) AND shipment_id = ?`, [
@@ -140,43 +182,11 @@ export async function updateShipment(
 			]);
 		}
 
-		// Adjust rolls on existing lines (reduce only)
 		for (const line of lines) {
 			if (removeLineIds.includes(line.id)) continue;
-			const newRolls = lineRolls[line.id];
-			if (!newRolls || newRolls >= line.rolls) continue;
-
-			const newSqft = Math.round((newRolls / line.rolls) * line.sqft);
-			await conn.query(`UPDATE shipment_lines SET rolls = ?, sqft = ? WHERE id = ?`, [
-				newRolls,
-				newSqft,
-				line.id,
-			]);
-
-			// Split remainder from production run
-			const remainderRolls = line.rolls - newRolls;
-			const remainderSqft = line.sqft - newSqft;
-			const remainderNumber = await nextRunNumber(conn);
-			await conn.query(
-				`INSERT INTO production_runs
-				 (run_number, group_id, wo_line_id, sku_id, run_date,
-				  rolls_scheduled, sqft_scheduled, rolls_actual, sqft_actual, status, confirmed_at, created_by)
-				 SELECT ?, group_id, wo_line_id, sku_id, run_date,
-				        ?, ?, ?, ?, 'COMPLETED', confirmed_at, ?
-				 FROM production_runs WHERE id = ?`,
-				[
-					remainderNumber,
-					remainderRolls,
-					remainderSqft,
-					remainderRolls,
-					remainderSqft,
-					userId,
-					line.production_run_id,
-				]
-			);
+			await reduceShipmentLine(conn, line, Number(lineRolls[line.id]), userId);
 		}
 
-		// Add new runs (same split logic as createShipment)
 		if (addRunIds.length > 0) {
 			const ph = addRunIds.map(() => '?').join(',');
 			const [runs] = await conn.query(
@@ -185,41 +195,11 @@ export async function updateShipment(
 				addRunIds
 			);
 			for (const run of runs) {
-				const rollsToShip = addRollsMap[run.id] ?? run.rolls_actual;
-				const sqftToShip =
-					rollsToShip === run.rolls_actual
-						? run.sqft_actual
-						: Math.round((rollsToShip / run.rolls_actual) * run.sqft_actual);
-
-				if (rollsToShip < run.rolls_actual) {
-					const remainderRolls = run.rolls_actual - rollsToShip;
-					const remainderSqft = run.sqft_actual - sqftToShip;
-					const remainderNumber = await nextRunNumber(conn);
-					await conn.query(
-						`UPDATE production_runs SET rolls_actual = ?, sqft_actual = ? WHERE id = ?`,
-						[rollsToShip, sqftToShip, run.id]
-					);
-					await conn.query(
-						`INSERT INTO production_runs
-						 (run_number, group_id, wo_line_id, sku_id, run_date,
-						  rolls_scheduled, sqft_scheduled, rolls_actual, sqft_actual, status, confirmed_at, created_by)
-						 SELECT ?, group_id, wo_line_id, sku_id, run_date,
-						        ?, ?, ?, ?, 'COMPLETED', confirmed_at, ?
-						 FROM production_runs WHERE id = ?`,
-						[
-							remainderNumber,
-							remainderRolls,
-							remainderSqft,
-							remainderRolls,
-							remainderSqft,
-							userId,
-							run.id,
-						]
-					);
-				}
+				const rollsToShip = Number(addRollsMap[run.id] ?? run.rolls_actual);
+				const shipped = await splitRunForShipment(conn, run, rollsToShip, userId);
 				await conn.query(
 					`INSERT INTO shipment_lines (shipment_id, production_run_id, sku_id, rolls, sqft) VALUES (?, ?, ?, ?, ?)`,
-					[shipmentId, run.id, run.sku_id, rollsToShip, sqftToShip]
+					[shipmentId, run.id, run.sku_id, shipped.rolls, shipped.sqft]
 				);
 			}
 		}
@@ -233,7 +213,7 @@ export async function updateShipment(
 	}
 }
 
-// lineRolls: { [lineId]: newRolls } — splits remainder runs for any reductions
+// lineRolls: { [lineId]: newRolls } - splits remainder runs for any reductions
 export async function confirmShipment(shipmentId, lineRolls = {}, userId) {
 	const conn = await db.getConnection();
 	try {
@@ -246,36 +226,7 @@ export async function confirmShipment(shipmentId, lineRolls = {}, userId) {
 		);
 
 		for (const line of lines) {
-			const newRolls = lineRolls[line.id];
-			if (!newRolls || newRolls >= line.rolls) continue;
-
-			const newSqft = Math.round((newRolls / line.rolls) * line.sqft);
-			await conn.query(`UPDATE shipment_lines SET rolls = ?, sqft = ? WHERE id = ?`, [
-				newRolls,
-				newSqft,
-				line.id,
-			]);
-
-			const remainderRolls = line.rolls - newRolls;
-			const remainderSqft = line.sqft - newSqft;
-			const remainderNumber = await nextRunNumber(conn);
-			await conn.query(
-				`INSERT INTO production_runs
-				 (run_number, group_id, wo_line_id, sku_id, run_date,
-				  rolls_scheduled, sqft_scheduled, rolls_actual, sqft_actual, status, confirmed_at, created_by)
-				 SELECT ?, group_id, wo_line_id, sku_id, run_date,
-				        ?, ?, ?, ?, 'COMPLETED', confirmed_at, ?
-				 FROM production_runs WHERE id = ?`,
-				[
-					remainderNumber,
-					remainderRolls,
-					remainderSqft,
-					remainderRolls,
-					remainderSqft,
-					userId,
-					line.production_run_id,
-				]
-			);
+			await reduceShipmentLine(conn, line, Number(lineRolls[line.id]), userId);
 		}
 
 		await conn.query(`UPDATE shipments SET status = 'SHIPPED' WHERE id = ?`, [shipmentId]);
@@ -349,3 +300,8 @@ export async function getAllShipments() {
 	);
 	return rows;
 }
+
+export const __shippingTest = {
+	prorateSqft,
+	validateRollsToShip,
+};

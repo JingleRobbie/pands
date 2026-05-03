@@ -1,8 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { fmtDate } from '$lib/utils.js';
-
-	let { data } = $props();
+	import { SvelteDate, SvelteURLSearchParams } from 'svelte/reactivity';
 
 	const MONTH_NAMES = [
 		'January',
@@ -20,13 +19,13 @@
 	];
 
 	let view = $state('week'); // 'week' | '2weeks' | 'month'
-	let today = new Date();
+	const today = new SvelteDate();
 	let monthYear = $state({ year: today.getFullYear(), month: today.getMonth() + 1 });
 	let events = $state({});
 	let showPastShipped = $state(false);
 
 	function monday(d) {
-		const dt = new Date(d);
+		const dt = new SvelteDate(d);
 		const day = dt.getDay();
 		const diff = day === 0 ? -6 : 1 - day;
 		dt.setDate(dt.getDate() + diff);
@@ -46,27 +45,27 @@
 		if (view === 'month') {
 			const { year, month } = monthYear;
 			const start = `${year}-${pad(month)}-01`;
-			const lastDay = new Date(year, month, 0).getDate();
+			const lastDay = new SvelteDate(year, month, 0).getDate();
 			const end = `${year}-${pad(month)}-${pad(lastDay)}`;
 			return { start, end, pastDrafts: false };
 		}
 		if (view === 'week') {
-			const start = new Date(today);
+			const start = new SvelteDate(today);
 			start.setDate(start.getDate() - 3);
-			const end = new Date(today);
+			const end = new SvelteDate(today);
 			end.setDate(end.getDate() + 7);
 			return { start: isoDate(start), end: isoDate(end), pastDrafts: true };
 		}
 		// 2weeks: Mon of current week through 13 days
 		const mon = monday(today);
-		const end = new Date(mon);
+		const end = new SvelteDate(mon);
 		end.setDate(end.getDate() + 13);
 		return { start: isoDate(mon), end: isoDate(end), pastDrafts: false };
 	}
 
 	async function loadEvents() {
 		const { start, end, pastDrafts } = dateRange();
-		const params = new URLSearchParams({ start, end });
+		const params = new SvelteURLSearchParams({ start, end });
 		if (pastDrafts) params.set('past_drafts', '1');
 		const res = await fetch(`/shipments/calendar/events?${params}`);
 		events = await res.json();

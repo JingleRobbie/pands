@@ -1,11 +1,13 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
 	let { data, form } = $props();
-	const { so, skus } = data;
+	const so = $derived(data.so);
+	const skus = $derived(data.skus);
 
 	// Editable lines = no production runs
 	let editableLines = $state(
-		data.lines.filter((l) => Number(l.run_count) === 0).map((l) => ({ ...l }))
+		untrack(() => data.lines.filter((l) => Number(l.run_count) === 0).map((l) => ({ ...l })))
 	);
 	let lockedLines = $derived(data.lines.filter((l) => Number(l.run_count) > 0));
 

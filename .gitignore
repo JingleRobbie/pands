@@ -12,6 +12,9 @@ static/css/app.css
 # Environment
 .env
 
+# Local agent tooling
+.agents/
+
 #examples and sessions
 docs/
 

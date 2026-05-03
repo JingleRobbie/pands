@@ -2,7 +2,8 @@
 	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { count, lines } = data;
+	const count = $derived(data.count);
+	const lines = $derived(data.lines);
 	let confirming = $state(false);
 </script>
 

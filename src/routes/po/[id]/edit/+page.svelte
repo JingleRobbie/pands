@@ -1,10 +1,15 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
 	let { data, form } = $props();
-	const { po, skus } = data;
+	const po = $derived(data.po);
+	const skus = $derived(data.skus);
+	const user = $derived(data.user);
 
 	// Editable open lines — start from server data
-	let openLines = $state(data.lines.filter((l) => l.status === 'OPEN').map((l) => ({ ...l })));
+	let openLines = $state(
+		untrack(() => data.lines.filter((l) => l.status === 'OPEN').map((l) => ({ ...l })))
+	);
 	let receivedLines = $derived(data.lines.filter((l) => l.status !== 'OPEN'));
 
 	// New lines to add
@@ -213,7 +218,7 @@
 				<button type="submit" form="edit-form" class="btn-primary">Save Changes</button>
 				<a href="/po/{po.id}" class="btn-secondary">Cancel</a>
 			</div>
-			{#if data.user?.role === 'admin'}
+			{#if user?.role === 'admin'}
 				<form
 					method="POST"
 					action="/po/{po.id}?/cancel"

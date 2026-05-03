@@ -1,10 +1,7 @@
 import { db } from '$lib/db.js';
 import { localDate } from '$lib/utils.js';
 
-// ── Balance helpers ──────────────────────────────────────────
-
 export async function getAllBalances() {
-	// Adjustments and consumptions from transactions (RECEIPT no longer used)
 	const [txnRows] = await db.query(`
 		SELECT sku_id,
 			SUM(CASE WHEN transaction_type = 'ADJUSTMENT_IN'                       THEN sqft_quantity ELSE 0 END)
@@ -14,7 +11,6 @@ export async function getAllBalances() {
 		WHERE sku_id IN (SELECT id FROM material_skus WHERE is_active = TRUE)
 		GROUP BY sku_id
 	`);
-	// Past PO lines count as received once expected_date <= today
 	const [poRows] = await db.query(`
 		SELECT pol.sku_id, SUM(pol.sqft_ordered) AS received
 		FROM purchase_order_lines pol
@@ -25,206 +21,73 @@ export async function getAllBalances() {
 		  AND pol.sku_id IN (SELECT id FROM material_skus WHERE is_active = TRUE)
 		GROUP BY pol.sku_id
 	`);
-	const map = {};
-	for (const r of txnRows) map[r.sku_id] = Number(r.balance) || 0;
-	for (const r of poRows) map[r.sku_id] = (map[r.sku_id] ?? 0) + Number(r.received);
-	return map;
+	return mergeBalanceRows(txnRows, poRows);
 }
-
-// ── Matrix data ──────────────────────────────────────────────
 
 export async function getMatrixData(fromDate = null) {
 	const today = fromDate ?? localDate();
+	return buildMatrixData({ today, includeHistory: true });
+}
 
-	// 1. All active SKUs
+export async function getMatrixDataForSkus(skuIds) {
+	return buildMatrixData({ today: localDate(), skuIds });
+}
+
+async function buildMatrixData({ today, skuIds = null, includeHistory = false }) {
+	const skus = await getMatrixSkus(skuIds);
+	const matrixSkuIds = skus.map((s) => s.id);
+
+	const balanceMap = await getAllBalances();
+	const running = buildRunningMap(matrixSkuIds, balanceMap);
+	const balanceRow = {
+		rowType: 'balance',
+		description: 'Current Inventory',
+		cells: buildCells(matrixSkuIds, {}, running),
+	};
+
+	const filterBySku = Array.isArray(skuIds);
+	const poRowMap = buildPoRowMap(await getUpcomingPoLines(today, matrixSkuIds, filterBySku));
+	const prodRowMap = buildProductionRowMap(
+		await getScheduledProductionRuns(today, matrixSkuIds, filterBySku)
+	);
+
+	const datedRows = sortDatedRows(poRowMap, prodRowMap);
+	applyRunningCells(datedRows, matrixSkuIds, running);
+
+	const unscheduledRows = buildUnscheduledRows(
+		await getUnscheduledLines(matrixSkuIds, filterBySku),
+		matrixSkuIds,
+		running
+	);
+
+	const rows = [...datedRows, ...unscheduledRows];
+	if (!includeHistory) return { skus, balanceRow, rows };
+
+	const historyRows = await getHistoricalActivityRows(matrixSkuIds, subtractDays(today, 365));
+	return { skus, balanceRow, historyRows, rows };
+}
+
+async function getMatrixSkus(skuIds) {
+	if (Array.isArray(skuIds)) {
+		if (skuIds.length === 0) return [];
+		const [skus] = await db.query(
+			'SELECT * FROM material_skus WHERE id IN (?) ORDER BY sort_order, thickness_in, width_in',
+			[skuIds]
+		);
+		return skus;
+	}
+
 	const [skus] = await db.query(
 		'SELECT * FROM material_skus WHERE is_active = TRUE ORDER BY sort_order, thickness_in, width_in'
 	);
-	const skuIds = skus.map((s) => s.id);
-
-	// 2. Current on-hand balances (starting point for running totals)
-	const balanceMap = await getAllBalances();
-	const running = {};
-	for (const id of skuIds) running[id] = balanceMap[id] ?? 0;
-
-	// 3. Balance row (current inventory header)
-	const balanceRow = {
-		rowType: 'balance',
-		description: 'Current Inventory',
-		cells: buildCells(skuIds, {}, running),
-	};
-
-	// 4. Upcoming PO lines (grouped by PO)
-	const [poLines] = await db.query(
-		`
-		SELECT pol.id, pol.po_id, pol.sku_id, pol.sqft_ordered,
-		       po.po_number, po.expected_date, po.status AS po_status, po.vendor_name
-		FROM purchase_order_lines pol
-		JOIN purchase_orders po ON po.id = pol.po_id
-		WHERE po.expected_date >= ? AND po.status = 'OPEN' AND pol.status = 'OPEN'
-		ORDER BY po.expected_date, po.po_number
-	`,
-		[today]
-	);
-
-	const poRowMap = {};
-	for (const line of poLines) {
-		if (!poRowMap[line.po_id]) {
-			poRowMap[line.po_id] = {
-				rowType: 'po',
-				partyName: line.vendor_name,
-				description: `PO ${line.po_number}`,
-				poNumber: line.po_number,
-				soNumber: '',
-				status: line.po_status,
-				eventDate: line.expected_date,
-				shipDate: null,
-				objectId: line.po_id,
-				deltas: {},
-			};
-		}
-		const row = poRowMap[line.po_id];
-		row.deltas[line.sku_id] = (row.deltas[line.sku_id] ?? 0) + Number(line.sqft_ordered);
-	}
-
-	// 5. Scheduled production runs
-	const [prodRuns] = await db.query(
-		`
-		SELECT pr.id, pr.group_id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
-		       wol.facing,
-		       wo.so_number, wo.job_name, wo.id AS wo_id, wo.ship_date, wo.customer_name
-		FROM production_runs pr
-		JOIN work_order_lines wol ON wol.id = pr.wo_line_id
-		JOIN work_orders wo ON wo.id = wol.wo_id
-		WHERE pr.run_date >= ? AND pr.status = 'SCHEDULED'
-		ORDER BY pr.run_date, pr.run_number
-	`,
-		[today]
-	);
-
-	const prodRowMap = {};
-	for (const run of prodRuns) {
-		const key = run.group_id ?? run.id;
-		if (!prodRowMap[key]) {
-			prodRowMap[key] = {
-				rowType: 'production',
-				partyName: run.customer_name,
-				description: run.job_name,
-				soNumber: run.so_number,
-				poNumber: '',
-				eventDate: run.run_date,
-				shipDate: run.ship_date,
-				facings: new Set(),
-				groupId: key,
-				objectId: run.wo_id,
-				deltas: {},
-			};
-		}
-		prodRowMap[key].deltas[run.sku_id] =
-			(prodRowMap[key].deltas[run.sku_id] ?? 0) - Number(run.sqft_scheduled);
-		if (run.facing) prodRowMap[key].facings.add(run.facing);
-	}
-	for (const row of Object.values(prodRowMap)) {
-		row.facing = [...row.facings].join(', ');
-		delete row.facings;
-	}
-
-	// 6. Sort dated rows: same date → POs before production runs
-	const allDates = [
-		...new Set([
-			...Object.values(poRowMap).map((r) => fmtDate(r.eventDate)),
-			...Object.values(prodRowMap).map((r) => fmtDate(r.eventDate)),
-		]),
-	].sort();
-
-	const datedRows = [];
-	for (const d of allDates) {
-		for (const row of Object.values(poRowMap))
-			if (fmtDate(row.eventDate) === d) datedRows.push(row);
-		for (const row of Object.values(prodRowMap))
-			if (fmtDate(row.eventDate) === d) datedRows.push(row);
-	}
-
-	// 7. Compute running totals for dated rows
-	for (const row of datedRows) {
-		for (const id of skuIds) {
-			if (row.deltas[id] != null) running[id] += row.deltas[id];
-		}
-		row.cells = buildCells(skuIds, row.deltas, running);
-	}
-
-	// 8. Unscheduled WO lines
-	const [unscheduledLines] = await db.query(`
-		SELECT wol.id, wol.sku_id, wol.qty, wol.rolls_produced, wol.length_ft, wol.width_in, wol.facing,
-		       wo.so_number, wo.job_name, wo.id AS wo_id, wo.customer_name, wo.ship_date,
-		       COALESCE(
-		         (SELECT SUM(pr.rolls_scheduled)
-		          FROM production_runs pr
-		          WHERE pr.wo_line_id = wol.id AND pr.status != 'COMPLETED'), 0
-		       ) AS rolls_scheduled
-		FROM work_order_lines wol
-		JOIN work_orders wo ON wo.id = wol.wo_id
-		WHERE wo.status NOT IN ('COMPLETE','CANCELLED')
-		ORDER BY wo.ship_date, wo.so_number
-	`);
-
-	const unscheduledRows = [];
-	for (const line of unscheduledLines) {
-		const remainingRolls =
-			Number(line.qty) - Number(line.rolls_produced) - Number(line.rolls_scheduled);
-		if (remainingRolls <= 0) continue;
-
-		const delta = -Math.round(
-			remainingRolls * (Number(line.width_in) / 12) * Number(line.length_ft)
-		);
-		running[line.sku_id] = (running[line.sku_id] ?? 0) + delta;
-
-		unscheduledRows.push({
-			rowType: 'unscheduled',
-			partyName: line.customer_name,
-			description: line.job_name,
-			soNumber: line.so_number,
-			poNumber: '',
-			eventDate: null,
-			shipDate: line.ship_date,
-			facing: line.facing,
-			objectId: line.wo_id,
-			woLineId: line.id,
-			deltas: { [line.sku_id]: delta },
-			cells: buildCells(skuIds, { [line.sku_id]: delta }, running),
-		});
-	}
-
-	// 9. Historical activity rows (receipts + confirmed runs from past 2 days)
-	const historyRows = await getHistoricalActivityRows(skuIds, subtractDays(today, 365));
-
-	return { skus, balanceRow, historyRows, rows: [...datedRows, ...unscheduledRows] };
+	return skus;
 }
 
-// ── SKU-filtered matrix (for entity detail pages) ────────────
+async function getUpcomingPoLines(today, skuIds, filterBySku) {
+	if (filterBySku && skuIds.length === 0) return [];
+	const skuWhere = filterBySku ? 'AND pol.sku_id IN (?)' : '';
+	const params = filterBySku ? [today, skuIds] : [today];
 
-export async function getMatrixDataForSkus(skuIds) {
-	const today = localDate();
-
-	// 1. Only the requested SKUs
-	const [skus] = await db.query(
-		'SELECT * FROM material_skus WHERE id IN (?) ORDER BY sort_order, thickness_in, width_in',
-		[skuIds]
-	);
-
-	// 2. Current balances, filtered to these SKUs
-	const allBalances = await getAllBalances();
-	const running = {};
-	for (const id of skuIds) running[id] = allBalances[id] ?? 0;
-
-	// 3. Balance row
-	const balanceRow = {
-		rowType: 'balance',
-		description: 'Current Inventory',
-		cells: buildCells(skuIds, {}, running),
-	};
-
-	// 4. Upcoming PO lines for these SKUs
 	const [poLines] = await db.query(
 		`
 		SELECT pol.id, pol.po_id, pol.sku_id, pol.sqft_ordered,
@@ -232,33 +95,19 @@ export async function getMatrixDataForSkus(skuIds) {
 		FROM purchase_order_lines pol
 		JOIN purchase_orders po ON po.id = pol.po_id
 		WHERE po.expected_date >= ? AND po.status = 'OPEN' AND pol.status = 'OPEN'
-		  AND pol.sku_id IN (?)
+		  ${skuWhere}
 		ORDER BY po.expected_date, po.po_number
 	`,
-		[today, skuIds]
+		params
 	);
+	return poLines;
+}
 
-	const poRowMap = {};
-	for (const line of poLines) {
-		if (!poRowMap[line.po_id]) {
-			poRowMap[line.po_id] = {
-				rowType: 'po',
-				partyName: line.vendor_name,
-				description: `PO ${line.po_number}`,
-				poNumber: line.po_number,
-				soNumber: '',
-				status: line.po_status,
-				eventDate: line.expected_date,
-				shipDate: null,
-				objectId: line.po_id,
-				deltas: {},
-			};
-		}
-		const row = poRowMap[line.po_id];
-		row.deltas[line.sku_id] = (row.deltas[line.sku_id] ?? 0) + Number(line.sqft_ordered);
-	}
+async function getScheduledProductionRuns(today, skuIds, filterBySku) {
+	if (filterBySku && skuIds.length === 0) return [];
+	const skuWhere = filterBySku ? 'AND pr.sku_id IN (?)' : '';
+	const params = filterBySku ? [today, skuIds] : [today];
 
-	// 5. Scheduled production runs for these SKUs
 	const [prodRuns] = await db.query(
 		`
 		SELECT pr.id, pr.group_id, pr.sku_id, pr.run_date, pr.sqft_scheduled,
@@ -268,64 +117,19 @@ export async function getMatrixDataForSkus(skuIds) {
 		JOIN work_order_lines wol ON wol.id = pr.wo_line_id
 		JOIN work_orders wo ON wo.id = wol.wo_id
 		WHERE pr.run_date >= ? AND pr.status = 'SCHEDULED'
-		  AND pr.sku_id IN (?)
+		  ${skuWhere}
 		ORDER BY pr.run_date, pr.run_number
 	`,
-		[today, skuIds]
+		params
 	);
+	return prodRuns;
+}
 
-	const prodRowMap = {};
-	for (const run of prodRuns) {
-		const key = run.group_id ?? run.id;
-		if (!prodRowMap[key]) {
-			prodRowMap[key] = {
-				rowType: 'production',
-				partyName: run.customer_name,
-				description: run.job_name,
-				soNumber: run.so_number,
-				poNumber: '',
-				eventDate: run.run_date,
-				shipDate: run.ship_date,
-				facings: new Set(),
-				groupId: key,
-				objectId: run.wo_id,
-				deltas: {},
-			};
-		}
-		prodRowMap[key].deltas[run.sku_id] =
-			(prodRowMap[key].deltas[run.sku_id] ?? 0) - Number(run.sqft_scheduled);
-		if (run.facing) prodRowMap[key].facings.add(run.facing);
-	}
-	for (const row of Object.values(prodRowMap)) {
-		row.facing = [...row.facings].join(', ');
-		delete row.facings;
-	}
+async function getUnscheduledLines(skuIds, filterBySku) {
+	if (filterBySku && skuIds.length === 0) return [];
+	const skuWhere = filterBySku ? 'AND wol.sku_id IN (?)' : '';
+	const params = filterBySku ? [skuIds] : [];
 
-	// 6. Sort dated rows: same date → POs before production runs
-	const allDates = [
-		...new Set([
-			...Object.values(poRowMap).map((r) => fmtDate(r.eventDate)),
-			...Object.values(prodRowMap).map((r) => fmtDate(r.eventDate)),
-		]),
-	].sort();
-
-	const datedRows = [];
-	for (const d of allDates) {
-		for (const row of Object.values(poRowMap))
-			if (fmtDate(row.eventDate) === d) datedRows.push(row);
-		for (const row of Object.values(prodRowMap))
-			if (fmtDate(row.eventDate) === d) datedRows.push(row);
-	}
-
-	// 7. Running totals for dated rows
-	for (const row of datedRows) {
-		for (const id of skuIds) {
-			if (row.deltas[id] != null) running[id] += row.deltas[id];
-		}
-		row.cells = buildCells(skuIds, row.deltas, running);
-	}
-
-	// 8. Unscheduled WO lines for these SKUs
 	const [unscheduledLines] = await db.query(
 		`
 		SELECT wol.id, wol.sku_id, wol.qty, wol.rolls_produced, wol.length_ft, wol.width_in, wol.facing,
@@ -338,21 +142,95 @@ export async function getMatrixDataForSkus(skuIds) {
 		FROM work_order_lines wol
 		JOIN work_orders wo ON wo.id = wol.wo_id
 		WHERE wo.status NOT IN ('COMPLETE','CANCELLED')
-		  AND wol.sku_id IN (?)
+		  ${skuWhere}
 		ORDER BY wo.ship_date, wo.so_number
 	`,
-		[skuIds]
+		params
 	);
+	return unscheduledLines;
+}
 
+function buildPoRowMap(poLines) {
+	const poRowMap = {};
+	for (const line of poLines) {
+		if (!poRowMap[line.po_id]) {
+			poRowMap[line.po_id] = {
+				rowType: 'po',
+				partyName: line.vendor_name,
+				description: `PO ${line.po_number}`,
+				poNumber: line.po_number,
+				soNumber: '',
+				status: line.po_status,
+				eventDate: line.expected_date,
+				shipDate: null,
+				objectId: line.po_id,
+				deltas: {},
+			};
+		}
+		const row = poRowMap[line.po_id];
+		row.deltas[line.sku_id] = (row.deltas[line.sku_id] ?? 0) + Number(line.sqft_ordered);
+	}
+	return poRowMap;
+}
+
+function buildProductionRowMap(prodRuns) {
+	const prodRowMap = {};
+	for (const run of prodRuns) {
+		const key = run.group_id ?? run.id;
+		if (!prodRowMap[key]) {
+			prodRowMap[key] = {
+				rowType: 'production',
+				partyName: run.customer_name,
+				description: run.job_name,
+				soNumber: run.so_number,
+				poNumber: '',
+				eventDate: run.run_date,
+				shipDate: run.ship_date,
+				facings: new Set(),
+				groupId: key,
+				objectId: run.wo_id,
+				deltas: {},
+			};
+		}
+		prodRowMap[key].deltas[run.sku_id] =
+			(prodRowMap[key].deltas[run.sku_id] ?? 0) - Number(run.sqft_scheduled);
+		if (run.facing) prodRowMap[key].facings.add(run.facing);
+	}
+	for (const row of Object.values(prodRowMap)) {
+		row.facing = [...row.facings].join(', ');
+		delete row.facings;
+	}
+	return prodRowMap;
+}
+
+function sortDatedRows(poRowMap, prodRowMap) {
+	const allDates = [
+		...new Set([
+			...Object.values(poRowMap).map((r) => fmtDate(r.eventDate)),
+			...Object.values(prodRowMap).map((r) => fmtDate(r.eventDate)),
+		]),
+	].sort();
+
+	const datedRows = [];
+	for (const d of allDates) {
+		for (const row of Object.values(poRowMap)) {
+			if (fmtDate(row.eventDate) === d) datedRows.push(row);
+		}
+		for (const row of Object.values(prodRowMap)) {
+			if (fmtDate(row.eventDate) === d) datedRows.push(row);
+		}
+	}
+	return datedRows;
+}
+
+function buildUnscheduledRows(unscheduledLines, skuIds, running) {
 	const unscheduledRows = [];
 	for (const line of unscheduledLines) {
 		const remainingRolls =
 			Number(line.qty) - Number(line.rolls_produced) - Number(line.rolls_scheduled);
 		if (remainingRolls <= 0) continue;
 
-		const delta = -Math.round(
-			remainingRolls * (Number(line.width_in) / 12) * Number(line.length_ft)
-		);
+		const delta = -calcSqft(line, remainingRolls);
 		running[line.sku_id] = (running[line.sku_id] ?? 0) + delta;
 
 		unscheduledRows.push({
@@ -370,11 +248,34 @@ export async function getMatrixDataForSkus(skuIds) {
 			cells: buildCells(skuIds, { [line.sku_id]: delta }, running),
 		});
 	}
-
-	return { skus, balanceRow, rows: [...datedRows, ...unscheduledRows] };
+	return unscheduledRows;
 }
 
-// ── Helpers ───────────────────────────────────────────────────
+function applyRunningCells(rows, skuIds, running) {
+	for (const row of rows) {
+		for (const id of skuIds) {
+			if (row.deltas[id] != null) running[id] += row.deltas[id];
+		}
+		row.cells = buildCells(skuIds, row.deltas, running);
+	}
+}
+
+function buildRunningMap(skuIds, balanceMap) {
+	const running = {};
+	for (const id of skuIds) running[id] = balanceMap[id] ?? 0;
+	return running;
+}
+
+function mergeBalanceRows(txnRows, poRows) {
+	const map = {};
+	for (const r of txnRows) map[r.sku_id] = Number(r.balance) || 0;
+	for (const r of poRows) map[r.sku_id] = (map[r.sku_id] ?? 0) + Number(r.received);
+	return map;
+}
+
+function calcSqft(line, rolls) {
+	return Math.round(Number(rolls) * (Number(line.width_in) / 12) * Number(line.length_ft));
+}
 
 function buildCells(skuIds, deltas, running) {
 	const cells = {};
@@ -431,10 +332,7 @@ export async function getCountBalancesAsOf(dateStr) {
 	`,
 		[dateStr]
 	);
-	const map = {};
-	for (const r of txnRows) map[r.sku_id] = Number(r.balance) || 0;
-	for (const r of poRows) map[r.sku_id] = (map[r.sku_id] ?? 0) + Number(r.received);
-	return map;
+	return mergeBalanceRows(txnRows, poRows);
 }
 
 export async function createCountBatch(items, memo, countDate, userId) {
@@ -466,7 +364,6 @@ export async function createCountBatch(items, memo, countDate, userId) {
 }
 
 async function getHistoricalActivityRows(skuIds, fromDate) {
-	// Past PO lines — expected_date has passed so they are auto-received
 	const [poLines] = await db.query(
 		`
 		SELECT pol.sku_id, pol.sqft_ordered AS sqft_quantity,
@@ -502,7 +399,6 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 			(poRowMap[t.po_id].deltas[t.sku_id] ?? 0) + Number(t.sqft_quantity);
 	}
 
-	// Confirmed production runs
 	const [prodTxns] = await db.query(
 		`
 		SELECT it.sku_id, it.sqft_quantity, it.reference_id AS pr_id,
@@ -548,7 +444,6 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 		delete row.facings;
 	}
 
-	// Inventory count adjustment rows
 	const [adjTxns] = await db.query(
 		`
 		SELECT it.sku_id, it.sqft_quantity, it.transaction_type,
@@ -585,7 +480,6 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 			(adjRowMap[t.count_id].deltas[t.sku_id] ?? 0) + sign * Number(t.sqft_quantity);
 	}
 
-	// Sort by date: POs first, adjustments second, production runs third
 	const typeOrder = { po: 0, adjustment: 1, production: 2 };
 	const rows = [
 		...Object.values(poRowMap),
@@ -597,12 +491,9 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 		return (typeOrder[a.subType] ?? 2) - (typeOrder[b.subType] ?? 2);
 	});
 
-	// Baseline: balance before the history window
 	const baseline = await getBalancesAsOf(skuIds, subtractDays(fromDate, 1));
-	const running = {};
-	for (const id of skuIds) running[id] = baseline[id] ?? 0;
+	const running = buildRunningMap(skuIds, baseline);
 
-	// Build cells with running totals — same pattern as future dated rows
 	for (const row of rows) {
 		for (const id of skuIds) {
 			if (row.deltas[id] != null) running[id] += row.deltas[id];
@@ -640,8 +531,13 @@ async function getBalancesAsOf(skuIds, dateStr) {
 	`,
 		[dateStr, skuIds]
 	);
-	const map = {};
-	for (const r of txnRows) map[r.sku_id] = Number(r.balance) || 0;
-	for (const r of poRows) map[r.sku_id] = (map[r.sku_id] ?? 0) + Number(r.received);
-	return map;
+	return mergeBalanceRows(txnRows, poRows);
 }
+
+export const __inventoryTest = {
+	buildCells,
+	buildRunningMap,
+	buildUnscheduledRows,
+	calcSqft,
+	mergeBalanceRows,
+};

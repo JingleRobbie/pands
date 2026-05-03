@@ -3,8 +3,12 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { untrack } from 'svelte';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	let { data, form } = $props();
-	const { wo, matrix, user } = data;
+	const wo = $derived(data.wo);
+	const matrix = $derived(data.matrix);
+	const user = $derived(data.user);
 
 	const highlightId = $derived(parseInt($page.url.searchParams.get('highlight')) || null);
 	$effect(() => {
@@ -15,13 +19,13 @@
 		}
 	});
 
-	let localRuns = $state(data.runs);
+	let localRuns = $state(untrack(() => data.runs));
 	const scheduledRuns = $derived(localRuns.filter((r) => r.status !== 'COMPLETED'));
 	const confirmedRuns = $derived(localRuns.filter((r) => r.status === 'COMPLETED'));
 
 	const groupedScheduled = $derived(() => {
 		const groups = [];
-		const seen = new Map();
+		const seen = new SvelteMap();
 		for (const run of scheduledRuns) {
 			const key = run.group_id ?? `solo-${run.id}`;
 			if (!seen.has(key)) {
@@ -34,24 +38,25 @@
 		return groups;
 	});
 
-	let checkedRunIds = $state(new Set(localRuns.map((r) => r.id)));
+	const checkedRunIds = new SvelteSet(untrack(() => data.runs.map((r) => r.id)));
 	const allChecked = $derived(scheduledRuns.every((r) => checkedRunIds.has(r.id)));
 	const someChecked = $derived(scheduledRuns.some((r) => checkedRunIds.has(r.id)) && !allChecked);
 	function toggleAllRuns() {
-		checkedRunIds = allChecked ? new Set() : new Set(scheduledRuns.map((r) => r.id));
+		checkedRunIds.clear();
+		if (!allChecked) {
+			for (const run of scheduledRuns) checkedRunIds.add(run.id);
+		}
 	}
 	function toggleRun(id) {
-		const next = new Set(checkedRunIds);
-		next.has(id) ? next.delete(id) : next.add(id);
-		checkedRunIds = next;
+		checkedRunIds.has(id) ? checkedRunIds.delete(id) : checkedRunIds.add(id);
 	}
-	let masterRunsCb;
+	let masterRunsCb = $state(null);
 	$effect(() => {
 		if (masterRunsCb) masterRunsCb.indeterminate = someChecked;
 	});
 
 	let confirmDeleteId = $state(null);
-	let deleteDialog;
+	let deleteDialog = $state(null);
 	let justDeleted = $state(false);
 
 	function requestDelete(runId) {
@@ -64,7 +69,9 @@
 		return d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10);
 	}
 
-	let dates = $state(Object.fromEntries(localRuns.map((r) => [r.id, toDateInput(r.run_date)])));
+	let dates = $state(
+		untrack(() => Object.fromEntries(data.runs.map((r) => [r.id, toDateInput(r.run_date)])))
+	);
 	let fillDate = $state('');
 
 	function applyDateToAll() {
@@ -355,7 +362,7 @@
 				const deletedId = confirmDeleteId;
 				return () => {
 					localRuns = localRuns.filter((r) => r.id !== deletedId);
-					checkedRunIds = new Set([...checkedRunIds].filter((id) => id !== deletedId));
+					checkedRunIds.delete(deletedId);
 					deleteDialog.close();
 					confirmDeleteId = null;
 					justDeleted = true;

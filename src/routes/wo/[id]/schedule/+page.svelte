@@ -1,10 +1,17 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { untrack } from 'svelte';
 	let { data, form } = $props();
-	const { wo, schedulableLines, doneLines } = data;
+	const wo = $derived(data.wo);
+	const schedulableLines = $derived(data.schedulableLines);
+	const doneLines = $derived(data.doneLines);
 
-	let rolls = $state(Object.fromEntries(schedulableLines.map((l) => [l.id, l.rollsUnscheduled])));
+	let rolls = $state(
+		untrack(() =>
+			Object.fromEntries(data.schedulableLines.map((l) => [l.id, l.rollsUnscheduled]))
+		)
+	);
 	function zeroAll() {
 		for (const line of schedulableLines) rolls[line.id] = 0;
 	}

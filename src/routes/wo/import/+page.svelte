@@ -1,7 +1,9 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { SvelteSet } from 'svelte/reactivity';
 	let { data, form } = $props();
+	const user = $derived(data.user);
 
 	const STATUS = {
 		new: { label: 'New', badge: 'badge-green', defaultAccepted: true },
@@ -9,19 +11,18 @@
 		unchanged: { label: 'No change', badge: 'badge-gray', defaultAccepted: false },
 	};
 
-	let accepted = $state(new Set());
+	const accepted = new SvelteSet();
 	$effect(() => {
+		accepted.clear();
 		if (form?.preview) {
-			accepted = new Set(
-				form.preview.filter((p) => STATUS[p.status].defaultAccepted).map((p) => p.so_number)
-			);
+			for (const wo of form.preview.filter((p) => STATUS[p.status].defaultAccepted)) {
+				accepted.add(wo.so_number);
+			}
 		}
 	});
 
 	function toggle(soNum) {
-		const next = new Set(accepted);
-		next.has(soNum) ? next.delete(soNum) : next.add(soNum);
-		accepted = next;
+		accepted.has(soNum) ? accepted.delete(soNum) : accepted.add(soNum);
 	}
 
 	const selectable = $derived(
@@ -30,9 +31,12 @@
 	const allAccepted = $derived(selectable.length > 0 && selectable.every((n) => accepted.has(n)));
 	const someAccepted = $derived(selectable.some((n) => accepted.has(n)) && !allAccepted);
 	function toggleAll() {
-		accepted = allAccepted ? new Set() : new Set(selectable);
+		accepted.clear();
+		if (!allAccepted) {
+			for (const soNumber of selectable) accepted.add(soNumber);
+		}
 	}
-	let masterCb;
+	let masterCb = $state(null);
 	$effect(() => {
 		if (masterCb) masterCb.indeterminate = someAccepted;
 	});
@@ -266,7 +270,7 @@
 			{/each}
 
 			<div class="flex items-center gap-4 mt-6">
-				{#if data.user?.role === 'admin'}
+				{#if user?.role === 'admin'}
 					<button type="submit" class="btn-primary">
 						Import {[...accepted].length} work order{accepted.size !== 1 ? 's' : ''}
 					</button>

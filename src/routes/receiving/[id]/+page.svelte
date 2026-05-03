@@ -2,7 +2,9 @@
 	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { po, openLines, doneLines } = data;
+	const po = $derived(data.po);
+	const openLines = $derived(data.openLines);
+	const doneLines = $derived(data.doneLines);
 </script>
 
 <svelte:head><title>Receive PO {po.po_number} — PandS</title></svelte:head>

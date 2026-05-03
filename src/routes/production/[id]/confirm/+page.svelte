@@ -3,7 +3,8 @@
 	import { goto } from '$app/navigation';
 	import { fmtDate } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { matrix } = data;
+	const run = $derived(data.run);
+	const matrix = $derived(data.matrix);
 	function fmtSqft(n) {
 		if (n == null) return '';
 		return Math.round(n).toLocaleString();
@@ -14,14 +15,14 @@
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Record Production Run</h1>
-	{#if data.run.status !== 'COMPLETED'}
-		<a href="/production/{data.run.id}/edit" class="btn-secondary btn-sm">Edit</a>
+	{#if run.status !== 'COMPLETED'}
+		<a href="/production/{run.id}/edit" class="btn-secondary btn-sm">Edit</a>
 	{/if}
 	<a href="/production" class="btn-secondary btn-sm">Back</a>
 </header>
 <main class="p-6">
 	<div class="max-w-lg">
-		{#if data.run.status === 'COMPLETED'}
+		{#if run.status === 'COMPLETED'}
 			<div
 				class="mb-4 px-4 py-3 rounded-md text-sm bg-green-50 text-green-800 border border-green-200"
 			>
@@ -42,36 +43,36 @@
 			<div class="card-body space-y-2 text-sm">
 				<div class="flex justify-between">
 					<span class="text-gray-500">Run #</span>
-					<span class="font-mono">{data.run.run_number}</span>
+					<span class="font-mono">{run.run_number}</span>
 				</div>
 				<div class="flex justify-between">
 					<span class="text-gray-500">Job</span>
-					<span class="font-medium">{data.run.job_name}</span>
+					<span class="font-medium">{run.job_name}</span>
 				</div>
 				<div class="flex justify-between">
 					<span class="text-gray-500">WO #</span>
-					<span>{data.run.so_number}</span>
+					<span>{run.so_number}</span>
 				</div>
 				<div class="flex justify-between">
 					<span class="text-gray-500">SKU</span>
-					<span>{data.run.display_label}</span>
+					<span>{run.display_label}</span>
 				</div>
 				<div class="flex justify-between">
 					<span class="text-gray-500">Facing</span>
-					<span>{data.run.facing}</span>
+					<span>{run.facing}</span>
 				</div>
 				<div class="flex justify-between">
 					<span class="text-gray-500">Run Date</span>
-					<span>{fmtDate(data.run.run_date)}</span>
+					<span>{fmtDate(run.run_date)}</span>
 				</div>
 				<div class="flex justify-between">
 					<span class="text-gray-500">Scheduled Rolls</span>
-					<span class="tabular-nums">{data.run.rolls_scheduled}</span>
+					<span class="tabular-nums">{run.rolls_scheduled}</span>
 				</div>
 			</div>
 		</div>
 
-		{#if data.run.status !== 'COMPLETED'}
+		{#if run.status !== 'COMPLETED'}
 			<form method="POST" use:enhance>
 				<div class="card mb-4">
 					<div class="card-header">
@@ -85,9 +86,9 @@
 							name="rolls_actual"
 							step="1"
 							min="1"
-							max={data.run.rolls_scheduled}
+							max={run.rolls_scheduled}
 							class="form-input tabular-nums"
-							value={data.run.rolls_scheduled}
+							value={run.rolls_scheduled}
 							required
 						/>
 						<p class="text-xs text-gray-400 mt-1">
@@ -96,7 +97,8 @@
 					</div>
 				</div>
 				<div class="flex gap-3">
-					<button type="submit" class="btn-primary">Mark Produced &amp; Deduct Inventory</button
+					<button type="submit" class="btn-primary"
+						>Mark Produced &amp; Deduct Inventory</button
 					>
 					<a href="/production" class="btn-secondary">Cancel</a>
 				</div>

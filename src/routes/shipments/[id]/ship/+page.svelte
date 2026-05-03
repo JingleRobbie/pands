@@ -1,11 +1,13 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { shipment } = data;
+	const shipment = $derived(data.shipment);
 
-	let lineRolls = $state(new Map(shipment.lines.map((l) => [l.id, l.rolls])));
-	let confirmDialog;
+	let lineRolls = new SvelteMap(untrack(() => shipment.lines.map((l) => [l.id, l.rolls])));
+	let confirmDialog = $state(null);
 	const anyInvalid = $derived(
 		shipment.lines.some((l) => {
 			const val = lineRolls.get(l.id) ?? l.rolls;
@@ -17,9 +19,7 @@
 		confirmDialog.showModal();
 	}
 	function setLineRolls(id, val) {
-		const next = new Map(lineRolls);
-		next.set(id, val);
-		lineRolls = next;
+		lineRolls.set(id, val);
 	}
 
 	const totalRolls = $derived(

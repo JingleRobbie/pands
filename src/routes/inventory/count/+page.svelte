@@ -1,12 +1,13 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { fmtSqft, fmtDate, localDate } from '$lib/utils.js';
+	import { untrack } from 'svelte';
 	let { data, form } = $props();
-	const { skus } = data;
+	const skus = $derived(data.skus);
 	const today = localDate();
 
-	let dateInput = $state(form?.countDate ?? today);
-	let balances = $state({ ...data.balances });
+	let dateInput = $state(untrack(() => form?.countDate ?? today));
+	let balances = $state(untrack(() => ({ ...data.balances })));
 	let loadingBalances = $state(false);
 
 	$effect(() => {

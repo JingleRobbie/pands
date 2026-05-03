@@ -1,16 +1,14 @@
 <script>
-	import { goto } from '$app/navigation';
 	import { enhance } from '$app/forms';
 	import MatrixDrawer from '$lib/components/MatrixDrawer.svelte';
 	import { fmtDate } from '$lib/utils.js';
 	let { data } = $props();
-	const { po, lines, matrix, receivedAt, user } = data;
+	const po = $derived(data.po);
+	const lines = $derived(data.lines);
+	const matrix = $derived(data.matrix);
+	const receivedAt = $derived(data.receivedAt);
+	const user = $derived(data.user);
 	let outlookOpen = $state(false);
-
-	function fmtSqft(n) {
-		if (n == null) return '';
-		return Math.round(n).toLocaleString();
-	}
 </script>
 
 <svelte:head><title>PO {po.po_number} — PandS</title></svelte:head>

@@ -9,6 +9,7 @@
 	);
 	const hiddenCount = $derived(data.shipments.length - visible.length);
 </script>
+
 <div class="p-6">
 	<div class="flex items-center justify-between mb-6">
 		<h1 class="text-xl font-semibold text-gray-900">Shipments</h1>

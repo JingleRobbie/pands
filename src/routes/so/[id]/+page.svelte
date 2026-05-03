@@ -1,14 +1,12 @@
 <script>
-	import { goto } from '$app/navigation';
 	import MatrixDrawer from '$lib/components/MatrixDrawer.svelte';
 	import { fmtDate } from '$lib/utils.js';
 	let { data } = $props();
-	const { so, lineData, matrix } = data;
+	const so = $derived(data.so);
+	const lineData = $derived(data.lineData);
+	const matrix = $derived(data.matrix);
+	const woId = $derived(data.woId);
 	let outlookOpen = $state(false);
-	function fmtSqft(n) {
-		if (n == null) return '';
-		return Math.round(n).toLocaleString();
-	}
 </script>
 
 <svelte:head><title>SO {so.so_number} — PandS</title></svelte:head>
@@ -19,8 +17,8 @@
 		{#if so.status === 'OPEN' || so.status === 'IN_PROGRESS'}
 			<a href="/so/{so.id}/edit" class="btn-secondary btn-sm">Edit</a>
 		{/if}
-		{#if data.woId && (so.status === 'OPEN' || so.status === 'IN_PROGRESS')}
-			<a href="/wo/{data.woId}/schedule" class="btn-primary btn-sm">Schedule</a>
+		{#if woId && (so.status === 'OPEN' || so.status === 'IN_PROGRESS')}
+			<a href="/wo/{woId}/schedule" class="btn-primary btn-sm">Schedule</a>
 		{/if}
 		<button onclick={() => (outlookOpen = !outlookOpen)} class="btn-secondary btn-sm"
 			>Inventory Outlook</button

@@ -1,38 +1,41 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
+	const wo = $derived(data.wo);
+	const runs = $derived(data.runs);
 
-	let selected = $state(new Set());
+	let selected = new SvelteSet();
 	const toggle = (id) => {
-		const next = new Set(selected);
-		next.has(id) ? next.delete(id) : next.add(id);
-		selected = next;
+		selected.has(id) ? selected.delete(id) : selected.add(id);
 	};
-	const allSelected = $derived(data.runs.length > 0 && selected.size === data.runs.length);
+	const allSelected = $derived(runs.length > 0 && selected.size === runs.length);
 	const someSelected = $derived(selected.size > 0 && !allSelected);
 	function toggleAll() {
-		selected = allSelected ? new Set() : new Set(data.runs.map((r) => r.id));
+		selected.clear();
+		if (!allSelected) {
+			for (const run of runs) selected.add(run.id);
+		}
 	}
-	let masterSelectCb;
+	let masterSelectCb = $state(null);
 	$effect(() => {
 		if (masterSelectCb) masterSelectCb.indeterminate = someSelected;
 	});
 
-	let rollsToShip = $state(new Map(data.runs.map((r) => [r.id, r.rolls_actual])));
+	let rollsToShip = new SvelteMap(untrack(() => runs.map((r) => [r.id, r.rolls_actual])));
 	function setRolls(id, val) {
-		const next = new Map(rollsToShip);
-		next.set(id, val);
-		rollsToShip = next;
+		rollsToShip.set(id, val);
 	}
 
 	const totalRolls = $derived(
-		data.runs
+		runs
 			.filter((r) => selected.has(r.id))
 			.reduce((s, r) => s + (rollsToShip.get(r.id) ?? r.rolls_actual), 0)
 	);
 	const totalSqft = $derived(
-		data.runs
+		runs
 			.filter((r) => selected.has(r.id))
 			.reduce((s, r) => {
 				const rolls = rollsToShip.get(r.id) ?? r.rolls_actual;
@@ -43,8 +46,8 @@
 
 <div class="p-6 max-w-3xl">
 	<div class="flex items-center gap-4 mb-6">
-		<a href="/wo/{data.wo.id}" class="text-gray-400 hover:text-gray-600 text-sm"
-			>← WO #{data.wo.so_number}</a
+		<a href="/wo/{wo.id}" class="text-gray-400 hover:text-gray-600 text-sm"
+			>← WO #{wo.so_number}</a
 		>
 		<h1 class="text-xl font-semibold text-gray-900">New Shipment</h1>
 	</div>
@@ -54,18 +57,18 @@
 			<p class="text-red-600 text-sm">{form.error}</p>
 		{/if}
 
-		<input type="hidden" name="wo_id" value={data.wo.id} />
-		<input type="hidden" name="customer_id" value={data.wo.customer_id} />
+		<input type="hidden" name="wo_id" value={wo.id} />
+		<input type="hidden" name="customer_id" value={wo.customer_id} />
 
 		<div class="card card-body space-y-3">
 			<div class="grid grid-cols-2 gap-4 text-sm">
 				<div>
 					<p class="form-label">Customer</p>
-					<p class="text-gray-900">{data.wo.customer_display_name}</p>
+					<p class="text-gray-900">{wo.customer_display_name}</p>
 				</div>
 				<div>
 					<p class="form-label">Job</p>
-					<p class="text-gray-900">{data.wo.job_name}</p>
+					<p class="text-gray-900">{wo.job_name}</p>
 				</div>
 			</div>
 			<div>
@@ -89,7 +92,7 @@
 					>
 				{/if}
 			</div>
-			{#if data.runs.length === 0}
+			{#if runs.length === 0}
 				<div class="card-body text-sm text-gray-500">
 					No completed, unshipped runs for this work order.
 				</div>
@@ -122,7 +125,7 @@
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-gray-100 bg-white">
-						{#each data.runs as run (run.id)}
+						{#each runs as run (run.id)}
 							<tr
 								class="cursor-pointer hover:bg-blue-50 {selected.has(run.id)
 									? 'bg-blue-50'
@@ -192,7 +195,7 @@
 			<button type="submit" class="btn-primary" disabled={selected.size === 0}>
 				Create Shipment
 			</button>
-			<a href="/wo/{data.wo.id}" class="btn-secondary">Cancel</a>
+			<a href="/wo/{wo.id}" class="btn-secondary">Cancel</a>
 		</div>
 	</form>
 </div>
