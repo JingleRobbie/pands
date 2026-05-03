@@ -33,8 +33,11 @@
 
 <svelte:head><title>Production — PandS</title></svelte:head>
 
-<header class="bg-white border-b border-gray-200 px-6 py-4">
+<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Production</h1>
+	{#if data.user?.role === 'admin'}
+		<a href="/production/unproduce" class="btn-secondary btn-sm">Unproduce</a>
+	{/if}
 </header>
 <main class="p-6 space-y-4">
 	<nav class="flex gap-1">

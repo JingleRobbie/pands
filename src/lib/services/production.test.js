@@ -35,4 +35,22 @@ describe('production helpers', () => {
 			__productionTest.validateConfirmableRun({ status: 'SCHEDULED', rolls_scheduled: 2 }, 3)
 		).toThrow('Cannot record 3 rolls - only 2 rolls were scheduled.');
 	});
+
+	it('validates unproduce rolls against unshipped rolls', () => {
+		expect(() => __productionTest.validateUnproduceRolls(0, 3)).toThrow(
+			'Rolls to unproduce must be greater than zero.'
+		);
+		expect(() => __productionTest.validateUnproduceRolls(4, 3)).toThrow(
+			'Cannot unproduce 4 rolls - only 3 rolls are unshipped.'
+		);
+		expect(() => __productionTest.validateUnproduceRolls(3, 3)).not.toThrow();
+	});
+
+	it('uses exact actual square feet when fully unproducing a run', () => {
+		const line = { width_in: 48, length_ft: 100 };
+		const run = { rolls_actual: 3, sqft_actual: 1199 };
+
+		expect(__productionTest.prorateUnproduceSqft(line, run, 3)).toBe(1199);
+		expect(__productionTest.prorateUnproduceSqft(line, run, 2)).toBe(800);
+	});
 });

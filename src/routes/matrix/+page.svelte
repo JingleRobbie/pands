@@ -174,6 +174,10 @@
 								>
 							{:else if row.subType === 'adjustment'}
 								<span class="badge-amber">ADJUSTMENT</span>
+							{:else if row.activityLabel}
+								<span class={row.activityClass ?? 'badge-gray'}
+									>{row.activityLabel}</span
+								>
 							{:else}
 								{row.description}
 							{/if}

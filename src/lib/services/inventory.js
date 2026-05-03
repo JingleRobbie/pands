@@ -3,7 +3,7 @@ import { localDate } from '$lib/utils.js';
 
 function transactionDelta(alias = 'it') {
 	return `CASE
-		WHEN ${alias}.transaction_type IN ('RECEIPT','ADJUSTMENT_IN') THEN ${alias}.sqft_quantity
+		WHEN ${alias}.transaction_type IN ('RECEIPT','CONSUMPTION_REVERSAL','ADJUSTMENT_IN') THEN ${alias}.sqft_quantity
 		WHEN ${alias}.transaction_type IN ('RECEIPT_REVERSAL','CONSUMPTION','ADJUSTMENT_OUT') THEN -${alias}.sqft_quantity
 		ELSE 0
 	END`;
@@ -395,7 +395,8 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 		JOIN production_runs pr ON pr.id = it.reference_id
 		JOIN work_order_lines wol ON wol.id = pr.wo_line_id
 		JOIN work_orders wo ON wo.id = wol.wo_id
-		WHERE it.reference_type = 'PRODUCTION_RUN' AND it.transaction_type = 'CONSUMPTION'
+		WHERE it.reference_type = 'PRODUCTION_RUN'
+		  AND it.transaction_type IN ('CONSUMPTION','CONSUMPTION_REVERSAL')
 		  AND it.effective_date >= ?
 		ORDER BY it.effective_date, it.created_at
 	`,
@@ -404,13 +405,16 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 
 	const prodRowMap = {};
 	for (const t of prodTxns) {
-		const key = t.group_id ?? t.pr_id;
+		const key = `${t.group_id ?? t.pr_id}:${t.event_date}:${t.transaction_type}`;
 		if (!prodRowMap[key]) {
+			const isReversal = t.transaction_type === 'CONSUMPTION_REVERSAL';
 			prodRowMap[key] = {
 				rowType: 'historical',
 				subType: 'production',
 				partyName: t.customer_name,
-				description: t.job_name,
+				description: isReversal ? `${t.job_name} Unproduced` : t.job_name,
+				activityLabel: isReversal ? 'UNPRODUCED' : null,
+				activityClass: isReversal ? 'badge-amber' : null,
 				soNumber: t.so_number,
 				poNumber: '',
 				eventDate: t.event_date,
@@ -420,8 +424,9 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 				deltas: {},
 			};
 		}
+		const sign = t.transaction_type === 'CONSUMPTION_REVERSAL' ? 1 : -1;
 		prodRowMap[key].deltas[t.sku_id] =
-			(prodRowMap[key].deltas[t.sku_id] ?? 0) - Number(t.sqft_quantity);
+			(prodRowMap[key].deltas[t.sku_id] ?? 0) + sign * Number(t.sqft_quantity);
 		if (t.facing) prodRowMap[key].facings.add(t.facing);
 	}
 	for (const row of Object.values(prodRowMap)) {

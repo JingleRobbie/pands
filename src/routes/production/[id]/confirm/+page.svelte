@@ -39,10 +39,12 @@
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Record Production Run</h1>
-	{#if run.status !== 'COMPLETED'}
-		<a href="/production/{run.id}/edit" class="btn-secondary btn-sm">Edit</a>
-	{/if}
-	<a href="/production" class="btn-secondary btn-sm">Back</a>
+	<div class="flex gap-2">
+		{#if run.status !== 'COMPLETED'}
+			<a href="/production/{run.id}/edit" class="btn-secondary btn-sm">Edit</a>
+		{/if}
+		<a href="/production" class="btn-secondary btn-sm">Back</a>
+	</div>
 </header>
 <main class="p-6">
 	<div class="max-w-lg">
@@ -125,7 +127,7 @@
 						type="button"
 						class="btn-primary"
 						onclick={(e) => requestConfirm(e.currentTarget.form)}
-						>Mark Produced &amp; Deduct Inventory</button
+						>Mark Produced</button
 					>
 					<a href="/production" class="btn-secondary">Cancel</a>
 				</div>

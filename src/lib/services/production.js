@@ -66,6 +66,25 @@ async function findExistingRun(conn, woLineId, runDate) {
 	return existing ?? null;
 }
 
+async function findMatchingOpenRun(conn, woLineId, runDate) {
+	const normalizedDate = runDate || null;
+	const dateWhere = normalizedDate
+		? 'run_date = ? AND status = ?'
+		: 'run_date IS NULL AND status = ?';
+	const params = normalizedDate
+		? [woLineId, normalizedDate, 'SCHEDULED']
+		: [woLineId, 'UNSCHEDULED'];
+	const [[existing]] = await conn.query(
+		`SELECT id, run_number
+		 FROM production_runs
+		 WHERE wo_line_id = ? AND ${dateWhere}
+		 ORDER BY id
+		 LIMIT 1`,
+		params
+	);
+	return existing ?? null;
+}
+
 async function addToExistingRun(conn, existingRunId, rollsScheduled, sqftScheduled) {
 	await conn.query(
 		`UPDATE production_runs
@@ -158,22 +177,58 @@ function validateConfirmableRun(run, rollsActual) {
 	}
 }
 
-async function insertShortfallRun(conn, run, line, shortfallRolls, userId) {
+async function insertShortfallRun(
+	conn,
+	run,
+	line,
+	shortfallRolls,
+	userId,
+	{ runDate = null, groupId = null } = {}
+) {
+	const shortfallDate = runDate || null;
+	const existing = await findMatchingOpenRun(conn, run.wo_line_id, shortfallDate);
+	const sqftScheduled = calcSqft(line, shortfallRolls);
+	if (existing) {
+		await addToExistingRun(conn, existing.id, shortfallRolls, sqftScheduled);
+		return existing.run_number;
+	}
+
 	const shortfallRunNumber = await nextRunNumber(conn);
+	const status = shortfallDate ? 'SCHEDULED' : 'UNSCHEDULED';
 	await conn.query(
 		`INSERT INTO production_runs
-		 (run_number, wo_line_id, sku_id, run_date, rolls_scheduled, sqft_scheduled, status, created_by)
-		 VALUES (?, ?, ?, NULL, ?, ?, 'UNSCHEDULED', ?)`,
+		 (run_number, group_id, wo_line_id, sku_id, run_date, rolls_scheduled, sqft_scheduled, status, created_by)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		[
 			shortfallRunNumber,
+			groupId,
 			run.wo_line_id,
 			run.sku_id,
+			shortfallDate,
 			shortfallRolls,
-			calcSqft(line, shortfallRolls),
+			sqftScheduled,
+			status,
 			userId ?? null,
 		]
 	);
 	return shortfallRunNumber;
+}
+
+function prorateUnproduceSqft(line, run, rollsToUnproduce) {
+	const rollsActual = Number(run.rolls_actual);
+	if (rollsToUnproduce === rollsActual) return Number(run.sqft_actual);
+	return calcSqft(line, rollsToUnproduce);
+}
+
+function validateUnproduceRolls(rollsToUnproduce, unshippedRolls) {
+	if (!Number.isInteger(rollsToUnproduce) || rollsToUnproduce < 1) {
+		throw new Error('Rolls to unproduce must be greater than zero.');
+	}
+	if (rollsToUnproduce > unshippedRolls) {
+		throw new Error(
+			`Cannot unproduce ${rollsToUnproduce} rolls - only ${unshippedRolls} rolls are unshipped.`
+		);
+	}
 }
 
 export async function scheduleRun(woLineId, runDate, rollsScheduled, userId) {
@@ -326,6 +381,130 @@ export async function confirmRun(runId, rollsActual, userId, runDate = null) {
 	}
 }
 
+export async function unproduceRun(runId, rollsToUnproduce, userId) {
+	const conn = await db.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		const [[run]] = await conn.query(
+			`SELECT pr.*, wol.wo_id, wo.so_number, wo.job_name, wo.status AS wo_status
+			 FROM production_runs pr
+			 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
+			 JOIN work_orders wo ON wo.id = wol.wo_id
+			 WHERE pr.id = ? FOR UPDATE`,
+			[runId]
+		);
+		if (!run) throw new Error('Production run not found.');
+		if (run.status !== 'COMPLETED') throw new Error('Only completed runs can be unproduced.');
+
+		const line = await getLockedWoLine(conn, run.wo_line_id);
+
+		const [[shipped]] = await conn.query(
+			`SELECT COALESCE(SUM(rolls), 0) AS shippedRolls
+			 FROM shipment_lines
+			 WHERE production_run_id = ?`,
+			[runId]
+		);
+		const shippedRolls = Number(shipped.shippedRolls);
+		const unshippedRolls = Number(run.rolls_actual) - shippedRolls;
+		validateUnproduceRolls(rollsToUnproduce, unshippedRolls);
+
+		const [[consumption]] = await conn.query(
+			`SELECT id, effective_date
+			 FROM inventory_transactions
+			 WHERE reference_type = 'PRODUCTION_RUN'
+			   AND reference_id = ?
+			   AND transaction_type = 'CONSUMPTION'
+			 ORDER BY effective_date, id
+			 LIMIT 1`,
+			[runId]
+		);
+		if (!consumption) {
+			throw new Error(
+				`Run ${run.run_number} does not have a consumption transaction to reverse.`
+			);
+		}
+
+		const sqftToUnproduce = prorateUnproduceSqft(line, run, rollsToUnproduce);
+		await conn.query(
+			`INSERT INTO inventory_transactions
+			 (sku_id, transaction_type, sqft_quantity, effective_date, reference_type, reference_id,
+			  reverses_transaction_id, memo, created_by)
+			 VALUES (?, 'CONSUMPTION_REVERSAL', ?, ?, 'PRODUCTION_RUN', ?, ?, ?, ?)`,
+			[
+				run.sku_id,
+				sqftToUnproduce,
+				consumption.effective_date,
+				runId,
+				consumption.id,
+				`Unproduced ${rollsToUnproduce} roll${rollsToUnproduce === 1 ? '' : 's'} from run ${run.run_number}`,
+				userId ?? null,
+			]
+		);
+
+		const fullUnproduce = rollsToUnproduce === Number(run.rolls_actual);
+		let shortfallRunNumber = null;
+		if (fullUnproduce) {
+			const reopenedStatus = run.run_date ? 'SCHEDULED' : 'UNSCHEDULED';
+			await conn.query(
+				`UPDATE production_runs
+				 SET status = ?, rolls_scheduled = ?, sqft_scheduled = ?,
+				     rolls_actual = NULL, sqft_actual = NULL,
+				     confirmed_at = NULL, confirmed_by = NULL
+				 WHERE id = ?`,
+				[reopenedStatus, run.rolls_actual, run.sqft_actual, runId]
+			);
+		} else {
+			const remainingRolls = Number(run.rolls_actual) - rollsToUnproduce;
+			const remainingSqft = Number(run.sqft_actual) - sqftToUnproduce;
+			await conn.query(
+				`UPDATE production_runs
+				 SET rolls_actual = ?, sqft_actual = ?
+				 WHERE id = ?`,
+				[remainingRolls, remainingSqft, runId]
+			);
+			shortfallRunNumber = await insertShortfallRun(
+				conn,
+				run,
+				line,
+				rollsToUnproduce,
+				userId,
+				{
+					runDate: dateOnly(run.run_date),
+					groupId: run.group_id ?? null,
+				}
+			);
+		}
+
+		await conn.query(
+			`UPDATE work_order_lines
+			 SET rolls_produced = GREATEST(rolls_produced - ?, 0)
+			 WHERE id = ?`,
+			[rollsToUnproduce, run.wo_line_id]
+		);
+
+		await conn.query(
+			`UPDATE work_orders
+			 SET status = 'OPEN'
+			 WHERE id = ? AND status = 'COMPLETE'`,
+			[run.wo_id]
+		);
+
+		await conn.commit();
+		return {
+			woId: run.wo_id,
+			shortfallRunNumber,
+			rollsUnproduced: rollsToUnproduce,
+			sqftUnproduced: sqftToUnproduce,
+		};
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+}
+
 export async function deleteRun(runId) {
 	const conn = await db.getConnection();
 	try {
@@ -348,6 +527,8 @@ export async function deleteRun(runId) {
 export const __productionTest = {
 	calcSqft,
 	dateOnly,
+	prorateUnproduceSqft,
 	validateRollsScheduled,
 	validateConfirmableRun,
+	validateUnproduceRolls,
 };

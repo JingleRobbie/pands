@@ -249,3 +249,46 @@ fmtSqft(12345); // → "12,345"
 ### Adding a New SKU
 
 Edit `scripts/seed-skus.js` — add an entry with a unique `sku_code`, `thickness`, `width`, and `sort_order`. Then run `npm run seed`.
+
+
+<claude-mem-context>
+# Memory Context
+
+# [PandS] recent context, 2026-05-03 12:01am CDT
+
+Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
+Format: ID TIME TYPE TITLE
+Fetch details: get_observations([IDs]) | Search: mem-search skill
+
+Stats: 18 obs (7,774t read) | 393,577t work | 98% savings
+
+### May 2, 2026
+1 8:42p 🔵 PandS inventory system architecture: SvelteKit + MySQL with role-based auth
+2 " 🔵 UI patterns: global search, inventory matrix, shipment tracking
+3 8:43p 🔵 PandS system architecture: manufacturing management with import workflows
+S2 Verify Codex CLI setup status and readiness (May 2, 8:43 PM)
+S1 Continue PandS session; memory auto-injected from previous learn-codebase run (May 2, 8:43 PM)
+S3 Verify caveman mode status (May 2, 9:12 PM)
+S4 Audit confirmation dialog patterns in PandS codebase and determine standardization approach (May 2, 9:15 PM)
+4 9:17p 🔵 Dialog/confirmation patterns vary across codebase
+5 " 🔵 Four distinct confirmation dialog patterns found across codebase
+6 " 🔵 Comprehensive confirmation dialog audit completed - 6 implementations, no shared component
+S5 Audit confirmation dialog patterns, standardize on HTML5 dialog pattern, create refactoring plan (May 2, 9:18 PM)
+7 9:22p 🔵 PO cancel implementation uses window.confirm() in form with use:enhance
+8 " 🔵 Conditional div overlay pattern used for 2 confirmations - similar structure, different state shapes
+9 " 🔵 HTML5 dialog pattern extracted and documented for replication across 4 remaining confirmations
+10 9:23p ⚖️ Refactoring plan created to standardize 3 confirmation dialogs to HTML5 pattern
+S6 Refactor confirmation dialog patterns across three Svelte route files to standardize using HTML5 `&lt;dialog&gt;` elements instead of boolean state + conditional div overlays (May 2, 9:23 PM)
+11 9:24p ✅ Refactoring started: cancelDialog state added to po/[id]/edit
+12 9:25p ✅ Cancel PO trigger button refactored from form with window.confirm() to showModal() call
+S7 Standardize confirmation dialog patterns across Svelte route files by refactoring from boolean state + conditional div overlays to HTML5 `&lt;dialog&gt;` elements (May 2, 9:25 PM)
+13 9:41p 🔵 Inventory matrix row structure and filtering behavior mapped
+14 9:42p ⚖️ Plan: show today's activity in "Current" matrix view
+S8 Create plan: show today's activities in inventory matrix "Current" dropdown view, above current inventory row, with future-row formatting (May 2, 9:44 PM)
+15 10:08p 🔵 Modal confirmation missing in production confirm page
+16 10:09p 🔴 Modal confirmation added to wo/[id]/confirm
+17 " 🔴 Modal confirmation added to production/[id]/confirm
+18 11:30p 🟣 Production Unproduce Feature
+
+Access 394k tokens of past work via get_observations([IDs]) or mem-search skill.
+</claude-mem-context>
