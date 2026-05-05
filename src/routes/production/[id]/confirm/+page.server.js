@@ -29,9 +29,9 @@ export const actions = {
 
 		try {
 			await confirmRun(Number(params.id), rollsActual, locals.appUser?.id);
-			redirect(303, returnTo);
 		} catch (err) {
 			return fail(400, { error: err.message });
 		}
+		redirect(303, returnTo);
 	},
 };
