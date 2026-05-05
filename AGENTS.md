@@ -254,22 +254,18 @@ Edit `scripts/seed-skus.js` — add an entry with a unique `sku_code`, `thicknes
 <claude-mem-context>
 # Memory Context
 
-# [PandS] recent context, 2026-05-03 12:01am CDT
+# [PandS] recent context, 2026-05-04 8:16pm CDT
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 18 obs (7,774t read) | 393,577t work | 98% savings
+Stats: 41 obs (14,687t read) | 750,821t work | 98% savings
 
 ### May 2, 2026
 1 8:42p 🔵 PandS inventory system architecture: SvelteKit + MySQL with role-based auth
 2 " 🔵 UI patterns: global search, inventory matrix, shipment tracking
 3 8:43p 🔵 PandS system architecture: manufacturing management with import workflows
-S2 Verify Codex CLI setup status and readiness (May 2, 8:43 PM)
-S1 Continue PandS session; memory auto-injected from previous learn-codebase run (May 2, 8:43 PM)
-S3 Verify caveman mode status (May 2, 9:12 PM)
-S4 Audit confirmation dialog patterns in PandS codebase and determine standardization approach (May 2, 9:15 PM)
 4 9:17p 🔵 Dialog/confirmation patterns vary across codebase
 5 " 🔵 Four distinct confirmation dialog patterns found across codebase
 6 " 🔵 Comprehensive confirmation dialog audit completed - 6 implementations, no shared component
@@ -282,13 +278,44 @@ S6 Refactor confirmation dialog patterns across three Svelte route files to stan
 11 9:24p ✅ Refactoring started: cancelDialog state added to po/[id]/edit
 12 9:25p ✅ Cancel PO trigger button refactored from form with window.confirm() to showModal() call
 S7 Standardize confirmation dialog patterns across Svelte route files by refactoring from boolean state + conditional div overlays to HTML5 `&lt;dialog&gt;` elements (May 2, 9:25 PM)
+S8 Create plan: show today's activities in inventory matrix "Current" dropdown view, above current inventory row, with future-row formatting (May 2, 9:29 PM)
 13 9:41p 🔵 Inventory matrix row structure and filtering behavior mapped
 14 9:42p ⚖️ Plan: show today's activity in "Current" matrix view
-S8 Create plan: show today's activities in inventory matrix "Current" dropdown view, above current inventory row, with future-row formatting (May 2, 9:44 PM)
+S9 User requested usage statistics (May 2, 9:44 PM)
 15 10:08p 🔵 Modal confirmation missing in production confirm page
 16 10:09p 🔴 Modal confirmation added to wo/[id]/confirm
 17 " 🔴 Modal confirmation added to production/[id]/confirm
 18 11:30p 🟣 Production Unproduce Feature
+### May 3, 2026
+19 12:01a ✅ Removed Unproduce links from work order confirmation page
+20 " 🔵 Production service layer already supports full unproduce logic
+21 " 🔵 Production list page shows work orders grouped with run details and status filtering
+22 " ✅ New unproduce route created at /production/[id]/unproduce
+23 12:02a 🟣 Implemented new unproduce page with date filtering and run selection
+24 " ✅ Removed individual run unproduce route; added admin button to production list header
+25 " ✅ Enhanced shortfall run creation to merge into existing open runs
+26 12:03a ✅ Optimized SQL query for eligible runs; moved calculations to database layer
+28 12:05a ✅ Fixed Svelte state initialization and cleaned up unused code
+S10 Continue from where left off: Review audit findings and implement 3 identified fixes for production unproduce, PO unreceive, and error handling (May 3, 12:11 AM)
+31 12:12a 🟣 Unproduce and unreceive operations with ledger-based reversals
+32 " 🔵 Code audit completed on 3-commit batch (unproduce, unreceive, ledger refactor)
+33 " ⚖️ Implementation plan created for 3 code fixes (deferred execution pending bash approval)
+34 12:23a 🔵 Code review identified 3 real issues and 1 false positive in recent changes
+S11 Summarize and commit review fixes for PO unreceive and unproduce features (May 3, 12:24 AM)
+35 12:29a 🔴 Disable unreceive button during submission to prevent double-submit
+36 " 🔴 Fix HTTP error code for unproduceRun server errors
+S12 Fix back navigation from confirm page - should return to production list, not work order detail (May 3, 12:30 AM)
+37 12:35a 🔵 Back navigation from confirm page broken
+38 " 🔵 Back links hardcoded to incorrect route
+S13 Review and verify code changes from overnight work; fix back navigation on confirm page (May 3, 12:35 AM)
+### May 4, 2026
+41 7:54p 🔵 Project has vitest test infrastructure already configured
+42 7:55p 🔵 Vitest test infrastructure configured but no tests exist yet
+S14 Implement TDD in PandS project; write plan and understand current state (May 4, 7:56 PM)
+43 7:59p 🔵 Ripgrep executable inaccessible on Windows after installation
+44 8:05p 🟣 TDD plan and initial purchasing service tests
+45 8:06p 🟣 Purchasing service tests verified and build passes
+46 8:07p ✅ TDD plan moved to project root for version control
 
-Access 394k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 751k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

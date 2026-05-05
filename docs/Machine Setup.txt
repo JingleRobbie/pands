@@ -1,0 +1,36 @@
+Setup on a new machine                                                                                         
+Prerequisites — install these first:                                                                        
+- https://nodejs.org (LTS)
+- https://dev.mysql.com/downloads/mysql/ — or MySQL Workbench which bundles it
+
+1. Get the code
+git clone <your-repo-url> PandS
+cd PandS
+npm install
+
+2. Create the database
+mysql -u root -p < db/schema.sql
+npm run seed
+
+3. Create the .env file (in the project root)
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=your_mysql_user
+DB_PASSWORD=your_mysql_password
+DB_NAME=pands
+
+▎ If your password contains $, escape it as \$
+
+4. Build and run
+npm run build
+npm run build:css
+node build/index.js
+App will be at http://localhost:3000. Set PORT=8080 (or whatever) in .env to change the port.
+
+5. Log in
+The schema seeds one Admin user. Go to http://localhost:3000, pick Admin, and you're in. Add other users via
+MySQL directly (INSERT INTO app_users ...) until a user management UI is built.
+
+---
+For dev work (hot reload, not a deployment): just npm run dev instead of steps 4–5, app at
+http://localhost:5173.
