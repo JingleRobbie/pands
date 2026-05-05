@@ -72,8 +72,9 @@ async function splitRunForShipment(conn, run, rollsToShip, userId) {
 
 async function reduceShipmentLine(conn, line, newRolls, userId) {
 	const originalRolls = Number(line.rolls);
-	if (!newRolls || newRolls >= originalRolls) return null;
+	if (!newRolls) return null;
 	validateRollsToShip(newRolls, originalRolls);
+	if (newRolls === originalRolls) return null;
 
 	const originalSqft = Number(line.sqft);
 	const newSqft = prorateSqft(newRolls, originalRolls, originalSqft);
