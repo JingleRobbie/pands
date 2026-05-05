@@ -254,13 +254,13 @@ Edit `scripts/seed-skus.js` — add an entry with a unique `sku_code`, `thicknes
 <claude-mem-context>
 # Memory Context
 
-# [PandS] recent context, 2026-05-04 8:16pm CDT
+# [PandS] recent context, 2026-05-04 8:55pm CDT
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 41 obs (14,687t read) | 750,821t work | 98% savings
+Stats: 46 obs (15,924t read) | 773,239t work | 98% savings
 
 ### May 2, 2026
 1 8:42p 🔵 PandS inventory system architecture: SvelteKit + MySQL with role-based auth
@@ -316,6 +316,11 @@ S14 Implement TDD in PandS project; write plan and understand current state (May
 44 8:05p 🟣 TDD plan and initial purchasing service tests
 45 8:06p 🟣 Purchasing service tests verified and build passes
 46 8:07p ✅ TDD plan moved to project root for version control
+47 8:08p ✅ .gitignore refined to allow tracked docs/ files
+48 8:17p 🔵 Git index lock prevents staging files
+49 " ✅ TDD plan and purchasing tests staged for commit
+50 " ✅ TDD plan and purchasing tests committed
+51 8:19p 🟣 Expanded purchasing service test coverage
 
-Access 751k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 773k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>
