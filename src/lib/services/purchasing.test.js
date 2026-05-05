@@ -76,6 +76,25 @@ describe('purchasing services', () => {
 			expect(conn.rollback).toHaveBeenCalledOnce();
 			expect(conn.release).toHaveBeenCalledOnce();
 		});
+
+		it('keeps the PO open when other lines are still open', async () => {
+			conn.query
+				.mockResolvedValueOnce([[{ sku_id: 7 }]])
+				.mockResolvedValueOnce([{}])
+				.mockResolvedValueOnce([{}])
+				.mockResolvedValueOnce([[{ openCount: 1, receivedCount: 1 }]])
+				.mockResolvedValueOnce([{}]);
+
+			await receivePoLines(12, [{ lineId: 34, sqftReceived: 500 }], 9);
+
+			expect(conn.query).toHaveBeenNthCalledWith(
+				5,
+				"UPDATE purchase_orders SET status = 'OPEN' WHERE id = ?",
+				[12]
+			);
+			expect(conn.commit).toHaveBeenCalledOnce();
+			expect(conn.rollback).not.toHaveBeenCalled();
+		});
 	});
 
 	describe('unreceivePoLines', () => {
@@ -126,6 +145,63 @@ describe('purchasing services', () => {
 			expect(conn.commit).toHaveBeenCalledOnce();
 			expect(conn.rollback).not.toHaveBeenCalled();
 			expect(conn.release).toHaveBeenCalledOnce();
+		});
+
+		it('rolls back when a selected line is not received on the PO', async () => {
+			conn.query.mockResolvedValueOnce([[]]);
+
+			await expect(unreceivePoLines(12, [34], 9)).rejects.toThrow(
+				'Line 34 is not a received line on PO 12'
+			);
+
+			expect(conn.beginTransaction).toHaveBeenCalledOnce();
+			expect(conn.commit).not.toHaveBeenCalled();
+			expect(conn.rollback).toHaveBeenCalledOnce();
+			expect(conn.release).toHaveBeenCalledOnce();
+		});
+
+		it('rolls back when the received line has no active receipt transaction', async () => {
+			conn.query
+				.mockResolvedValueOnce([[{ id: 34, sku_id: 7, sqft_received: 500 }]])
+				.mockResolvedValueOnce([[]]);
+
+			await expect(unreceivePoLines(12, [34], 9)).rejects.toThrow(
+				'Line 34 does not have an active receipt transaction to reverse.'
+			);
+
+			expect(conn.beginTransaction).toHaveBeenCalledOnce();
+			expect(conn.commit).not.toHaveBeenCalled();
+			expect(conn.rollback).toHaveBeenCalledOnce();
+			expect(conn.release).toHaveBeenCalledOnce();
+		});
+
+		it('stores null created_by when unreceiving without a user id', async () => {
+			conn.query
+				.mockResolvedValueOnce([[{ id: 34, sku_id: 7, sqft_received: 500 }]])
+				.mockResolvedValueOnce([
+					[
+						{
+							id: 101,
+							sku_id: 7,
+							sqft_quantity: 500,
+							effective_date: '2026-05-01',
+						},
+					],
+				])
+				.mockResolvedValueOnce([{}])
+				.mockResolvedValueOnce([{}])
+				.mockResolvedValueOnce([[{ openCount: 1, receivedCount: 0 }]])
+				.mockResolvedValueOnce([{}]);
+
+			await unreceivePoLines(12, [34]);
+
+			expect(conn.query).toHaveBeenNthCalledWith(
+				3,
+				expect.stringContaining('INSERT INTO inventory_transactions'),
+				[7, 500, '2026-05-01', 34, 101, 'Unreceived PO line 34', null]
+			);
+			expect(conn.commit).toHaveBeenCalledOnce();
+			expect(conn.rollback).not.toHaveBeenCalled();
 		});
 	});
 });
