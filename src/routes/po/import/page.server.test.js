@@ -162,4 +162,62 @@ describe('purchase order import page', () => {
 		expect(conn.rollback).toHaveBeenCalledOnce();
 		expect(conn.release).toHaveBeenCalledOnce();
 	});
+
+	it('updates accepted changed POs and cancels accepted removed POs', async () => {
+		conn.query.mockResolvedValue([{}]);
+		const changedPo = {
+			po_number: 'PO-100',
+			vendor_name: 'Certainteed',
+			expected_date: '2026-05-20',
+			status: 'changed',
+			existing_id: 101,
+			lines: [{ sku_id: 7, sqft_ordered: 1400 }],
+		};
+		const removedPo = {
+			po_number: 'PO-200',
+			status: 'removed',
+			existing_id: 202,
+			lines: [],
+		};
+
+		const result = await actions.import({
+			request: requestWithForm([
+				['accepted', 'PO-100'],
+				['accepted', 'PO-200'],
+				['csv_data', JSON.stringify([changedPo, removedPo])],
+			]),
+			locals: { appUser: { id: 9, role: 'admin' } },
+		});
+
+		expect(result).toEqual({ success: true, created: 0, updated: 1, cancelled: 1 });
+		expect(conn.beginTransaction).toHaveBeenCalledOnce();
+		expect(conn.query).toHaveBeenNthCalledWith(
+			1,
+			'UPDATE purchase_orders SET vendor_name = ?, expected_date = ? WHERE id = ?',
+			['Certainteed', '2026-05-20', 101]
+		);
+		expect(conn.query).toHaveBeenNthCalledWith(
+			2,
+			"DELETE FROM purchase_order_lines WHERE po_id = ? AND status = 'OPEN'",
+			[101]
+		);
+		expect(conn.query).toHaveBeenNthCalledWith(
+			3,
+			'INSERT INTO purchase_order_lines (po_id, sku_id, sqft_ordered) VALUES (?, ?, ?)',
+			[101, 7, 1400]
+		);
+		expect(conn.query).toHaveBeenNthCalledWith(
+			4,
+			"UPDATE purchase_orders SET status = 'CANCELLED' WHERE id = ?",
+			[202]
+		);
+		expect(conn.query).toHaveBeenNthCalledWith(
+			5,
+			"UPDATE purchase_order_lines SET status = 'CANCELLED' WHERE po_id = ? AND status = 'OPEN'",
+			[202]
+		);
+		expect(conn.commit).toHaveBeenCalledOnce();
+		expect(conn.rollback).not.toHaveBeenCalled();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
 });
