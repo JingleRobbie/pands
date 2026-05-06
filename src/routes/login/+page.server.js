@@ -3,7 +3,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import bcrypt from 'bcryptjs';
 
 export async function load({ locals }) {
-	if (locals.appUser) redirect(302, '/calendar');
+	if (locals.appUser) redirect(302, '/');
 	const [users] = await db.query(
 		'SELECT id, display_name FROM app_users WHERE is_active = TRUE ORDER BY display_name'
 	);
@@ -12,7 +12,7 @@ export async function load({ locals }) {
 
 export const actions = {
 	default: async ({ request, cookies, locals }) => {
-		if (locals.appUser) redirect(302, '/calendar');
+		if (locals.appUser) redirect(302, '/');
 		const data = await request.formData();
 		const userId = parseInt(data.get('user_id'));
 		const password = data.get('password');
@@ -33,6 +33,6 @@ export const actions = {
 			httpOnly: true,
 			sameSite: 'lax',
 		});
-		redirect(303, '/calendar');
+		redirect(303, '/');
 	},
 };

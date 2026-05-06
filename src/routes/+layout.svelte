@@ -8,6 +8,7 @@
 	let searchOpen = $state(false);
 
 	const navItems = [
+		{ href: '/', label: 'Home', icon: 'home' },
 		{ href: '/matrix', label: 'Overview', icon: 'grid' },
 		{ href: '/po', label: 'Purchase Orders', icon: 'box' },
 		{ href: '/receiving', label: 'Receiving', icon: 'truck' },
@@ -102,7 +103,20 @@
 						? 'bg-brand text-white'
 						: 'text-white/70 hover:bg-white/10 hover:text-white'}"
 				>
-					{#if nav.icon === 'grid'}
+					{#if nav.icon === 'home'}
+						<svg
+							class="w-4 h-4 flex-shrink-0"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							viewBox="0 0 24 24"
+							><path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"
+							/></svg
+						>
+					{:else if nav.icon === 'grid'}
 						<svg
 							class="w-4 h-4 flex-shrink-0"
 							fill="none"
