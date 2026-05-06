@@ -212,4 +212,99 @@ describe('work order import page', () => {
 		expect(conn.rollback).toHaveBeenCalledOnce();
 		expect(conn.release).toHaveBeenCalledOnce();
 	});
+
+	it('updates accepted changed work orders and replaces child rows', async () => {
+		conn.query.mockResolvedValueOnce([[{ id: 44 }]]).mockResolvedValue([{}]);
+		const changedWo = {
+			so_number: 'SO-100',
+			customer_name: 'Acme',
+			job_name: 'North Wing Revised',
+			branch: 'Tulsa',
+			ship_date: '2026-05-20',
+			ship_addr1: '123 Main St',
+			ship_city: 'Tulsa',
+			ship_state: 'OK',
+			ship_zip: '74101',
+			status: 'changed',
+			existing_id: 101,
+			contact_name: 'Sam',
+			contact_phone: '555-1000',
+			accessories: [{ qty: 2, part_number: 'PIN-1', description: 'Pins' }],
+			lines: [
+				{
+					sku_id: 7,
+					thickness_in: 3,
+					width_in: 48,
+					qty: 4,
+					length_ft: 100,
+					sqft: 1600,
+					rollfor: 'Wall',
+					facing: 'FSK',
+					instructions: 'Label A',
+					tab_type: 'A',
+				},
+			],
+		};
+
+		const result = await actions.import({
+			request: requestWithForm([
+				['accepted', 'SO-100'],
+				['csv_data', JSON.stringify([changedWo])],
+			]),
+			locals: { appUser: { id: 9, role: 'admin' } },
+		});
+
+		expect(result).toEqual({ success: true, created: 0, updated: 1 });
+		expect(conn.beginTransaction).toHaveBeenCalledOnce();
+		expect(conn.query).toHaveBeenNthCalledWith(
+			1,
+			'SELECT id FROM customers WHERE LOWER(name) = LOWER(?)',
+			['Acme']
+		);
+		expect(conn.query).toHaveBeenNthCalledWith(
+			2,
+			'UPDATE work_orders SET customer_name=?, job_name=?, branch=?, ship_date=?, customer_id=COALESCE(customer_id, ?), ship_addr1=?, ship_city=?, ship_state=?, ship_zip=? WHERE id=?',
+			[
+				'Acme',
+				'North Wing Revised',
+				'Tulsa',
+				'2026-05-20',
+				44,
+				'123 Main St',
+				'Tulsa',
+				'OK',
+				'74101',
+				101,
+			]
+		);
+		expect(conn.query).toHaveBeenNthCalledWith(3, 'DELETE FROM work_order_lines WHERE wo_id = ?', [
+			101,
+		]);
+		expect(conn.query).toHaveBeenNthCalledWith(4, 'DELETE FROM contacts WHERE wo_id = ?', [
+			101,
+		]);
+		expect(conn.query).toHaveBeenNthCalledWith(
+			5,
+			'DELETE FROM wo_accessories WHERE wo_id = ?',
+			[101]
+		);
+		expect(conn.query).toHaveBeenNthCalledWith(
+			6,
+			'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+			[101, 7, 3, 48, 4, 100, 1600, 'Wall', 'FSK', 'Label A', 'A']
+		);
+		expect(conn.query).toHaveBeenNthCalledWith(
+			7,
+			'INSERT INTO contacts (wo_id, name, phone) VALUES (?, ?, ?)',
+			[101, 'Sam', '555-1000']
+		);
+		expect(conn.query).toHaveBeenNthCalledWith(
+			8,
+			'INSERT INTO wo_accessories (wo_id, qty, part_number, description) VALUES (?, ?, ?, ?)',
+			[101, 2, 'PIN-1', 'Pins']
+		);
+		expect(conn.commit).toHaveBeenCalledOnce();
+		expect(conn.rollback).not.toHaveBeenCalled();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
 });
