@@ -61,36 +61,32 @@
 	</div>
 
 	{#if data.searchResults !== null}
-		<div class="card">
+		<div class="card overflow-x-auto">
 			<div class="card-header">
 				<span class="text-sm font-semibold text-gray-700">
 					{data.searchResults.length} result{data.searchResults.length === 1 ? '' : 's'}
 				</span>
 			</div>
 			{#if data.searchResults.length}
-				<table class="min-w-full divide-y divide-gray-200 text-sm">
-					<thead class="bg-gray-50">
+				<table class="dense-list-table min-w-[42rem]">
+					<thead>
 						<tr>
-							<th class="px-4 py-3 text-left font-medium text-gray-500">PO #</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-500">Vendor</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-500"
-								>Expected / Received</th
-							>
-							<th class="px-4 py-3 text-left font-medium text-gray-500">Status</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-500"
-								>SKUs / Sq Ft</th
-							>
+							<th class="text-left">PO #</th>
+							<th class="text-left">Vendor</th>
+							<th class="text-left">Expected / Received</th>
+							<th class="text-left">Status</th>
+							<th class="text-left">SKUs / Sq Ft</th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-gray-100 bg-white">
+					<tbody>
 						{#each data.searchResults as po (po.id)}
 							<tr
-								class="hover:bg-gray-50 cursor-pointer"
+								class="cursor-pointer"
 								onclick={() => goto(withReturnTo(`/po/${po.id}`, returnTo))}
 							>
-								<td class="px-4 py-3 font-medium text-gray-900">{po.po_number}</td>
-								<td class="px-4 py-3 text-gray-700">{po.vendor_name}</td>
-								<td class="px-4 py-3">
+								<td class="font-medium text-gray-900">{po.po_number}</td>
+								<td class="text-gray-700">{po.vendor_name}</td>
+								<td>
 									{#if po.received_at}
 										<span class="text-gray-700">{fmtDate(po.received_at)}</span>
 										{#if fmtDate(po.received_at) !== fmtDate(po.expected_date)}
@@ -104,26 +100,22 @@
 										>
 									{/if}
 								</td>
-								<td class="px-4 py-3">
+								<td>
 									<span class={statusBadge(po.status)}
 										>{statusLabel(po.status)}</span
 									>
 								</td>
-								<td class="px-4 py-3">
-									{#each po.lines ?? [] as line, i (line.sku_code)}
-										<div
-											class="flex justify-between gap-6 text-xs text-gray-600 px-1 rounded {i %
-												2 ===
-											0
-												? 'bg-gray-100'
-												: ''}"
-										>
-											<span>{line.sku_code}</span>
-											<span class="tabular-nums"
-												>{fmtSqft(line.sqft_ordered)}</span
-											>
-										</div>
-									{/each}
+								<td>
+									<div class="dense-list-lines">
+										{#each po.lines ?? [] as line (line.sku_code)}
+											<div class="dense-list-line">
+												<span>{line.sku_code}</span>
+												<span class="text-right font-mono tabular-nums"
+													>{fmtSqft(line.sqft_ordered)}</span
+												>
+											</div>
+										{/each}
+									</div>
 								</td>
 							</tr>
 						{/each}
@@ -134,80 +126,66 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="card">
+		<div class="card overflow-x-auto">
 			<div class="card-header">
 				<span class="text-sm font-semibold text-gray-700">Active</span>
 			</div>
 			{#if data.overdue.length || data.upcoming.length}
-				<table class="min-w-full divide-y divide-gray-200 text-sm">
-					<thead class="bg-gray-50">
+				<table class="dense-list-table min-w-[42rem]">
+					<thead>
 						<tr>
-							<th class="px-4 py-3 text-left font-medium text-gray-500">PO #</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-500">Vendor</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-500"
-								>Expected / Received</th
-							>
-							<th class="px-4 py-3 text-left font-medium text-gray-500">Status</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-500"
-								>SKUs / Sq Ft</th
-							>
+							<th class="text-left">PO #</th>
+							<th class="text-left">Vendor</th>
+							<th class="text-left">Expected / Received</th>
+							<th class="text-left">Status</th>
+							<th class="text-left">SKUs / Sq Ft</th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-gray-100 bg-white">
+					<tbody>
 						{#each data.overdue as po (po.id)}
 							<tr
-								class="bg-amber-50 cursor-pointer border-l-2 border-l-amber-400 hover:bg-amber-100"
+								class="dense-list-row-overdue cursor-pointer"
 								onclick={() => goto(withReturnTo(`/po/${po.id}`, returnTo))}
 							>
-								<td class="px-4 py-3 font-medium text-gray-900">{po.po_number}</td>
-								<td class="px-4 py-3 text-gray-700">{po.vendor_name}</td>
-								<td class="px-4 py-3 text-amber-700 font-medium"
+								<td class="font-medium text-gray-900">{po.po_number}</td>
+								<td class="text-gray-700">{po.vendor_name}</td>
+								<td class="text-amber-700 font-medium"
 									>{fmtDate(po.expected_date)}</td
 								>
-								<td class="px-4 py-3">
+								<td>
 									<span class="badge-amber">Overdue</span>
 								</td>
-								<td class="px-4 py-3">
-									{#each po.lines ?? [] as line, i (line.sku_code)}
-										<div
-											class="flex justify-between gap-6 text-xs text-gray-600 px-1 rounded {i %
-												2 ===
-											0
-												? 'bg-gray-100'
-												: ''}"
-										>
-											<span>{line.sku_code}</span>
-											<span class="tabular-nums"
-												>{fmtSqft(line.sqft_ordered)}</span
-											>
-										</div>
-									{/each}
+								<td>
+									<div class="dense-list-lines">
+										{#each po.lines ?? [] as line (line.sku_code)}
+											<div class="dense-list-line">
+												<span>{line.sku_code}</span>
+												<span class="text-right font-mono tabular-nums"
+													>{fmtSqft(line.sqft_ordered)}</span
+												>
+											</div>
+										{/each}
+									</div>
 								</td>
 							</tr>
 						{/each}
 
 						{#if data.overdue.length && data.upcoming.length}
-							<tr>
-								<td
-									colspan="5"
-									class="px-4 py-1 bg-gray-50 border-y border-gray-200"
-								>
-									<span
-										class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-										>Upcoming</span
-									>
+							<tr class="dense-list-section-row">
+								<td colspan="5">
+									<span class="dense-list-section-label">Upcoming</span>
 								</td>
 							</tr>
 						{/if}
 
 						{#each data.upcoming as po (po.id)}
 							<tr
-								class="hover:bg-gray-50 cursor-pointer"
+								class="cursor-pointer"
 								onclick={() => goto(withReturnTo(`/po/${po.id}`, returnTo))}
 							>
-								<td class="px-4 py-3 font-medium text-gray-900">{po.po_number}</td>
-								<td class="px-4 py-3 text-gray-700">{po.vendor_name}</td>
-								<td class="px-4 py-3">
+								<td class="font-medium text-gray-900">{po.po_number}</td>
+								<td class="text-gray-700">{po.vendor_name}</td>
+								<td>
 									{#if po.received_at}
 										<span class="text-gray-700">{fmtDate(po.received_at)}</span>
 										{#if fmtDate(po.received_at) !== fmtDate(po.expected_date)}
@@ -221,26 +199,22 @@
 										>
 									{/if}
 								</td>
-								<td class="px-4 py-3">
+								<td>
 									<span class={statusBadge(po.status)}
 										>{statusLabel(po.status)}</span
 									>
 								</td>
-								<td class="px-4 py-3">
-									{#each po.lines ?? [] as line, i (line.sku_code)}
-										<div
-											class="flex justify-between gap-6 text-xs text-gray-600 px-1 rounded {i %
-												2 ===
-											0
-												? 'bg-gray-100'
-												: ''}"
-										>
-											<span>{line.sku_code}</span>
-											<span class="tabular-nums"
-												>{fmtSqft(line.sqft_ordered)}</span
-											>
-										</div>
-									{/each}
+								<td>
+									<div class="dense-list-lines">
+										{#each po.lines ?? [] as line (line.sku_code)}
+											<div class="dense-list-line">
+												<span>{line.sku_code}</span>
+												<span class="text-right font-mono tabular-nums"
+													>{fmtSqft(line.sqft_ordered)}</span
+												>
+											</div>
+										{/each}
+									</div>
 								</td>
 							</tr>
 						{/each}

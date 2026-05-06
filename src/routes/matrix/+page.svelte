@@ -256,7 +256,13 @@
 							? `/po/${row.objectId}`
 							: `/wo/${row.objectId}/${row.rowType === 'unscheduled' ? 'schedule' : 'confirm'}`}
 					<tr class="row-{row.rowType} cursor-pointer" onclick={() => goto(href)}>
-						<td class="text-gray-600">{row.partyName ?? ''}</td>
+						<td
+							class={row.rowType === 'unscheduled'
+								? 'text-amber-700'
+								: 'text-gray-600'}
+						>
+							{row.partyName ?? ''}
+						</td>
 						<td class="font-medium">
 							{#if row.rowType === 'po'}
 								{@const sc =

@@ -66,6 +66,15 @@
 		}
 	}
 
+	function closeFromPanelKey(e) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			if (detail) back();
+			else close();
+		}
+		e.stopPropagation();
+	}
+
 	$effect(() => {
 		if (open) inputEl?.focus();
 	});
@@ -126,7 +135,7 @@
 			class="w-3/5 bg-white rounded-xl shadow-2xl overflow-hidden h-fit"
 			role="presentation"
 			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
+			onkeydown={closeFromPanelKey}
 		>
 			<!-- Search input -->
 			<div class="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
