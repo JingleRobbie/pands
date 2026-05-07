@@ -41,36 +41,36 @@
 			No {data.status === 'all' ? '' : data.status} shipments found.
 		</p>
 	{:else}
-		<div class="card">
-			<table class="min-w-full divide-y divide-gray-200 text-sm">
-				<thead class="bg-gray-50">
+		<div class="card overflow-x-auto">
+			<table class="dense-list-table min-w-[42rem]">
+				<thead>
 					<tr>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Shipment #</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Customer</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Job</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Ship Date</th>
-						<th class="px-4 py-3 text-right font-medium text-gray-500">Rolls</th>
-						<th class="px-4 py-3 text-right font-medium text-gray-500">Sq Ft</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Status</th>
+						<th class="text-left">Shipment #</th>
+						<th class="text-left">Customer</th>
+						<th class="text-left">Job</th>
+						<th class="text-left">Ship Date</th>
+						<th class="text-right">Rolls</th>
+						<th class="text-right">Sq Ft</th>
+						<th class="text-left">Status</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-gray-100 bg-white">
+				<tbody>
 					{#each data.shipments as s (s.id)}
 						<tr
-							class="hover:bg-gray-50 cursor-pointer"
+							class="cursor-pointer"
 							onclick={() => goto(withReturnTo(`/shipments/${s.id}`, returnTo))}
 						>
-							<td class="px-4 py-3 font-medium text-gray-900">{s.shipment_number}</td>
-							<td class="px-4 py-3 text-gray-700">{s.customer_name}</td>
-							<td class="px-4 py-3 text-gray-600">{s.job_name}</td>
-							<td class="px-4 py-3 text-gray-600">{fmtDate(s.ship_date)}</td>
-							<td class="px-4 py-3 text-right tabular-nums text-gray-600"
+							<td class="font-medium text-gray-900">{s.shipment_number}</td>
+							<td class="text-gray-700">{s.customer_name}</td>
+							<td class="text-gray-600">{s.job_name}</td>
+							<td class="text-gray-600">{fmtDate(s.ship_date)}</td>
+							<td class="text-right tabular-nums text-gray-600"
 								>{s.total_rolls ?? 0}</td
 							>
-							<td class="px-4 py-3 text-right tabular-nums font-mono text-gray-600"
+							<td class="text-right tabular-nums font-mono text-gray-600"
 								>{fmtSqft(s.total_sqft ?? 0)}</td
 							>
-							<td class="px-4 py-3">
+							<td>
 								<span class="badge-{s.status === 'SHIPPED' ? 'green' : 'amber'}"
 									>{s.status}</span
 								>
