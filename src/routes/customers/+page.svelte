@@ -16,26 +16,23 @@
 			>
 		</p>
 	{:else}
-		<div class="card">
-			<table class="min-w-full divide-y divide-gray-200 text-sm">
-				<thead class="bg-gray-50">
+		<div class="card overflow-x-auto">
+			<table class="dense-list-table min-w-[32rem]">
+				<thead>
 					<tr>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Name</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Contact</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">City</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Phone</th>
+						<th class="text-left">Name</th>
+						<th class="text-left">Contact</th>
+						<th class="text-left">City</th>
+						<th class="text-left">Phone</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-gray-100 bg-white">
+				<tbody>
 					{#each data.customers as c (c.id)}
-						<tr
-							class="hover:bg-gray-50 cursor-pointer"
-							onclick={() => goto(`/customers/${c.id}`)}
-						>
-							<td class="px-4 py-3 font-medium text-gray-900">{c.name}</td>
-							<td class="px-4 py-3 text-gray-600">{c.contact_name ?? '—'}</td>
-							<td class="px-4 py-3 text-gray-600">{c.billing_city ?? '—'}</td>
-							<td class="px-4 py-3 text-gray-600">{c.phone ?? '—'}</td>
+						<tr class="cursor-pointer" onclick={() => goto(`/customers/${c.id}`)}>
+							<td class="font-medium text-gray-900">{c.name}</td>
+							<td class="text-gray-600">{c.contact_name ?? '—'}</td>
+							<td class="text-gray-600">{c.billing_city ?? '—'}</td>
+							<td class="text-gray-600">{c.phone ?? '—'}</td>
 						</tr>
 					{/each}
 				</tbody>
