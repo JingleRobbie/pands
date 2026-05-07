@@ -51,27 +51,27 @@
 		{/if}
 	</div>
 
-	<div class="card">
+	<div class="card overflow-x-auto">
 		<div class="card-header">
 			<span class="text-sm font-semibold text-gray-700">
 				{data.wos.length} work order{data.wos.length === 1 ? '' : 's'}
 			</span>
 		</div>
 		{#if data.wos.length}
-			<table class="min-w-full divide-y divide-gray-200 text-sm">
-				<thead class="bg-gray-50">
+			<table class="dense-list-table min-w-[56rem]">
+				<thead>
 					<tr>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">SO #</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Customer</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Job</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Branch</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Ship Date</th>
+						<th class="text-left">SO #</th>
+						<th class="text-left">Customer</th>
+						<th class="text-left">Job</th>
+						<th class="text-left">Branch</th>
+						<th class="text-left">Ship Date</th>
 						{#if data.status !== 'open'}
-							<th class="px-4 py-3 text-left font-medium text-gray-500">Completed</th>
+							<th class="text-left">Completed</th>
 						{/if}
-						<th class="px-4 py-3 text-right font-medium text-gray-500">Lines</th>
-						<th class="px-4 py-3 text-right font-medium text-gray-500">Sq Ft</th>
-						<th class="px-4 py-3 text-right font-medium text-gray-500">
+						<th class="text-right">Lines</th>
+						<th class="text-right">Sq Ft</th>
+						<th class="text-right">
 							<span
 								class="relative inline-flex items-center gap-1 group cursor-default"
 							>
@@ -86,28 +86,28 @@
 								</span>
 							</span>
 						</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Status</th>
+						<th class="text-left">Status</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-gray-100 bg-white">
+				<tbody>
 					{#each data.wos as wo (wo.id)}
 						<tr
-							class="hover:bg-gray-50 cursor-pointer"
+							class="cursor-pointer"
 							onclick={() => goto(withReturnTo(`/wo/${wo.id}`, returnTo))}
 						>
-							<td class="px-4 py-3 font-medium text-gray-900">{wo.so_number}</td>
-							<td class="px-4 py-3 text-gray-700">{wo.customer_name}</td>
-							<td class="px-4 py-3 text-gray-700">{wo.job_name}</td>
-							<td class="px-4 py-3 text-gray-500">{wo.branch}</td>
-							<td class="px-4 py-3 text-gray-600">{fmtDate(wo.ship_date)}</td>
+							<td class="font-medium text-gray-900">{wo.so_number}</td>
+							<td class="text-gray-700">{wo.customer_name}</td>
+							<td class="text-gray-700">{wo.job_name}</td>
+							<td class="text-gray-500">{wo.branch}</td>
+							<td class="text-gray-600">{fmtDate(wo.ship_date)}</td>
 							{#if data.status !== 'open'}
-								<td class="px-4 py-3 text-gray-600">{fmtDate(wo.completed_at)}</td>
+								<td class="text-gray-600">{fmtDate(wo.completed_at)}</td>
 							{/if}
-							<td class="px-4 py-3 text-right text-gray-500">{wo.line_count}</td>
-							<td class="px-4 py-3 text-right font-mono text-gray-600"
+							<td class="text-right text-gray-500">{wo.line_count}</td>
+							<td class="text-right font-mono text-gray-600"
 								>{fmtSqft(wo.total_sqft)}</td
 							>
-							<td class="px-4 py-3 text-right tabular-nums">
+							<td class="text-right tabular-nums">
 								<span class="text-green-600 font-medium">{wo.rolls_produced}</span
 								><span class="text-gray-400"> / {wo.total_rolls} rolls</span>
 								{#if wo.rolls_scheduled > 0}
@@ -116,9 +116,10 @@
 									</div>
 								{/if}
 							</td>
-							<td class="px-4 py-3">
-								<span class={statusBadge(wo.status)}>{statusLabel(wo.status)}</span>
-							</td>
+							<td
+								><span class={statusBadge(wo.status)}>{statusLabel(wo.status)}</span
+								></td
+							>
 						</tr>
 					{/each}
 				</tbody>
