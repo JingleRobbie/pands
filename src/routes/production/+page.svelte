@@ -73,40 +73,36 @@
 		{/if}
 	</div>
 
-	<div class="card">
+	<div class="card overflow-x-auto">
 		<div class="card-header">
 			<span class="font-semibold text-sm text-gray-700">
 				{data.woGroups.length} job{data.woGroups.length === 1 ? '' : 's'}
 			</span>
 		</div>
 		{#if data.woGroups.length}
-			<table class="min-w-full divide-y divide-gray-200 text-sm">
-				<thead class="bg-gray-50">
+			<table class="dense-list-table min-w-[44rem]">
+				<thead>
 					<tr>
-						<th class="px-4 py-3 text-left font-medium text-gray-500 w-28">Date</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500 w-36">Customer</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Job</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500 w-24">WO #</th>
-						<th class="px-4 py-3 text-left font-medium text-gray-500">Runs</th>
+						<th class="text-left w-28">Date</th>
+						<th class="text-left w-36">Customer</th>
+						<th class="text-left">Job</th>
+						<th class="text-left w-24">WO #</th>
+						<th class="text-left">Runs</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-gray-100 bg-white">
+				<tbody>
 					{#each data.woGroups as wo (wo.wo_id)}
 						<tr
-							class="cursor-pointer hover:bg-gray-50 align-top {woRowClass(
-								wo.urgency
-							)}"
+							class="cursor-pointer align-top {woRowClass(wo.urgency)}"
 							onclick={() => goto(withReturnTo(`/wo/${wo.wo_id}/confirm`, returnTo))}
 						>
-							<td class="px-4 py-3 align-top {woDateClass(wo.urgency)}">
+							<td class="align-top {woDateClass(wo.urgency)}">
 								{wo.minDate ? fmtDate(wo.minDate) : '—'}
 							</td>
-							<td class="px-4 py-3 align-top text-gray-600">{wo.customer_name}</td>
-							<td class="px-4 py-3 align-top font-medium text-gray-900"
-								>{wo.job_name}</td
-							>
-							<td class="px-4 py-3 align-top text-gray-500">{wo.so_number}</td>
-							<td class="px-4 py-3 align-top">
+							<td class="align-top text-gray-600">{wo.customer_name}</td>
+							<td class="align-top font-medium text-gray-900">{wo.job_name}</td>
+							<td class="align-top text-gray-500">{wo.so_number}</td>
+							<td class="align-top">
 								<table class="w-full text-xs">
 									<tbody>
 										{#each wo.skuLines as line (`${line.display_label}|||${line.facing}`)}
