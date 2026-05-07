@@ -254,43 +254,21 @@ Edit `scripts/seed-skus.js` — add an entry with a unique `sku_code`, `thicknes
 <claude-mem-context>
 # Memory Context
 
-# [PandS] recent context, 2026-05-04 8:55pm CDT
+# [PandS] recent context, 2026-05-06 7:02pm CDT
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 46 obs (15,924t read) | 773,239t work | 98% savings
+Stats: 50 obs (15,557t read) | 753,903t work | 98% savings
 
 ### May 2, 2026
-1 8:42p 🔵 PandS inventory system architecture: SvelteKit + MySQL with role-based auth
-2 " 🔵 UI patterns: global search, inventory matrix, shipment tracking
-3 8:43p 🔵 PandS system architecture: manufacturing management with import workflows
-4 9:17p 🔵 Dialog/confirmation patterns vary across codebase
-5 " 🔵 Four distinct confirmation dialog patterns found across codebase
-6 " 🔵 Comprehensive confirmation dialog audit completed - 6 implementations, no shared component
-S5 Audit confirmation dialog patterns, standardize on HTML5 dialog pattern, create refactoring plan (May 2, 9:18 PM)
-7 9:22p 🔵 PO cancel implementation uses window.confirm() in form with use:enhance
-8 " 🔵 Conditional div overlay pattern used for 2 confirmations - similar structure, different state shapes
-9 " 🔵 HTML5 dialog pattern extracted and documented for replication across 4 remaining confirmations
-10 9:23p ⚖️ Refactoring plan created to standardize 3 confirmation dialogs to HTML5 pattern
 S6 Refactor confirmation dialog patterns across three Svelte route files to standardize using HTML5 `&lt;dialog&gt;` elements instead of boolean state + conditional div overlays (May 2, 9:23 PM)
-11 9:24p ✅ Refactoring started: cancelDialog state added to po/[id]/edit
-12 9:25p ✅ Cancel PO trigger button refactored from form with window.confirm() to showModal() call
 S7 Standardize confirmation dialog patterns across Svelte route files by refactoring from boolean state + conditional div overlays to HTML5 `&lt;dialog&gt;` elements (May 2, 9:25 PM)
 S8 Create plan: show today's activities in inventory matrix "Current" dropdown view, above current inventory row, with future-row formatting (May 2, 9:29 PM)
-13 9:41p 🔵 Inventory matrix row structure and filtering behavior mapped
-14 9:42p ⚖️ Plan: show today's activity in "Current" matrix view
 S9 User requested usage statistics (May 2, 9:44 PM)
-15 10:08p 🔵 Modal confirmation missing in production confirm page
-16 10:09p 🔴 Modal confirmation added to wo/[id]/confirm
-17 " 🔴 Modal confirmation added to production/[id]/confirm
-18 11:30p 🟣 Production Unproduce Feature
 ### May 3, 2026
 19 12:01a ✅ Removed Unproduce links from work order confirmation page
-20 " 🔵 Production service layer already supports full unproduce logic
-21 " 🔵 Production list page shows work orders grouped with run details and status filtering
-22 " ✅ New unproduce route created at /production/[id]/unproduce
 23 12:02a 🟣 Implemented new unproduce page with date filtering and run selection
 24 " ✅ Removed individual run unproduce route; added admin button to production list header
 25 " ✅ Enhanced shortfall run creation to merge into existing open runs
@@ -308,10 +286,10 @@ S12 Fix back navigation from confirm page - should return to production list, no
 37 12:35a 🔵 Back navigation from confirm page broken
 38 " 🔵 Back links hardcoded to incorrect route
 S13 Review and verify code changes from overnight work; fix back navigation on confirm page (May 3, 12:35 AM)
+S14 Implement TDD in PandS project; write plan and understand current state (May 3, 12:36 AM)
 ### May 4, 2026
 41 7:54p 🔵 Project has vitest test infrastructure already configured
 42 7:55p 🔵 Vitest test infrastructure configured but no tests exist yet
-S14 Implement TDD in PandS project; write plan and understand current state (May 4, 7:56 PM)
 43 7:59p 🔵 Ripgrep executable inaccessible on Windows after installation
 44 8:05p 🟣 TDD plan and initial purchasing service tests
 45 8:06p 🟣 Purchasing service tests verified and build passes
@@ -321,6 +299,34 @@ S14 Implement TDD in PandS project; write plan and understand current state (May
 49 " ✅ TDD plan and purchasing tests staged for commit
 50 " ✅ TDD plan and purchasing tests committed
 51 8:19p 🟣 Expanded purchasing service test coverage
+### May 5, 2026
+52 7:41p 🟣 Test-Driven Development (TDD) implementation started
+53 " 🔵 Git index lock permission denied on staging
+54 7:42p 🟣 TDD test suite expanded to shipments list page loader
+55 7:44p 🟣 TDD coverage extended to receiving/purchase orders page loaders
+56 7:45p 🟣 TDD escalated to complex multi-query loaders with nested result attachment
+59 7:46p 🟣 TDD coverage expanded to sales order list loader with status filtering patterns
+65 7:47p 🟣 TDD applied to complex detail loaders with multi-query async orchestration
+68 7:49p ✅ Successfully committed SO detail test; WO routes show existing TDD coverage patterns
+76 7:50p 🟣 TDD extended to work order detail loader with creation flag parsing
+### May 6, 2026
+85 3:10p 🔵 Test coverage audit identified 5 missing backend unit tests
+S16 Identify missing test coverage across server-side route handlers, utilities, and services to complete test suite for PandS project (May 6, 3:37 PM)
+86 3:37p 🔵 PandS current landing page architecture and route structure
+87 4:00p 🟣 Activity hub landing page replaces calendar as default route
+88 4:01p 🟣 Landing page redesigned with card-based activity links and pastel colors
+89 4:18p ✅ Renamed Sell section to Customers on landing page
+90 4:42p 🟣 Add home navigation link to landing page
+91 4:44p 🟣 Redesign landing page with activity-grouped navigation
+92 " 🔵 Git index.lock permission denied on git add
+93 4:45p 🔵 Git commit blocked by persistent .git/index.lock permission issue
+94 5:06p 🟣 Activity landing page with card-based navigation
+95 6:29p 🔴 Escape key now works in search popup when input focused
+96 6:39p 🟣 Highlight unscheduled work order customer name in amber on matrix
+97 6:45p ⚖️ PO list formatting approach clarified
+98 " ⚖️ PO list design details clarified
+99 6:46p 🟣 Reusable dense-list CSS pattern created
+100 6:48p ✅ PO list page refactored to use dense-list CSS pattern
 
-Access 773k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 754k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

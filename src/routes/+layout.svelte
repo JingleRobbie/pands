@@ -35,224 +35,256 @@
 
 <div class="print-root bg-gray-50 h-screen overflow-hidden flex">
 	<!-- Sidebar -->
-	<aside
-		class="h-screen flex-shrink-0 flex flex-col transition-[width] duration-200 overflow-y-auto overflow-x-hidden"
-		style="background-color:#0F1E2E; width:{collapsed ? '3.5rem' : '14rem'};"
-	>
-		<div class="px-3 py-5 border-b border-white/10 flex items-center justify-between min-w-0">
-			{#if !collapsed}
-				<div class="flex items-center min-w-0">
-					<span class="text-white font-bold text-lg tracking-tight">PandS</span>
-					<span class="text-white/40 text-xs ml-1">Inventory</span>
-				</div>
-			{/if}
-			<button
-				onclick={() => (collapsed = !collapsed)}
-				class="text-white/40 hover:text-white/70 transition-colors flex-shrink-0 {collapsed
-					? 'mx-auto'
-					: ''}"
-				title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+	{#if data.appUser}
+		<aside
+			class="h-screen flex-shrink-0 flex flex-col transition-[width] duration-200 overflow-y-auto overflow-x-hidden"
+			style="background-color:#0F1E2E; width:{collapsed ? '3.5rem' : '14rem'};"
+		>
+			<div
+				class="px-3 py-5 border-b border-white/10 flex items-center justify-between min-w-0"
 			>
-				<svg
-					class="w-4 h-4 transition-transform duration-200 {collapsed
-						? 'rotate-180'
-						: ''}"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					viewBox="0 0 24 24"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						d="M15 19l-7-7 7-7"
-					/></svg
-				>
-			</button>
-		</div>
-
-		<nav class="flex-1 py-4 space-y-0.5 px-2">
-			<button
-				onclick={() => (searchOpen = true)}
-				title={collapsed ? 'Search' : ''}
-				class="w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors text-white/70 hover:bg-white/10 hover:text-white mb-1
-				       {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}"
-			>
-				<svg
-					class="w-4 h-4 flex-shrink-0"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					viewBox="0 0 24 24"
-				>
-					<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-				</svg>
 				{#if !collapsed}
-					<span class="flex-1 text-left">Search</span>
-					<kbd class="text-xs text-white/30 border border-white/20 rounded px-1 font-mono"
-						>⌃K</kbd
-					>
+					<div class="flex items-center min-w-0">
+						<span class="text-white font-bold text-lg tracking-tight">PandS</span>
+						<span class="text-white/40 text-xs ml-1">Inventory</span>
+					</div>
 				{/if}
-			</button>
-			{#each navItems as nav (nav.href)}
-				<a
-					href={nav.href}
-					title={collapsed ? nav.label : ''}
-					class="flex items-center py-2 rounded-md text-sm font-medium transition-colors
-					          {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}
-					          {activeHref === nav.href
-						? 'bg-brand text-white'
-						: 'text-white/70 hover:bg-white/10 hover:text-white'}"
+				<button
+					onclick={() => (collapsed = !collapsed)}
+					class="text-white/40 hover:text-white/70 transition-colors flex-shrink-0 {collapsed
+						? 'mx-auto'
+						: ''}"
+					title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
 				>
-					{#if nav.icon === 'home'}
-						<svg
-							class="w-4 h-4 flex-shrink-0"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"
-							/></svg
-						>
-					{:else if nav.icon === 'grid'}
-						<svg
-							class="w-4 h-4 flex-shrink-0"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M3 10h18M3 14h18M10 3v18M14 3v18"
-							/></svg
-						>
-					{:else if nav.icon === 'box'}
-						<svg
-							class="w-4 h-4 flex-shrink-0"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-							/></svg
-						>
-					{:else if nav.icon === 'doc'}
-						<svg
-							class="w-4 h-4 flex-shrink-0"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-							/></svg
-						>
-					{:else if nav.icon === 'truck'}
-						<svg
-							class="w-4 h-4 flex-shrink-0"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
-							/></svg
-						>
-					{:else if nav.icon === 'check'}
-						<svg
-							class="w-4 h-4 flex-shrink-0"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-							/></svg
-						>
-					{:else if nav.icon === 'clipboard'}
-						<svg
-							class="w-4 h-4 flex-shrink-0"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-							/></svg
-						>
-					{:else if nav.icon === 'users'}
-						<svg
-							class="w-4 h-4 flex-shrink-0"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m3-4.13a4 4 0 100-8 4 4 0 000 8zm6 0a3 3 0 100-6 3 3 0 000 6z"
-							/></svg
-						>
-					{:else if nav.icon === 'ship'}
-						<svg
-							class="w-4 h-4 flex-shrink-0"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
-							/></svg
-						>
-					{:else}
-						<svg
-							class="w-4 h-4 flex-shrink-0"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line
-								x1="16"
-								y1="2"
-								x2="16"
-								y2="6"
-							/><line x1="8" y1="2" x2="8" y2="6" /><line
-								x1="3"
-								y1="10"
-								x2="21"
-								y2="10"
-							/></svg
+					<svg
+						class="w-4 h-4 transition-transform duration-200 {collapsed
+							? 'rotate-180'
+							: ''}"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						viewBox="0 0 24 24"
+						><path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M15 19l-7-7 7-7"
+						/></svg
+					>
+				</button>
+			</div>
+
+			<nav class="flex-1 py-4 space-y-0.5 px-2">
+				<button
+					onclick={() => (searchOpen = true)}
+					title={collapsed ? 'Search' : ''}
+					class="w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors text-white/70 hover:bg-white/10 hover:text-white mb-1
+				       {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}"
+				>
+					<svg
+						class="w-4 h-4 flex-shrink-0"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						viewBox="0 0 24 24"
+					>
+						<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+					</svg>
+					{#if !collapsed}
+						<span class="flex-1 text-left">Search</span>
+						<kbd
+							class="text-xs text-white/30 border border-white/20 rounded px-1 font-mono"
+							>⌃K</kbd
 						>
 					{/if}
-					{#if !collapsed}{nav.label}{/if}
-				</a>
-			{/each}
-		</nav>
+				</button>
+				{#each navItems as nav (nav.href)}
+					<a
+						href={nav.href}
+						title={collapsed ? nav.label : ''}
+						class="flex items-center py-2 rounded-md text-sm font-medium transition-colors
+					          {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}
+					          {activeHref === nav.href
+							? 'bg-brand text-white'
+							: 'text-white/70 hover:bg-white/10 hover:text-white'}"
+					>
+						{#if nav.icon === 'home'}
+							<svg
+								class="w-4 h-4 flex-shrink-0"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"
+								/></svg
+							>
+						{:else if nav.icon === 'grid'}
+							<svg
+								class="w-4 h-4 flex-shrink-0"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M3 10h18M3 14h18M10 3v18M14 3v18"
+								/></svg
+							>
+						{:else if nav.icon === 'box'}
+							<svg
+								class="w-4 h-4 flex-shrink-0"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+								/></svg
+							>
+						{:else if nav.icon === 'doc'}
+							<svg
+								class="w-4 h-4 flex-shrink-0"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+								/></svg
+							>
+						{:else if nav.icon === 'truck'}
+							<svg
+								class="w-4 h-4 flex-shrink-0"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
+								/></svg
+							>
+						{:else if nav.icon === 'check'}
+							<svg
+								class="w-4 h-4 flex-shrink-0"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+								/></svg
+							>
+						{:else if nav.icon === 'clipboard'}
+							<svg
+								class="w-4 h-4 flex-shrink-0"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+								/></svg
+							>
+						{:else if nav.icon === 'users'}
+							<svg
+								class="w-4 h-4 flex-shrink-0"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m3-4.13a4 4 0 100-8 4 4 0 000 8zm6 0a3 3 0 100-6 3 3 0 000 6z"
+								/></svg
+							>
+						{:else if nav.icon === 'ship'}
+							<svg
+								class="w-4 h-4 flex-shrink-0"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
+								/></svg
+							>
+						{:else}
+							<svg
+								class="w-4 h-4 flex-shrink-0"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								viewBox="0 0 24 24"
+								><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line
+									x1="16"
+									y1="2"
+									x2="16"
+									y2="6"
+								/><line x1="8" y1="2" x2="8" y2="6" /><line
+									x1="3"
+									y1="10"
+									x2="21"
+									y2="10"
+								/></svg
+							>
+						{/if}
+						{#if !collapsed}{nav.label}{/if}
+					</a>
+				{/each}
+			</nav>
 
-		{#if data.appUser?.role === 'admin'}
-			<div class="border-t border-white/10 pt-2 px-2 pb-1">
-				<a
-					href="/inventory/counts"
-					title={collapsed ? 'Inventory Counts' : ''}
-					class="flex items-center py-2 rounded-md text-sm font-medium transition-colors
+			{#if data.appUser?.role === 'admin'}
+				<div class="border-t border-white/10 pt-2 px-2 pb-1">
+					<a
+						href="/inventory/counts"
+						title={collapsed ? 'Inventory Counts' : ''}
+						class="flex items-center py-2 rounded-md text-sm font-medium transition-colors
 					       {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}
 					       {$page.url.pathname.startsWith('/inventory')
+							? 'bg-brand text-white'
+							: 'text-white/70 hover:bg-white/10 hover:text-white'}"
+					>
+						<svg
+							class="w-4 h-4 flex-shrink-0"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6m-6 4h3"
+							/>
+						</svg>
+						{#if !collapsed}Inventory Counts{/if}
+					</a>
+				</div>
+			{/if}
+
+			<div class="border-t border-white/10 pt-2 px-2 pb-1">
+				<a
+					href="/settings"
+					title={collapsed ? 'Settings' : ''}
+					class="flex items-center py-2 rounded-md text-sm font-medium transition-colors
+				       {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}
+				       {$page.url.pathname === '/settings'
 						? 'bg-brand text-white'
 						: 'text-white/70 hover:bg-white/10 hover:text-white'}"
 				>
@@ -266,49 +298,24 @@
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
-							d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6m-6 4h3"
-						/>
+							d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+						/><circle cx="12" cy="12" r="3" />
 					</svg>
-					{#if !collapsed}Inventory Counts{/if}
+					{#if !collapsed}Settings{/if}
 				</a>
 			</div>
-		{/if}
-
-		<div class="border-t border-white/10 pt-2 px-2 pb-1">
-			<a
-				href="/settings"
-				title={collapsed ? 'Settings' : ''}
-				class="flex items-center py-2 rounded-md text-sm font-medium transition-colors
-				       {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}
-				       {$page.url.pathname === '/settings'
-					? 'bg-brand text-white'
-					: 'text-white/70 hover:bg-white/10 hover:text-white'}"
-			>
-				<svg
-					class="w-4 h-4 flex-shrink-0"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					viewBox="0 0 24 24"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-					/><circle cx="12" cy="12" r="3" />
-				</svg>
-				{#if !collapsed}Settings{/if}
-			</a>
-		</div>
-		<div class="px-4 py-3 border-t border-white/10">
-			{#if data.appUser && !collapsed}
-				<div class="flex items-center justify-between">
-					<span class="text-white/60 text-xs">{data.appUser.display_name}</span>
-					<a href="/logout" class="text-white/40 hover:text-white/70 text-xs">switch</a>
-				</div>
-			{/if}
-		</div>
-	</aside>
+			<div class="px-4 py-3 border-t border-white/10">
+				{#if data.appUser && !collapsed}
+					<div class="flex items-center justify-between">
+						<span class="text-white/60 text-xs">{data.appUser.display_name}</span>
+						<a href="/logout" class="text-white/40 hover:text-white/70 text-xs"
+							>switch</a
+						>
+					</div>
+				{/if}
+			</div>
+		</aside>
+	{/if}
 
 	<!-- Main content -->
 	<div class="flex-1 flex flex-col h-screen overflow-y-auto">
@@ -316,4 +323,6 @@
 	</div>
 </div>
 
-<SearchOverlay bind:open={searchOpen} />
+{#if data.appUser}
+	<SearchOverlay bind:open={searchOpen} />
+{/if}

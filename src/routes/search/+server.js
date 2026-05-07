@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/db.js';
 
-export async function GET({ url }) {
+export async function GET({ url, locals }) {
+	if (!locals.appUser) return json([]);
 	const woId = parseInt(url.searchParams.get('wo_id'));
 	if (woId) {
 		const [[wo]] = await db.query(

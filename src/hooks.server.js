@@ -18,14 +18,7 @@ export async function handle({ event, resolve }) {
 	}
 
 	const path = event.url.pathname;
-	if (
-		!event.locals.appUser &&
-		path !== '/' &&
-		path !== '/login' &&
-		path !== '/calendar' &&
-		path !== '/calendar/events' &&
-		!path.startsWith('/static')
-	) {
+	if (!event.locals.appUser && path !== '/login' && !path.startsWith('/static')) {
 		return Response.redirect(new URL('/login', event.url), 302);
 	}
 

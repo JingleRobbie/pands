@@ -2,7 +2,8 @@ import { db } from '$lib/db.js';
 import { json } from '@sveltejs/kit';
 import { localDate } from '$lib/utils.js';
 
-export async function GET({ url }) {
+export async function GET({ url, locals }) {
+	if (!locals.appUser) return json({});
 	const year = Number(url.searchParams.get('year') || new Date().getFullYear());
 	const month = Number(url.searchParams.get('month') || new Date().getMonth() + 1);
 	const status = url.searchParams.get('status') ?? '';

@@ -5,7 +5,8 @@ function rowToDate(val) {
 	return val instanceof Date ? val.toISOString().slice(0, 10) : String(val).slice(0, 10);
 }
 
-export async function GET({ url }) {
+export async function GET({ url, locals }) {
+	if (!locals.appUser) return json({});
 	const start = url.searchParams.get('start');
 	const end = url.searchParams.get('end');
 	const pastDrafts = url.searchParams.get('past_drafts') === '1';
