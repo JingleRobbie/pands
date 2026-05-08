@@ -96,7 +96,6 @@
 			>Record Count</a
 		>
 		<a href="/po/new" class="btn-secondary btn-sm">+ PO</a>
-		<a href="/so/new" class="btn-secondary btn-sm">+ SO</a>
 	</div>
 </header>
 
@@ -334,7 +333,7 @@
 						<td colspan="100" class="py-10 text-center text-gray-400">
 							No upcoming orders.
 							<a href="/po/new" class="underline">Add a PO</a> or
-							<a href="/so/new" class="underline">add a Sales Order</a>.
+							<a href="/wo/import" class="underline">import a Work Order</a>.
 						</td>
 					</tr>
 				{/each}

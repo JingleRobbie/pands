@@ -18,8 +18,6 @@ TRUNCATE TABLE work_order_lines;
 TRUNCATE TABLE work_orders;
 TRUNCATE TABLE purchase_order_lines;
 TRUNCATE TABLE purchase_orders;
-TRUNCATE TABLE sales_order_lines;
-TRUNCATE TABLE sales_orders;
 TRUNCATE TABLE customers;
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -67,29 +67,6 @@ CREATE TABLE IF NOT EXISTS purchase_order_lines (
   FOREIGN KEY (sku_id) REFERENCES material_skus(id)
 );
 
-CREATE TABLE IF NOT EXISTS sales_orders (
-  id            INT AUTO_INCREMENT PRIMARY KEY,
-  so_number     VARCHAR(50) UNIQUE NOT NULL,
-  job_name      VARCHAR(200) NOT NULL,
-  ship_date     DATE NOT NULL,
-  status        ENUM('OPEN','IN_PROGRESS','COMPLETE','CANCELLED') DEFAULT 'OPEN',
-  created_by    INT,
-  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  customer_name VARCHAR(200) NOT NULL DEFAULT '',
-  FOREIGN KEY (created_by) REFERENCES app_users(id)
-);
-
-CREATE TABLE IF NOT EXISTS sales_order_lines (
-  id            INT AUTO_INCREMENT PRIMARY KEY,
-  so_id         INT NOT NULL,
-  sku_id        INT NOT NULL,
-  sqft_ordered  INT NOT NULL,
-  facing        VARCHAR(50) NOT NULL DEFAULT 'Faced',
-  sqft_produced INT DEFAULT 0,
-  UNIQUE KEY uq_so_sku (so_id, sku_id),
-  FOREIGN KEY (so_id) REFERENCES sales_orders(id) ON DELETE CASCADE,
-  FOREIGN KEY (sku_id) REFERENCES material_skus(id)
-);
 
 CREATE TABLE IF NOT EXISTS work_orders (
   id            INT AUTO_INCREMENT PRIMARY KEY,

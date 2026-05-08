@@ -82,7 +82,7 @@
 								? `/po/${row.objectId}`
 								: row.rowType === 'production'
 									? `/production/${row.objectId}/confirm`
-									: `/so/${row.objectId}`}
+									: `/wo/${row.objectId}`}
 						<tr
 							class="row-{row.rowType} cursor-pointer"
 							onclick={() => {
