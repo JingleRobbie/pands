@@ -6,6 +6,10 @@
 	let { data, form } = $props();
 	const wo = $derived(data.wo);
 	const lines = $derived(data.lines);
+	const billingLines = $derived(data.billingLines);
+	const productionLines = $derived(data.productionLines);
+	const unbrandedLines = $derived(data.unbrandedLines);
+	const canComplete = $derived(data.canComplete);
 	const contacts = $derived(data.contacts);
 	const customers = $derived(data.customers);
 	const justCreatedShipmentId = $derived(data.justCreatedShipmentId);
@@ -13,8 +17,14 @@
 	const returnTo = $derived(getReturnTo(page.url, '/wo'));
 	let addingContact = $state(false);
 	let dismissed = $state(false);
+	let activeTab = $state('billing');
 
 	const totalSqft = $derived(lines.reduce((s, l) => s + l.sqft, 0));
+	const hasBranched = $derived(productionLines.length > 0);
+	const hasStale = $derived(
+		billingLines.some((l) => l.reconciliation_status === 'STALE') ||
+			unbrandedLines.some((l) => l.reconciliation_status === 'STALE')
+	);
 </script>
 
 <svelte:head><title>WO {wo.so_number} — PandS</title></svelte:head>
@@ -32,15 +42,53 @@
 		</h1>
 	</div>
 	<div class="flex items-center gap-2">
-		{#if wo.status !== 'COMPLETE' && wo.status !== 'CANCELLED'}
-			<a href={withReturnTo(`/wo/${wo.id}/schedule`, returnTo)} class="btn-primary btn-sm">Schedule Production</a>
+		{#if hasBranched}
+			<a href="/wo/{wo.id}/cutdown" class="btn-secondary btn-sm">Cut-Downs</a>
 		{/if}
-		<a href={withReturnTo(`/wo/${wo.id}/confirm`, returnTo)} class="btn-secondary btn-sm">View Runs</a>
+		<a href="/wo/{wo.id}/diff" class="btn-secondary btn-sm">Diff</a>
+		{#if wo.status !== 'COMPLETE' && wo.status !== 'CANCELLED'}
+			<a href={withReturnTo(`/wo/${wo.id}/schedule`, returnTo)} class="btn-primary btn-sm"
+				>Schedule Production</a
+			>
+		{/if}
+		<a href={withReturnTo(`/wo/${wo.id}/confirm`, returnTo)} class="btn-secondary btn-sm"
+			>View Runs</a
+		>
 		{#if wo.customer_id}
 			<a href="/shipments/new?wo={wo.id}" class="btn-secondary btn-sm">New Shipment</a>
 		{/if}
+		{#if canComplete}
+			<form method="POST" action="?/completeWo" use:enhance>
+				<button type="submit" class="btn-primary btn-sm">Mark Complete</button>
+			</form>
+		{/if}
 	</div>
 </header>
+
+{#if hasStale && !dismissed}
+	<div
+		class="mx-6 mt-4 px-4 py-3 rounded-md text-sm bg-amber-50 text-amber-800 border border-amber-200 flex items-center justify-between"
+	>
+		<span
+			>Billing lines need reconciliation before this WO can be completed. <a
+				href="/wo/{wo.id}/diff"
+				class="underline font-medium">Review diff →</a
+			></span
+		>
+		<button
+			type="button"
+			class="text-amber-700 hover:text-amber-900 leading-none"
+			onclick={() => (dismissed = true)}>×</button
+		>
+	</div>
+{/if}
+{#if form?.completeError}
+	<div
+		class="mx-6 mt-4 px-4 py-3 rounded-md text-sm bg-red-50 text-red-800 border border-red-200"
+	>
+		{form.completeError}
+	</div>
+{/if}
 
 {#if justCreatedShipmentId && !dismissed}
 	<div
@@ -125,89 +173,175 @@
 	</div>
 
 	<div class="card">
-		<div class="card-header">
-			<span class="font-semibold text-sm text-gray-700"
-				>{lines.length} line{lines.length === 1 ? '' : 's'}</span
+		<!-- Tab bar -->
+		<div class="card-header flex items-center justify-between">
+			<div class="flex gap-1">
+				<button
+					type="button"
+					class="px-3 py-1 text-sm rounded {activeTab === 'billing'
+						? 'bg-gray-200 font-medium text-gray-800'
+						: 'text-gray-500 hover:text-gray-700'}"
+					onclick={() => (activeTab = 'billing')}
+				>
+					Billing / Unbranched
+					{#if hasStale}<span class="ml-1 text-amber-500">●</span>{/if}
+				</button>
+				{#if hasBranched}
+					<button
+						type="button"
+						class="px-3 py-1 text-sm rounded {activeTab === 'production'
+							? 'bg-gray-200 font-medium text-gray-800'
+							: 'text-gray-500 hover:text-gray-700'}"
+						onclick={() => (activeTab = 'production')}
+					>
+						Production ({productionLines.length})
+					</button>
+				{/if}
+			</div>
+			<span class="text-xs text-gray-400"
+				>{lines.length} line{lines.length === 1 ? '' : 's'} total</span
 			>
 		</div>
-		<table class="w-full text-sm">
-			<thead>
-				<tr class="border-b border-gray-100 bg-gray-50">
-					<th class="px-4 py-2 text-left text-gray-500 font-medium">Roll For</th>
-					<th class="px-4 py-2 text-left text-gray-500 font-medium">Facing</th>
-					<th class="px-4 py-2 text-right text-gray-500 font-medium">Qty</th>
-					<th class="px-4 py-2 text-right text-gray-500 font-medium">Thickness</th>
-					<th class="px-4 py-2 text-right text-gray-500 font-medium">Width</th>
-					<th class="px-4 py-2 text-right text-gray-500 font-medium">Length</th>
-					<th class="px-4 py-2 text-right text-gray-500 font-medium">Sq Ft</th>
-					<th class="px-4 py-2 text-left text-gray-500 font-medium">Instructions</th>
-					<th class="px-4 py-2 text-right text-gray-500 font-medium">
-						<span class="relative inline-flex items-center gap-1 group cursor-default">
-							Progress
-							<span class="text-gray-400 text-xs">ⓘ</span>
-							<span
-								class="pointer-events-none absolute right-0 top-5 z-20 hidden group-hover:block w-52 rounded bg-gray-800 p-2.5 text-left text-xs text-white shadow-lg leading-relaxed font-normal"
-							>
-								<span class="text-green-400 font-bold">N</span> / total — produced /
-								total<br />
-								<span class="text-blue-400 font-bold">+N</span> — scheduled<br />
-								<span class="text-green-300 font-bold">N shipped</span> — on a
-								SHIPPED shipment<br />
-								<span class="text-amber-300">N pending</span> — on a DRAFT shipment
-							</span>
-						</span>
-					</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each lines as line (line.id)}
-					<tr class="border-b border-gray-100">
-						<td class="px-4 py-2 text-gray-500">{line.rollfor}</td>
-						<td class="px-4 py-2 text-gray-500">{line.facing}</td>
-						<td class="px-4 py-2 text-right text-gray-600 tabular-nums">{line.qty}</td>
-						<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
-							>{line.thickness_in}"</td
-						>
-						<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
-							>{line.width_in}"</td
-						>
-						<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
-							>{line.length_ft}'</td
-						>
-						<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
-							>{fmtSqft(line.sqft)}</td
-						>
-						<td class="px-4 py-2 text-gray-400 italic text-xs">{line.instructions}</td>
-						<td class="px-4 py-2 text-right tabular-nums">
-							<span class="text-green-600 font-medium">{line.rolls_produced}</span
-							><span class="text-gray-400"> / {line.qty} rolls</span>
-							{#if line.rolls_scheduled > 0}
-								<div class="text-xs text-blue-500">
-									+{line.rolls_scheduled} scheduled
-								</div>
-							{/if}
-							{#if line.rolls_shipped > 0}
-								<div class="text-xs text-green-600 font-medium">
-									{line.rolls_shipped} shipped
-								</div>
-							{/if}
-							{#if line.rolls_in_draft > 0}
-								<div class="text-xs text-amber-600">
-									{line.rolls_in_draft} pending shipment
-								</div>
-							{/if}
-						</td>
+
+		{#if activeTab === 'billing'}
+			<!-- Billing + unbranched lines -->
+			<table class="w-full text-sm">
+				<thead>
+					<tr class="border-b border-gray-100 bg-gray-50">
+						<th class="px-4 py-2 text-left text-gray-500 font-medium">Type</th>
+						<th class="px-4 py-2 text-left text-gray-500 font-medium">Roll For</th>
+						<th class="px-4 py-2 text-left text-gray-500 font-medium">Facing</th>
+						<th class="px-4 py-2 text-right text-gray-500 font-medium">Qty</th>
+						<th class="px-4 py-2 text-right text-gray-500 font-medium">Width</th>
+						<th class="px-4 py-2 text-right text-gray-500 font-medium">Length</th>
+						<th class="px-4 py-2 text-right text-gray-500 font-medium">Sq Ft</th>
+						<th class="px-4 py-2 text-right text-gray-500 font-medium">Progress</th>
+						<th class="px-4 py-2 text-right text-gray-500 font-medium">Actions</th>
 					</tr>
-				{/each}
-				<tr class="border-t border-gray-200 bg-gray-50">
-					<td colspan="6" class="px-4 py-2 text-sm text-gray-500 font-medium">Total</td>
-					<td class="px-4 py-2 text-right font-mono font-medium text-gray-700"
-						>{fmtSqft(totalSqft)}</td
+				</thead>
+				<tbody>
+					{#each [...billingLines, ...unbrandedLines] as line (line.id)}
+						<tr
+							class="border-b border-gray-100 {line.reconciliation_status === 'STALE'
+								? 'bg-amber-50'
+								: ''}"
+						>
+							<td class="px-4 py-2">
+								{#if line.line_type === 'BILLING'}
+									<span class="badge-blue">Billing</span>
+								{:else}
+									<span class="badge-gray">Unbranched</span>
+								{/if}
+								{#if line.reconciliation_status === 'STALE'}
+									<span class="badge-amber ml-1">Stale</span>
+								{:else if line.reconciliation_status === 'RECONCILED'}
+									<span class="badge-green ml-1">Reconciled</span>
+								{/if}
+							</td>
+							<td class="px-4 py-2 text-gray-500">{line.rollfor}</td>
+							<td class="px-4 py-2 text-gray-500">{line.facing}</td>
+							<td class="px-4 py-2 text-right text-gray-600 tabular-nums"
+								>{line.qty}</td
+							>
+							<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
+								>{line.width_in}"</td
+							>
+							<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
+								>{line.length_ft}'</td
+							>
+							<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
+								>{fmtSqft(line.sqft)}</td
+							>
+							<td class="px-4 py-2 text-right tabular-nums text-xs">
+								<span class="text-green-600 font-medium">{line.rolls_produced}</span
+								><span class="text-gray-400"> / {line.qty}</span>
+							</td>
+							<td class="px-4 py-2 text-right">
+								{#if line.line_type === 'UNBRANCHED' && wo.status !== 'COMPLETE'}
+									<a
+										href="/wo/{wo.id}/branch?lineId={line.id}"
+										class="text-blue-600 hover:underline text-xs">Branch</a
+									>
+								{/if}
+								{#if line.reconciliation_status === 'STALE'}
+									<a
+										href="/wo/{wo.id}/diff"
+										class="text-amber-600 hover:underline text-xs ml-2"
+										>Reconcile</a
+									>
+								{/if}
+							</td>
+						</tr>
+					{/each}
+					<tr class="border-t border-gray-200 bg-gray-50">
+						<td colspan="6" class="px-4 py-2 text-sm text-gray-500 font-medium"
+							>Total</td
+						>
+						<td class="px-4 py-2 text-right font-mono font-medium text-gray-700"
+							>{fmtSqft(totalSqft)}</td
+						>
+						<td colspan="2"></td>
+					</tr>
+				</tbody>
+			</table>
+		{:else}
+			<!-- Production lines grouped by billing parent -->
+			{#each billingLines as billing (billing.id)}
+				{@const children = productionLines.filter((p) => p.parent_line_id === billing.id)}
+				{#if children.length > 0}
+					<div
+						class="border-b border-gray-100 px-4 py-2 bg-gray-50 text-xs text-gray-500 font-medium"
 					>
-					<td colspan="2"></td>
-				</tr>
-			</tbody>
-		</table>
+						Billing line: {billing.width_in}" × {billing.length_ft}' — {fmtSqft(
+							billing.sqft
+						)} sqft
+					</div>
+					<table class="w-full text-sm">
+						<tbody>
+							{#each children as line (line.id)}
+								<tr class="border-b border-gray-100">
+									<td class="px-4 py-2 text-gray-500">{line.rollfor}</td>
+									<td class="px-4 py-2 text-gray-500">{line.facing}</td>
+									<td class="px-4 py-2 text-right text-gray-600 tabular-nums"
+										>{line.qty}</td
+									>
+									<td
+										class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
+										>{line.width_in}"</td
+									>
+									<td
+										class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
+										>{line.length_ft}'</td
+									>
+									<td
+										class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
+										>{fmtSqft(line.sqft)}</td
+									>
+									<td class="px-4 py-2 text-right tabular-nums text-xs">
+										<span class="text-green-600 font-medium"
+											>{line.rolls_produced}</span
+										><span class="text-gray-400"> / {line.qty}</span>
+										{#if line.rolls_scheduled > 0}
+											<div class="text-blue-500">
+												+{line.rolls_scheduled} sched
+											</div>
+										{/if}
+									</td>
+									{#if line.path_type}
+										<td class="px-4 py-2"
+											><span class="badge-gray text-xs">{line.path_type}</span
+											></td
+										>
+									{:else}
+										<td class="px-4 py-2 text-gray-400 text-xs">—</td>
+									{/if}
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				{/if}
+			{/each}
+		{/if}
 	</div>
 
 	<!-- Contacts -->
@@ -299,4 +433,3 @@
 		{/if}
 	</div>
 </main>
-

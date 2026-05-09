@@ -1,6 +1,7 @@
 import { db } from '$lib/db.js';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { getAllCustomers } from '$lib/services/customers.js';
+import { requireAdmin } from '$lib/auth.js';
 
 export async function load({ params, locals, url }) {
 	const [[wo]] = await db.query(
@@ -12,8 +13,12 @@ export async function load({ params, locals, url }) {
 	);
 	if (!wo) error(404, 'Work order not found');
 
-	const [lines] = await db.query(
+	const [rawLines] = await db.query(
 		`SELECT wol.*, ms.display_label,
+		        wol.parent_line_id,
+		        wol.path_type,
+		        wol.reconciliation_status,
+		        (SELECT COUNT(*) FROM work_order_lines c WHERE c.parent_line_id = wol.id) AS child_count,
 		        COALESCE((
 		          SELECT SUM(pr.rolls_scheduled)
 		          FROM production_runs pr
@@ -40,6 +45,30 @@ export async function load({ params, locals, url }) {
 		[params.id]
 	);
 
+	// Derive line_type from parent_line_id / child_count (no stored column)
+	const lines = rawLines.map((l) => ({
+		...l,
+		line_type:
+			l.parent_line_id !== null
+				? 'PRODUCTION'
+				: Number(l.child_count) > 0
+					? 'BILLING'
+					: 'UNBRANCHED',
+	}));
+
+	const billingLines = lines.filter((l) => l.line_type === 'BILLING');
+	const productionLines = lines.filter((l) => l.line_type === 'PRODUCTION');
+	const unbrandedLines = lines.filter((l) => l.line_type === 'UNBRANCHED');
+
+	// WO can be completed when no line is STALE and all lines are fully produced
+	const canComplete =
+		wo.status !== 'COMPLETE' &&
+		lines.every(
+			(l) =>
+				Number(l.rolls_produced) >= Number(l.qty) &&
+				(l.line_type === 'PRODUCTION' || l.reconciliation_status !== 'STALE')
+		);
+
 	const [contacts] = await db.query('SELECT * FROM contacts WHERE wo_id = ? ORDER BY id', [
 		params.id,
 	]);
@@ -49,6 +78,10 @@ export async function load({ params, locals, url }) {
 	return {
 		wo,
 		lines,
+		billingLines,
+		productionLines,
+		unbrandedLines,
+		canComplete,
 		contacts,
 		customers,
 		user: locals.appUser,
@@ -84,6 +117,29 @@ export const actions = {
 			]
 		);
 		return { contactAdded: true };
+	},
+
+	completeWo: async ({ params, locals }) => {
+		requireAdmin(locals);
+		const woId = params.id;
+		const [[{ stale }]] = await db.query(
+			`SELECT COUNT(*) AS stale FROM work_order_lines
+			 WHERE wo_id = ? AND parent_line_id IS NULL AND reconciliation_status = 'STALE'`,
+			[woId]
+		);
+		const [[{ incomplete }]] = await db.query(
+			`SELECT COUNT(*) AS incomplete FROM work_order_lines
+			 WHERE wo_id = ? AND rolls_produced < qty`,
+			[woId]
+		);
+		if (Number(stale) > 0)
+			return fail(400, {
+				completeError: 'Work order has stale billing lines — reconcile before completing.',
+			});
+		if (Number(incomplete) > 0)
+			return fail(400, { completeError: 'Not all lines are fully produced.' });
+		await db.query("UPDATE work_orders SET status = 'COMPLETE' WHERE id = ?", [woId]);
+		redirect(303, `/wo/${woId}`);
 	},
 
 	deleteContact: async ({ request }) => {
