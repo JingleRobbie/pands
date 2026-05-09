@@ -47,7 +47,16 @@ export async function load({ locals, url }) {
 		          FROM production_runs pr
 		          JOIN work_order_lines wol2 ON wol2.id = pr.wo_line_id
 		          WHERE wol2.wo_id = wo.id AND pr.status != 'COMPLETED'
-		        ), 0) AS rolls_scheduled
+		        ), 0) AS rolls_scheduled,
+		        EXISTS (
+		          SELECT 1 FROM work_order_lines s
+		          WHERE s.wo_id = wo.id AND s.parent_line_id IS NULL
+		            AND s.reconciliation_status = 'STALE'
+		        ) AS has_stale,
+		        EXISTS (
+		          SELECT 1 FROM work_order_lines b
+		          WHERE b.wo_id = wo.id AND b.parent_line_id IS NOT NULL
+		        ) AS has_branched
 		 FROM work_orders wo
 		 LEFT JOIN work_order_lines wol ON wol.wo_id = wo.id
 		 LEFT JOIN (

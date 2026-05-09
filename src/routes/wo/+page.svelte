@@ -97,7 +97,12 @@
 						>
 							<td class="font-medium text-gray-900">{wo.so_number}</td>
 							<td class="text-gray-700">{wo.customer_name}</td>
-							<td class="text-gray-700">{wo.job_name}</td>
+							<td class="text-gray-700">
+								{wo.job_name}
+								{#if wo.has_branched}
+									<span class="badge-blue ml-1 text-xs">Branched</span>
+								{/if}
+							</td>
 							<td class="text-gray-500">{wo.branch}</td>
 							<td class="text-gray-600">{fmtDate(wo.ship_date)}</td>
 							{#if data.status !== 'open'}
@@ -116,10 +121,16 @@
 									</div>
 								{/if}
 							</td>
-							<td
-								><span class={statusBadge(wo.status)}>{statusLabel(wo.status)}</span
-								></td
-							>
+							<td>
+								<span class={statusBadge(wo.status)}>{statusLabel(wo.status)}</span>
+								{#if wo.has_stale}
+									<a
+										href="/wo/{wo.id}/diff"
+										class="badge-amber ml-1 text-xs"
+										onclick={(e) => e.stopPropagation()}>Stale</a
+									>
+								{/if}
+							</td>
 						</tr>
 					{/each}
 				</tbody>
