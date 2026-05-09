@@ -1,6 +1,6 @@
 import { db } from '$lib/db.js';
 import { safeReturnTo, withReturnTo } from '$lib/navigation.js';
-import { unproduceRun } from '$lib/services/production.js';
+import { unproduceRun } from '$lib/services/runs.js';
 import { error, fail, redirect } from '@sveltejs/kit';
 
 function dateOnly(value) {
@@ -97,7 +97,9 @@ export const actions = {
 		redirect(
 			303,
 			withReturnTo(
-				selectedDate ? `/production/unproduce?date=${selectedDate}` : '/production/unproduce',
+				selectedDate
+					? `/production/unproduce?date=${selectedDate}`
+					: '/production/unproduce',
 				returnTo
 			)
 		);

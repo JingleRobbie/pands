@@ -1,7 +1,7 @@
 import { db } from '$lib/db.js';
 import { safeReturnTo, withReturnTo } from '$lib/navigation.js';
 import { error, fail, redirect } from '@sveltejs/kit';
-import { scheduleGroup } from '$lib/services/production.js';
+import { scheduleGroup } from '$lib/services/runs.js';
 
 export async function load({ params }) {
 	const [[wo]] = await db.query('SELECT * FROM work_orders WHERE id = ?', [params.id]);

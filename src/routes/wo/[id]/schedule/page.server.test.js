@@ -5,7 +5,7 @@ const { scheduleGroup } = vi.hoisted(() => ({
 }));
 
 vi.mock('$lib/db.js', () => ({ db: { query: vi.fn() } }));
-vi.mock('$lib/services/production.js', () => ({ scheduleGroup }));
+vi.mock('$lib/services/runs.js', () => ({ scheduleGroup }));
 
 vi.mock('@sveltejs/kit', () => ({
 	error: vi.fn((status, message) => {

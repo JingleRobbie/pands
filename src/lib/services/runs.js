@@ -5,6 +5,9 @@ function todayStr() {
 	return localDate();
 }
 
+// NOTE: Duplicate of nextRunNumber() in shipping.js.
+// Copy is intentional — do not import across service files.
+// Consolidate into $lib/services/shared.js if a third copy is ever needed.
 async function nextRunNumber(conn = db) {
 	const prefix = `PR-${todayStr().replace(/-/g, '')}-`;
 	const [[{ last }]] = await conn.query(
@@ -524,7 +527,7 @@ export async function deleteRun(runId) {
 	}
 }
 
-export const __productionTest = {
+export const __runsTest = {
 	calcSqft,
 	dateOnly,
 	prorateUnproduceSqft,

@@ -6,7 +6,7 @@ const { confirmRun } = vi.hoisted(() => ({
 
 vi.mock('$lib/db.js', () => ({ db: { query: vi.fn() } }));
 vi.mock('$lib/services/inventory.js', () => ({ getMatrixDataForSkus: vi.fn() }));
-vi.mock('$lib/services/production.js', () => ({ confirmRun }));
+vi.mock('$lib/services/runs.js', () => ({ confirmRun }));
 
 vi.mock('@sveltejs/kit', () => ({
 	error: vi.fn((status, message) => {

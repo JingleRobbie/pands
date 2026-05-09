@@ -7,7 +7,7 @@ const { confirmRun, deleteRun } = vi.hoisted(() => ({
 
 vi.mock('$lib/db.js', () => ({ db: { query: vi.fn() } }));
 vi.mock('$lib/services/inventory.js', () => ({ getMatrixDataForSkus: vi.fn() }));
-vi.mock('$lib/services/production.js', () => ({ confirmRun, deleteRun }));
+vi.mock('$lib/services/runs.js', () => ({ confirmRun, deleteRun }));
 vi.mock('$lib/auth.js', () => ({
 	requireAdmin: vi.fn((locals) =>
 		locals.appUser?.role === 'admin' ? null : { status: 403, data: { error: 'Admin only' } }

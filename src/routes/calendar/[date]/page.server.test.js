@@ -7,7 +7,7 @@ const { db, deleteRun, scheduleRun } = vi.hoisted(() => ({
 }));
 
 vi.mock('$lib/db.js', () => ({ db }));
-vi.mock('$lib/services/production.js', () => ({ deleteRun, scheduleRun }));
+vi.mock('$lib/services/runs.js', () => ({ deleteRun, scheduleRun }));
 vi.mock('$lib/auth.js', () => ({
 	requireAdmin: vi.fn((locals) =>
 		locals.appUser?.role === 'admin' ? null : { status: 403, data: { error: 'Admin only' } }
@@ -53,7 +53,9 @@ describe('calendar day page', () => {
 		expect(db.query).toHaveBeenCalledTimes(2);
 		expect(db.query.mock.calls[0][0]).toContain('WHERE pr.run_date = ?');
 		expect(db.query.mock.calls[0][1]).toEqual(['2026-05-05']);
-		expect(db.query.mock.calls[1][0]).toContain("WHERE wo.status NOT IN ('COMPLETE', 'CANCELLED')");
+		expect(db.query.mock.calls[1][0]).toContain(
+			"WHERE wo.status NOT IN ('COMPLETE', 'CANCELLED')"
+		);
 		expect(result).toEqual({
 			date: '2026-05-05',
 			runs,

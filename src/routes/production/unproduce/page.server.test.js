@@ -5,7 +5,7 @@ const { unproduceRun } = vi.hoisted(() => ({
 }));
 
 vi.mock('$lib/db.js', () => ({ db: { query: vi.fn() } }));
-vi.mock('$lib/services/production.js', () => ({ unproduceRun }));
+vi.mock('$lib/services/runs.js', () => ({ unproduceRun }));
 
 vi.mock('@sveltejs/kit', () => ({
 	error: vi.fn((status, message) => {

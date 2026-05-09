@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/db.js';
-import { scheduleRun, deleteRun } from '$lib/services/production.js';
+import { scheduleRun, deleteRun } from '$lib/services/runs.js';
 import { requireAdmin } from '$lib/auth.js';
 
 export async function load({ params, locals }) {
