@@ -1,5 +1,6 @@
 import { db } from '$lib/db.js';
 import { localDate } from '$lib/utils.js';
+import { getConfirmedCutDownForProductionLine } from '$lib/services/cutdown.js';
 
 function todayStr() {
 	return localDate();
@@ -329,20 +330,41 @@ export async function confirmRun(runId, rollsActual, userId, runDate = null) {
 		);
 
 		const sqftActual = calcSqft(line, rollsActual);
+		const isProductionLine = line.parent_line_id !== null;
 
-		await conn.query(
-			`INSERT INTO inventory_transactions
-			 (sku_id, transaction_type, sqft_quantity, effective_date, reference_type, reference_id, memo, created_by)
-			 VALUES (?, 'CONSUMPTION', ?, COALESCE(?, CURDATE()), 'PRODUCTION_RUN', ?, ?, ?)`,
-			[
-				run.sku_id,
-				sqftActual,
-				runDate || dateOnly(run.run_date),
-				runId,
-				`Run ${run.run_number} - ${line.so_number} ${line.job_name}`,
-				userId ?? null,
-			]
-		);
+		if (isProductionLine) {
+			// PRODUCTION line (CUT_LAMINATE path) — write WIP CUT_OUT, not inventory CONSUMPTION
+			const cutDown = await getConfirmedCutDownForProductionLine(conn, run.wo_line_id);
+			await conn.query(
+				`INSERT INTO wip_ledger
+				 (transaction_type, cut_down_id, wo_line_id, width_in, sqft_quantity, effective_date, memo, created_by)
+				 VALUES ('CUT_OUT', ?, ?, ?, ?, COALESCE(?, CURDATE()), ?, ?)`,
+				[
+					cutDown.id,
+					run.wo_line_id,
+					line.width_in,
+					-sqftActual,
+					runDate || dateOnly(run.run_date),
+					`Run ${run.run_number} — WIP consumed`,
+					userId ?? null,
+				]
+			);
+		} else {
+			// BILLING or UNBRANCHED line — standard inventory CONSUMPTION
+			await conn.query(
+				`INSERT INTO inventory_transactions
+				 (sku_id, transaction_type, sqft_quantity, effective_date, reference_type, reference_id, memo, created_by)
+				 VALUES (?, 'CONSUMPTION', ?, COALESCE(?, CURDATE()), 'PRODUCTION_RUN', ?, ?, ?)`,
+				[
+					run.sku_id,
+					sqftActual,
+					runDate || dateOnly(run.run_date),
+					runId,
+					`Run ${run.run_number} - ${line.so_number} ${line.job_name}`,
+					userId ?? null,
+				]
+			);
+		}
 
 		await conn.query(
 			`UPDATE production_runs
@@ -357,8 +379,12 @@ export async function confirmRun(runId, rollsActual, userId, runDate = null) {
 			[rollsActual, run.wo_line_id]
 		);
 
+		// Auto-close: all lines fully produced AND no STALE billing/unbranched lines
 		const [[{ incomplete }]] = await conn.query(
-			`SELECT COUNT(*) AS incomplete FROM work_order_lines WHERE wo_id = ? AND rolls_produced < qty`,
+			`SELECT COUNT(*) AS incomplete FROM work_order_lines
+			 WHERE wo_id = ?
+			   AND (rolls_produced < qty
+			        OR (parent_line_id IS NULL AND reconciliation_status = 'STALE'))`,
 			[line.wo_id]
 		);
 
@@ -401,9 +427,10 @@ export async function unproduceRun(runId, rollsToUnproduce, userId) {
 		if (run.status !== 'COMPLETED') throw new Error('Only completed runs can be unproduced.');
 
 		const line = await getLockedWoLine(conn, run.wo_line_id);
+		const isProductionLine = line.parent_line_id !== null;
 
 		const [[shipped]] = await conn.query(
-			`SELECT COALESCE(SUM(rolls), 0) AS shippedRolls
+			`SELECT COALESCE(SUM(COALESCE(rolls, 0)), 0) AS shippedRolls
 			 FROM shipment_lines
 			 WHERE production_run_id = ?`,
 			[runId]
@@ -412,38 +439,66 @@ export async function unproduceRun(runId, rollsToUnproduce, userId) {
 		const unshippedRolls = Number(run.rolls_actual) - shippedRolls;
 		validateUnproduceRolls(rollsToUnproduce, unshippedRolls);
 
-		const [[consumption]] = await conn.query(
-			`SELECT id, effective_date
-			 FROM inventory_transactions
-			 WHERE reference_type = 'PRODUCTION_RUN'
-			   AND reference_id = ?
-			   AND transaction_type = 'CONSUMPTION'
-			 ORDER BY effective_date, id
-			 LIMIT 1`,
-			[runId]
-		);
-		if (!consumption) {
-			throw new Error(
-				`Run ${run.run_number} does not have a consumption transaction to reverse.`
+		const sqftToUnproduce = prorateUnproduceSqft(line, run, rollsToUnproduce);
+
+		if (isProductionLine) {
+			// PRODUCTION line — reverse WIP CUT_OUT by inserting a CUT_IN
+			const [[wipEntry]] = await conn.query(
+				`SELECT id FROM wip_ledger
+				 WHERE wo_line_id = ? AND transaction_type = 'CUT_OUT'
+				 ORDER BY created_at DESC LIMIT 1`,
+				[run.wo_line_id]
+			);
+			if (!wipEntry) {
+				throw new Error(`Run ${run.run_number} has no WIP CUT_OUT entry to reverse.`);
+			}
+			const cutDown = await getConfirmedCutDownForProductionLine(conn, run.wo_line_id);
+			await conn.query(
+				`INSERT INTO wip_ledger
+				 (transaction_type, cut_down_id, wo_line_id, width_in, sqft_quantity, effective_date, memo, created_by)
+				 VALUES ('CUT_IN', ?, ?, ?, ?, CURDATE(), ?, ?)`,
+				[
+					cutDown.id,
+					run.wo_line_id,
+					line.width_in,
+					sqftToUnproduce,
+					`Unproduced run ${run.run_number} — WIP restored`,
+					userId ?? null,
+				]
+			);
+		} else {
+			// BILLING or UNBRANCHED line — reverse inventory CONSUMPTION
+			const [[consumption]] = await conn.query(
+				`SELECT id, effective_date
+				 FROM inventory_transactions
+				 WHERE reference_type = 'PRODUCTION_RUN'
+				   AND reference_id = ?
+				   AND transaction_type = 'CONSUMPTION'
+				 ORDER BY effective_date, id
+				 LIMIT 1`,
+				[runId]
+			);
+			if (!consumption) {
+				throw new Error(
+					`Run ${run.run_number} does not have a consumption transaction to reverse.`
+				);
+			}
+			await conn.query(
+				`INSERT INTO inventory_transactions
+				 (sku_id, transaction_type, sqft_quantity, effective_date, reference_type, reference_id,
+				  reverses_transaction_id, memo, created_by)
+				 VALUES (?, 'CONSUMPTION_REVERSAL', ?, ?, 'PRODUCTION_RUN', ?, ?, ?, ?)`,
+				[
+					run.sku_id,
+					sqftToUnproduce,
+					consumption.effective_date,
+					runId,
+					consumption.id,
+					`Unproduced ${rollsToUnproduce} roll${rollsToUnproduce === 1 ? '' : 's'} from run ${run.run_number}`,
+					userId ?? null,
+				]
 			);
 		}
-
-		const sqftToUnproduce = prorateUnproduceSqft(line, run, rollsToUnproduce);
-		await conn.query(
-			`INSERT INTO inventory_transactions
-			 (sku_id, transaction_type, sqft_quantity, effective_date, reference_type, reference_id,
-			  reverses_transaction_id, memo, created_by)
-			 VALUES (?, 'CONSUMPTION_REVERSAL', ?, ?, 'PRODUCTION_RUN', ?, ?, ?, ?)`,
-			[
-				run.sku_id,
-				sqftToUnproduce,
-				consumption.effective_date,
-				runId,
-				consumption.id,
-				`Unproduced ${rollsToUnproduce} roll${rollsToUnproduce === 1 ? '' : 's'} from run ${run.run_number}`,
-				userId ?? null,
-			]
-		);
 
 		const fullUnproduce = rollsToUnproduce === Number(run.rolls_actual);
 		let shortfallRunNumber = null;
