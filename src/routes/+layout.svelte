@@ -16,6 +16,7 @@
 		{ href: '/production', label: 'Production', icon: 'check' },
 		{ href: '/customers', label: 'Customers', icon: 'users' },
 		{ href: '/shipments', label: 'Shipments', icon: 'ship' },
+		{ href: '/wip', label: 'WIP Ledger', icon: 'layers' },
 		{ href: '/calendar', label: 'Prod Calendar', icon: 'cal' },
 		{ href: '/shipments/calendar', label: 'Ship Calendar', icon: 'cal' },
 	];
