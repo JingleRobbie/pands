@@ -117,6 +117,7 @@ async function getScheduledProductionRuns(today, skuIds, filterBySku) {
 		JOIN work_order_lines wol ON wol.id = pr.wo_line_id
 		JOIN work_orders wo ON wo.id = wol.wo_id
 		WHERE pr.run_date >= ? AND pr.status = 'SCHEDULED'
+		  AND wol.parent_line_id IS NULL
 		  ${skuWhere}
 		ORDER BY pr.run_date, pr.run_number
 	`,
@@ -470,10 +471,57 @@ async function getHistoricalActivityRows(skuIds, fromDate) {
 			(adjRowMap[t.count_id].deltas[t.sku_id] ?? 0) + sign * Number(t.sqft_quantity);
 	}
 
-	const typeOrder = { adjustment: 0, po: 1, production: 2 };
+	// CUT_DOWN consumption transactions (source SKU consumed at cut-down confirmation)
+	const [cutDownTxns] = await db.query(
+		`
+		SELECT it.sku_id, it.sqft_quantity, it.transaction_type,
+		       it.reference_id AS cd_id,
+		       it.effective_date AS event_date,
+		       cd.cut_down_number,
+		       wo.so_number, wo.job_name, wo.id AS wo_id, wo.ship_date, wo.customer_name
+		FROM inventory_transactions it
+		JOIN cut_downs cd ON cd.id = it.reference_id
+		JOIN work_orders wo ON wo.id = cd.wo_id
+		WHERE it.reference_type = 'CUT_DOWN'
+		  AND it.transaction_type IN ('CONSUMPTION','CONSUMPTION_REVERSAL')
+		  AND it.effective_date >= ?
+		ORDER BY it.effective_date, it.created_at
+	`,
+		[fromDate]
+	);
+
+	const cutDownRowMap = {};
+	for (const t of cutDownTxns) {
+		const key = `${t.cd_id}:${t.event_date}:${t.transaction_type}`;
+		if (!cutDownRowMap[key]) {
+			const isReversal = t.transaction_type === 'CONSUMPTION_REVERSAL';
+			cutDownRowMap[key] = {
+				rowType: 'historical',
+				subType: 'cutdown',
+				partyName: t.customer_name,
+				description: isReversal
+					? `${t.job_name} Cut-Down Reversed`
+					: `${t.job_name} Cut-Down`,
+				activityLabel: isReversal ? 'REVERSED' : 'CUT',
+				activityClass: isReversal ? 'badge-amber' : 'badge-blue',
+				soNumber: t.so_number,
+				poNumber: '',
+				eventDate: t.event_date,
+				shipDate: t.ship_date,
+				objectId: t.wo_id,
+				deltas: {},
+			};
+		}
+		const sign = t.transaction_type === 'CONSUMPTION_REVERSAL' ? 1 : -1;
+		cutDownRowMap[key].deltas[t.sku_id] =
+			(cutDownRowMap[key].deltas[t.sku_id] ?? 0) + sign * Number(t.sqft_quantity);
+	}
+
+	const typeOrder = { adjustment: 0, po: 1, cutdown: 2, production: 3 };
 	const rows = [
 		...Object.values(poRowMap),
 		...Object.values(adjRowMap),
+		...Object.values(cutDownRowMap),
 		...Object.values(prodRowMap),
 	].sort((a, b) => {
 		if (a.eventDate < b.eventDate) return -1;
