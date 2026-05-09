@@ -6,13 +6,20 @@
 	let { data, form } = $props();
 	const wo = $derived(data.wo);
 	const runs = $derived(data.runs);
+	const cutDowns = $derived(data.cutDowns ?? []);
+	const directLines = $derived(data.directLines ?? []);
 
 	let selected = new SvelteSet();
+	let selectedCutDowns = new SvelteSet();
+	let selectedDirectLines = new SvelteSet();
 	const toggle = (id) => {
 		selected.has(id) ? selected.delete(id) : selected.add(id);
 	};
 	const allSelected = $derived(runs.length > 0 && selected.size === runs.length);
 	const someSelected = $derived(selected.size > 0 && !allSelected);
+	const anySelected = $derived(
+		selected.size + selectedCutDowns.size + selectedDirectLines.size > 0
+	);
 	function toggleAll() {
 		selected.clear();
 		if (!allSelected) {
@@ -191,8 +198,128 @@
 			{/if}
 		</div>
 
+		{#if cutDowns.length > 0}
+			<div class="card">
+				<div class="card-header">
+					<span class="font-semibold text-sm text-gray-700"
+						>Cut-Ship — Completed Cut-Downs</span
+					>
+				</div>
+				<table class="min-w-full divide-y divide-gray-200 text-sm">
+					<thead class="bg-gray-50">
+						<tr>
+							<th class="w-8 px-4 py-3"></th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">SKU</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Width</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Sqft</th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">Cut Date</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-100 bg-white">
+						{#each cutDowns as cd (cd.id)}
+							<tr
+								class="cursor-pointer hover:bg-blue-50 {selectedCutDowns.has(cd.id)
+									? 'bg-blue-50'
+									: ''}"
+								onclick={() =>
+									selectedCutDowns.has(cd.id)
+										? selectedCutDowns.delete(cd.id)
+										: selectedCutDowns.add(cd.id)}
+							>
+								<td class="px-4 py-3">
+									<input
+										type="checkbox"
+										name="cut_down_ids"
+										value={cd.id}
+										checked={selectedCutDowns.has(cd.id)}
+										onchange={() =>
+											selectedCutDowns.has(cd.id)
+												? selectedCutDowns.delete(cd.id)
+												: selectedCutDowns.add(cd.id)}
+										onclick={(e) => e.stopPropagation()}
+									/>
+								</td>
+								<td class="px-4 py-3 text-gray-600">{cd.display_label}</td>
+								<td class="px-4 py-3 text-right tabular-nums text-gray-600"
+									>{cd.width_in}"</td
+								>
+								<td
+									class="px-4 py-3 text-right tabular-nums font-mono text-gray-600"
+									>{fmtSqft(cd.sqft_actual)}</td
+								>
+								<td class="px-4 py-3 text-gray-600"
+									>{cd.run_date ? fmtDate(cd.run_date) : '—'}</td
+								>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+
+		{#if directLines.length > 0}
+			<div class="card">
+				<div class="card-header">
+					<span class="font-semibold text-sm text-gray-700"
+						>Direct Ship — Unbranched Lines</span
+					>
+				</div>
+				<table class="min-w-full divide-y divide-gray-200 text-sm">
+					<thead class="bg-gray-50">
+						<tr>
+							<th class="w-8 px-4 py-3"></th>
+							<th class="px-4 py-3 text-left font-medium text-gray-500">SKU</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Width</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Length</th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Sqft</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-100 bg-white">
+						{#each directLines as dl (dl.id)}
+							<tr
+								class="cursor-pointer hover:bg-blue-50 {selectedDirectLines.has(
+									dl.id
+								)
+									? 'bg-blue-50'
+									: ''}"
+								onclick={() =>
+									selectedDirectLines.has(dl.id)
+										? selectedDirectLines.delete(dl.id)
+										: selectedDirectLines.add(dl.id)}
+							>
+								<td class="px-4 py-3">
+									<input
+										type="checkbox"
+										name="wo_line_ids"
+										value={dl.id}
+										checked={selectedDirectLines.has(dl.id)}
+										onchange={() =>
+											selectedDirectLines.has(dl.id)
+												? selectedDirectLines.delete(dl.id)
+												: selectedDirectLines.add(dl.id)}
+										onclick={(e) => e.stopPropagation()}
+									/>
+								</td>
+								<td class="px-4 py-3 text-gray-600">{dl.display_label}</td>
+								<td class="px-4 py-3 text-right tabular-nums text-gray-600"
+									>{dl.width_in}"</td
+								>
+								<td class="px-4 py-3 text-right tabular-nums text-gray-600"
+									>{dl.length_ft}'</td
+								>
+								<td
+									class="px-4 py-3 text-right tabular-nums font-mono text-gray-600"
+									>{fmtSqft(dl.sqft)}</td
+								>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+
 		<div class="flex gap-3">
-			<button type="submit" class="btn-primary" disabled={selected.size === 0}>
+			<button type="submit" class="btn-primary" disabled={!anySelected}>
 				Create Shipment
 			</button>
 			<a href="/wo/{wo.id}" class="btn-secondary">Cancel</a>

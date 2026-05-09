@@ -94,28 +94,71 @@ async function reduceShipmentLine(conn, line, newRolls, userId) {
 	return { rolls: newRolls, sqft: newSqft };
 }
 
-// rollsMap: { [runId]: rollsToShip } - omit a key to ship all rolls for that run
-export async function createShipment(woId, customerId, shipDate, runIds, userId, rollsMap = {}) {
+// sources: array of { type: 'PRODUCTION_RUN'|'CUT_DOWN'|'WO_LINE', id }
+// rollsMap: { [runId]: rollsToShip } — only applies to PRODUCTION_RUN sources
+export async function createShipment(woId, customerId, shipDate, sources, userId, rollsMap = {}) {
 	const conn = await db.getConnection();
 	try {
 		await conn.beginTransaction();
 
-		const ph = runIds.map(() => '?').join(',');
-		const [runs] = await conn.query(
-			`SELECT pr.id, pr.run_number, pr.sku_id, pr.wo_line_id, pr.group_id,
-			        pr.rolls_actual, pr.sqft_actual, pr.run_date, wol.wo_id
-			 FROM production_runs pr
-			 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
-			 WHERE pr.id IN (${ph}) AND pr.status = 'COMPLETED'`,
-			runIds
-		);
+		const runSources = sources.filter((s) => s.type === 'PRODUCTION_RUN');
+		const cutDownSources = sources.filter((s) => s.type === 'CUT_DOWN');
+		const woLineSources = sources.filter((s) => s.type === 'WO_LINE');
 
-		if (runs.length !== runIds.length) {
-			throw new Error('One or more selected runs are not completed or do not exist.');
+		// Validate PRODUCTION_RUN sources
+		let runs = [];
+		if (runSources.length > 0) {
+			const ph = runSources.map(() => '?').join(',');
+			const [rows] = await conn.query(
+				`SELECT pr.id, pr.run_number, pr.sku_id, pr.wo_line_id, pr.group_id,
+				        pr.rolls_actual, pr.sqft_actual, pr.run_date, wol.wo_id
+				 FROM production_runs pr
+				 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
+				 WHERE pr.id IN (${ph}) AND pr.status = 'COMPLETED'`,
+				runSources.map((s) => s.id)
+			);
+			if (rows.length !== runSources.length)
+				throw new Error('One or more selected runs are not completed or do not exist.');
+			if (rows.find((r) => r.wo_id !== woId))
+				throw new Error('All runs must belong to the selected work order.');
+			runs = rows;
 		}
-		const wrongWo = runs.find((r) => r.wo_id !== woId);
-		if (wrongWo) {
-			throw new Error('All runs must belong to the selected work order.');
+
+		// Validate CUT_DOWN sources
+		let cutDowns = [];
+		if (cutDownSources.length > 0) {
+			const ph = cutDownSources.map(() => '?').join(',');
+			const [rows] = await conn.query(
+				`SELECT cd.id, cd.sku_id, cd.sqft_actual, cd.billing_line_id, cd.wo_id
+				 FROM cut_downs cd
+				 WHERE cd.id IN (${ph}) AND cd.status = 'COMPLETED'`,
+				cutDownSources.map((s) => s.id)
+			);
+			if (rows.length !== cutDownSources.length)
+				throw new Error(
+					'One or more selected cut-downs are not completed or do not exist.'
+				);
+			if (rows.find((r) => r.wo_id !== woId))
+				throw new Error('All cut-downs must belong to the selected work order.');
+			cutDowns = rows;
+		}
+
+		// Validate WO_LINE sources (unbranched, direct-ship)
+		let woLines = [];
+		if (woLineSources.length > 0) {
+			const ph = woLineSources.map(() => '?').join(',');
+			const [rows] = await conn.query(
+				`SELECT wol.id, wol.sku_id, wol.sqft, wol.wo_id, wol.width_in, wol.length_ft
+				 FROM work_order_lines wol
+				 WHERE wol.id IN (${ph}) AND wol.parent_line_id IS NULL
+				   AND NOT EXISTS (SELECT 1 FROM work_order_lines c WHERE c.parent_line_id = wol.id)`,
+				woLineSources.map((s) => s.id)
+			);
+			if (rows.length !== woLineSources.length)
+				throw new Error('One or more WO lines are not unbranched or do not exist.');
+			if (rows.find((r) => r.wo_id !== woId))
+				throw new Error('All WO lines must belong to the selected work order.');
+			woLines = rows;
 		}
 
 		const [[wo]] = await conn.query('SELECT so_number FROM work_orders WHERE id = ?', [woId]);
@@ -131,14 +174,71 @@ export async function createShipment(woId, customerId, shipDate, runIds, userId,
 		);
 		const shipmentId = result.insertId;
 
+		// PRODUCTION_RUN lines — existing splitRunForShipment logic
 		for (const run of runs) {
 			const rollsToShip = Number(rollsMap[run.id] ?? run.rolls_actual);
 			const shipped = await splitRunForShipment(conn, run, rollsToShip, userId);
-
 			await conn.query(
 				`INSERT INTO shipment_lines (shipment_id, production_run_id, sku_id, rolls, sqft)
 				 VALUES (?, ?, ?, ?, ?)`,
 				[shipmentId, run.id, run.sku_id, shipped.rolls, shipped.sqft]
+			);
+			// Lock path_type on the WO line (STANDARD or CUT_LAMINATE based on parent)
+			await conn.query(
+				`UPDATE work_order_lines
+				 SET path_type = IF(parent_line_id IS NULL, 'STANDARD', 'CUT_LAMINATE')
+				 WHERE id = ? AND path_type IS NULL`,
+				[run.wo_line_id]
+			);
+		}
+
+		// CUT_DOWN lines (CUT_SHIP path) — write WIP CUT_OUT, no rolls
+		for (const cd of cutDowns) {
+			await conn.query(
+				`INSERT INTO shipment_lines (shipment_id, cut_down_id, sku_id, rolls, sqft)
+				 VALUES (?, ?, ?, NULL, ?)`,
+				[shipmentId, cd.id, cd.sku_id, cd.sqft_actual ?? 0]
+			);
+			// WIP CUT_OUT
+			await conn.query(
+				`INSERT INTO wip_ledger
+				 (transaction_type, cut_down_id, wo_line_id, width_in, sqft_quantity, effective_date, memo, created_by)
+				 SELECT 'CUT_OUT', ?, wol.id, wol.width_in, ?, ?, 'CUT_SHIP — shipped', ?
+				 FROM work_order_lines wol WHERE wol.parent_line_id = ? LIMIT 1`,
+				[cd.id, -(cd.sqft_actual ?? 0), localDate(), userId ?? null, cd.billing_line_id]
+			);
+			// Lock path_type on production children
+			await conn.query(
+				`UPDATE work_order_lines SET path_type = 'CUT_SHIP'
+				 WHERE parent_line_id = ? AND path_type IS NULL`,
+				[cd.billing_line_id]
+			);
+		}
+
+		// WO_LINE sources (DIRECT_SHIP path) — write inventory CONSUMPTION, no rolls
+		for (const wol of woLines) {
+			await conn.query(
+				`INSERT INTO shipment_lines (shipment_id, wo_line_id, sku_id, rolls, sqft)
+				 VALUES (?, ?, ?, NULL, ?)`,
+				[shipmentId, wol.id, wol.sku_id, wol.sqft]
+			);
+			await conn.query(
+				`INSERT INTO inventory_transactions
+				 (sku_id, transaction_type, sqft_quantity, effective_date, reference_type, reference_id, memo, created_by)
+				 VALUES (?, 'CONSUMPTION', ?, ?, 'MANUAL', ?, ?, ?)`,
+				[
+					wol.sku_id,
+					wol.sqft,
+					localDate(),
+					wol.id,
+					`Direct ship — WO line ${wol.id} — ${wo.so_number}`,
+					userId ?? null,
+				]
+			);
+			// Lock path_type
+			await conn.query(
+				`UPDATE work_order_lines SET path_type = 'DIRECT_SHIP' WHERE id = ? AND path_type IS NULL`,
+				[wol.id]
 			);
 		}
 
@@ -173,7 +273,7 @@ export async function updateShipment(
 			`SELECT sl.id, sl.production_run_id, sl.sku_id, sl.rolls, sl.sqft,
 			        pr.rolls_actual, pr.sqft_actual
 			 FROM shipment_lines sl
-			 JOIN production_runs pr ON pr.id = sl.production_run_id
+			 LEFT JOIN production_runs pr ON pr.id = sl.production_run_id
 			 WHERE sl.shipment_id = ?`,
 			[shipmentId]
 		);
@@ -188,7 +288,10 @@ export async function updateShipment(
 
 		for (const line of lines) {
 			if (removeLineIds.includes(line.id)) continue;
-			await reduceShipmentLine(conn, line, Number(lineRolls[line.id]), userId);
+			// Only PRODUCTION_RUN lines have rolls and can be reduced
+			if (line.production_run_id) {
+				await reduceShipmentLine(conn, line, Number(lineRolls[line.id]), userId);
+			}
 		}
 
 		if (addRunIds.length > 0) {
@@ -230,7 +333,10 @@ export async function confirmShipment(shipmentId, lineRolls = {}, userId) {
 		);
 
 		for (const line of lines) {
-			await reduceShipmentLine(conn, line, Number(lineRolls[line.id]), userId);
+			// Only PRODUCTION_RUN lines have rolls and can be reduced
+			if (line.production_run_id) {
+				await reduceShipmentLine(conn, line, Number(lineRolls[line.id]), userId);
+			}
 		}
 
 		await conn.query(`UPDATE shipments SET status = 'SHIPPED' WHERE id = ?`, [shipmentId]);
@@ -257,11 +363,16 @@ export async function getShipment(id) {
 
 	const [lines] = await db.query(
 		`SELECT sl.*, ms.display_label, pr.run_number, pr.run_date,
-		        wol.rollfor, wol.facing, wol.thickness_in, wol.width_in, wol.length_ft
+		        COALESCE(wol_run.rollfor, wol_direct.rollfor) AS rollfor,
+		        COALESCE(wol_run.facing,  wol_direct.facing)  AS facing,
+		        COALESCE(wol_run.thickness_in, wol_direct.thickness_in) AS thickness_in,
+		        COALESCE(wol_run.width_in,     wol_direct.width_in)     AS width_in,
+		        COALESCE(wol_run.length_ft,    wol_direct.length_ft)    AS length_ft
 		 FROM shipment_lines sl
 		 JOIN material_skus ms ON ms.id = sl.sku_id
-		 JOIN production_runs pr ON pr.id = sl.production_run_id
-		 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
+		 LEFT JOIN production_runs pr ON pr.id = sl.production_run_id
+		 LEFT JOIN work_order_lines wol_run    ON wol_run.id = pr.wo_line_id
+		 LEFT JOIN work_order_lines wol_direct ON wol_direct.id = sl.wo_line_id
 		 WHERE sl.shipment_id = ?
 		 ORDER BY ms.sort_order, pr.run_number`,
 		[id]

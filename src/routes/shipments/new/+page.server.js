@@ -16,7 +16,7 @@ export async function load({ url }) {
 	if (!wo) error(404, 'Work order not found');
 	if (!wo.customer_id) error(400, 'Work order must be linked to a customer before shipping');
 
-	// COMPLETED runs for this WO not already on any shipment
+	// COMPLETED production runs not already on any shipment
 	const [runs] = await db.query(
 		`SELECT pr.id, pr.run_date, pr.rolls_actual, pr.sqft_actual,
 		        ms.display_label, wol.facing, wol.rollfor, wol.length_ft, wol.thickness_in, wol.width_in
@@ -25,12 +25,34 @@ export async function load({ url }) {
 		 JOIN material_skus ms ON ms.id = pr.sku_id
 		 WHERE wol.wo_id = ?
 		   AND pr.status = 'COMPLETED'
-		   AND pr.id NOT IN (SELECT production_run_id FROM shipment_lines)
+		   AND pr.id NOT IN (SELECT production_run_id FROM shipment_lines WHERE production_run_id IS NOT NULL)
 		 ORDER BY pr.run_date, ms.display_label`,
 		[woId]
 	);
 
-	return { wo, runs };
+	// COMPLETED cut-downs not already on a shipment (CUT_SHIP path)
+	const [cutDowns] = await db.query(
+		`SELECT cd.id, cd.sqft_actual, cd.run_date, ms.display_label, wol.width_in
+		 FROM cut_downs cd
+		 JOIN material_skus ms ON ms.id = cd.sku_id
+		 JOIN work_order_lines wol ON wol.id = cd.billing_line_id
+		 WHERE cd.wo_id = ? AND cd.status = 'COMPLETED'
+		   AND cd.id NOT IN (SELECT cut_down_id FROM shipment_lines WHERE cut_down_id IS NOT NULL)`,
+		[woId]
+	);
+
+	// Unbranched WO lines not already on a shipment (DIRECT_SHIP path)
+	const [directLines] = await db.query(
+		`SELECT wol.id, wol.sqft, wol.width_in, wol.length_ft, ms.display_label
+		 FROM work_order_lines wol
+		 JOIN material_skus ms ON ms.id = wol.sku_id
+		 WHERE wol.wo_id = ? AND wol.parent_line_id IS NULL
+		   AND NOT EXISTS (SELECT 1 FROM work_order_lines c WHERE c.parent_line_id = wol.id)
+		   AND wol.id NOT IN (SELECT wo_line_id FROM shipment_lines WHERE wo_line_id IS NOT NULL)`,
+		[woId]
+	);
+
+	return { wo, runs, cutDowns, directLines };
 }
 
 export const actions = {
@@ -40,9 +62,18 @@ export const actions = {
 		const customerId = parseInt(data.get('customer_id'));
 		const shipDate = data.get('ship_date');
 		const runIds = data.getAll('run_ids').map(Number);
+		const cutDownIds = data.getAll('cut_down_ids').map(Number);
+		const woLineIds = data.getAll('wo_line_ids').map(Number);
 
 		if (!shipDate) return fail(400, { error: 'Ship date is required.' });
-		if (runIds.length === 0) return fail(400, { error: 'Select at least one production run.' });
+		if (runIds.length + cutDownIds.length + woLineIds.length === 0)
+			return fail(400, { error: 'Select at least one source.' });
+
+		const sources = [
+			...runIds.map((id) => ({ type: 'PRODUCTION_RUN', id })),
+			...cutDownIds.map((id) => ({ type: 'CUT_DOWN', id })),
+			...woLineIds.map((id) => ({ type: 'WO_LINE', id })),
+		];
 
 		const rollsMap = {};
 		for (const id of runIds) {
@@ -56,7 +87,7 @@ export const actions = {
 				woId,
 				customerId,
 				shipDate,
-				runIds,
+				sources,
 				locals.appUser.id,
 				rollsMap
 			));
