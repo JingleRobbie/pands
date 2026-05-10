@@ -13,6 +13,15 @@ export async function load({ params }) {
 		 FROM work_order_lines wol
 		 JOIN material_skus ms ON ms.id = wol.sku_id
 		 WHERE wol.wo_id = ? AND wol.parent_line_id IS NULL
+		 HAVING child_count > 0
+		 ORDER BY wol.id`,
+		[params.id]
+	);
+
+	const [productionLines] = await db.query(
+		`SELECT wol.id, wol.parent_line_id, wol.width_in, wol.length_ft, wol.qty, wol.sqft
+		 FROM work_order_lines wol
+		 WHERE wol.wo_id = ? AND wol.parent_line_id IS NOT NULL
 		 ORDER BY wol.id`,
 		[params.id]
 	);
@@ -23,12 +32,13 @@ export async function load({ params }) {
 		 FROM cut_downs cd
 		 LEFT JOIN cut_down_groups cdg ON cdg.id = cd.group_id
 		 JOIN material_skus ms ON ms.id = cd.sku_id
-		 WHERE cd.wo_id = ?
+		 JOIN work_order_lines wol ON wol.id = cd.billing_line_id
+		 WHERE wol.wo_id = ?
 		 ORDER BY cd.run_date, cd.id`,
 		[params.id]
 	);
 
-	return { wo, billingLines, cutDowns };
+	return { wo, billingLines, productionLines, cutDowns };
 }
 
 export const actions = {

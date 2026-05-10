@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { wo, billingLines, cutDowns } = $derived(data);
+	const { wo, billingLines, productionLines, cutDowns } = $derived(data);
 
 	let showScheduleFor = $state(null);
 
@@ -15,6 +15,15 @@
 		}, {})
 	);
 
+	const childrenByParent = $derived(
+		productionLines.reduce((map, pl) => {
+			const k = pl.parent_line_id;
+			if (!map[k]) map[k] = [];
+			map[k].push(pl);
+			return map;
+		}, {})
+	);
+
 	const statusBadge = {
 		UNSCHEDULED: 'badge-gray',
 		SCHEDULED: 'badge-blue',
@@ -22,7 +31,7 @@
 	};
 </script>
 
-<svelte:head><title>Cut-Downs — WO {wo.so_number} — PandS</title></svelte:head>
+<svelte:head><title>Cut-Downs - WO {wo.so_number} - PandS</title></svelte:head>
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
 	<a href="/wo/{wo.id}" class="text-gray-400 hover:text-gray-600 text-sm">← WO {wo.so_number}</a>
@@ -38,19 +47,29 @@
 
 	{#each billingLines as line (line.id)}
 		{@const lineCutDowns = cutDownsByLine[line.id] ?? []}
+		{@const children = childrenByParent[line.id] ?? []}
 		<div class="card">
 			<div class="card-header flex items-center justify-between">
-				<div class="flex items-center gap-3">
-					<span class="font-semibold text-sm text-gray-700"
-						>{line.display_label} — {line.width_in}" × {line.length_ft}' — {fmtSqft(
-							line.sqft
-						)} sqft</span
-					>
-					{#if Number(line.child_count) === 0}
-						<span class="badge-amber">Unbranched</span>
+				<div class="flex flex-col gap-0.5">
+					<div class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+						<span class="font-mono"
+							>{line.facing}
+							{line.tab_type}
+							{line.thickness_in}" × {line.width_in}" × {line.length_ft}'</span
+						>
+						<span class="text-gray-400 font-normal">{fmtSqft(line.sqft)} sqft</span>
+					</div>
+					{#if children.length > 0}
+						<div class="flex flex-col items-end gap-0.5 text-sm text-gray-700">
+							{#each children as child (child.id)}
+								<span
+									>→ {child.width_in}" × {child.length_ft}' ({fmtSqft(child.sqft)} sqft)</span
+								>
+							{/each}
+						</div>
 					{/if}
 				</div>
-				{#if Number(line.child_count) > 0 && wo.status !== 'COMPLETE'}
+				{#if wo.status !== 'COMPLETE'}
 					<button
 						type="button"
 						class="btn-secondary btn-sm"
@@ -125,7 +144,7 @@
 									>{fmtSqft(cd.sqft_scheduled)}</td
 								>
 								<td class="px-4 py-2 text-gray-600"
-									>{cd.run_date ? fmtDate(cd.run_date) : '—'}</td
+									>{cd.run_date ? fmtDate(cd.run_date) : '-'}</td
 								>
 								<td
 									class="px-4 py-2 text-right flex items-center justify-end gap-2"
