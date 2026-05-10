@@ -181,9 +181,8 @@
 					class="px-3 py-1 text-sm rounded {activeTab === 'billing'
 						? 'bg-gray-200 font-medium text-gray-800'
 						: 'text-gray-500 hover:text-gray-700'}"
-					onclick={() => (activeTab = 'billing')}
-				>
-					Billing / Unbranched
+					onclick={() => (activeTab = 'billing')}>
+					Billing
 					{#if hasStale}<span class="ml-1 text-amber-500">●</span>{/if}
 				</button>
 				{#if hasBranched}
@@ -224,7 +223,7 @@
 							(p) => p.parent_line_id === line.id
 						)}
 						<tr
-							class="border-b border-gray-100 {line.reconciliation_status === 'STALE'
+							class="align-top border-b border-gray-100 {line.reconciliation_status === 'STALE'
 								? 'bg-amber-50'
 								: ''}"
 						>
@@ -245,7 +244,7 @@
 											>{line.width_in}" → {children[0].width_in}"</span
 										>
 										{#each children.slice(1) as child (child.id)}
-											<span class="text-gray-400">→ {child.width_in}"</span>
+											<span class="text-gray-600">→ {child.width_in}"</span>
 										{/each}
 									</div>
 								{:else}
@@ -299,18 +298,23 @@
 			</table>
 		{:else}
 			<!-- Production lines grouped by billing parent -->
-			{#each billingLines as billing (billing.id)}
-				{@const children = productionLines.filter((p) => p.parent_line_id === billing.id)}
-				{#if children.length > 0}
-					<div
-						class="border-b border-gray-100 px-4 py-2 bg-gray-50 text-xs text-gray-500 font-medium"
-					>
-						Billing line: {billing.width_in}" × {billing.length_ft}' — {fmtSqft(
-							billing.sqft
-						)} sqft
-					</div>
+					
 					<table class="w-full text-sm">
 						<tbody>
+						{#each billingLines as billing (billing.id)}
+							{@const children = productionLines.filter((p) => p.parent_line_id === billing.id)}
+							{#if children.length > 0}
+							<tr>
+								<td colspan="8" class="px-4 py-2 text-sm text-gray-500 font-medium bg-gray-50">
+									<div
+										class="border-b border-gray-100 px-4 py-2 bg-gray-50 text-xs text-gray-500 font-medium"
+									>
+										{billing.thickness_in}" × {billing.width_in}" × {billing.length_ft}' — {fmtSqft(
+											billing.sqft
+										)} sqft
+									</div>
+								</td>
+							</tr>
 							{#each children as line (line.id)}
 								<tr class="border-b border-gray-100">
 									<td class="px-4 py-2 text-gray-500">{line.rollfor}</td>
@@ -350,10 +354,10 @@
 									{/if}
 								</tr>
 							{/each}
+							{/if}
+						{/each}
 						</tbody>
 					</table>
-				{/if}
-			{/each}
 		{/if}
 	</div>
 
