@@ -11,7 +11,11 @@
       "Bash(git commit *)",
       "Bash(npm ls *)",
       "Bash(npm install *)",
-      "Bash(npm audit *)"
+      "Bash(npm audit *)",
+      "Bash(mysql -u root -p pands)",
+      "Bash(git restore *)",
+      "Bash(git diff *)",
+      "write"
     ]
   },
   "hooks": {

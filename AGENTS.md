@@ -254,79 +254,75 @@ Edit `scripts/seed-skus.js` — add an entry with a unique `sku_code`, `thicknes
 <claude-mem-context>
 # Memory Context
 
-# [PandS] recent context, 2026-05-06 7:02pm CDT
+# [PandS] recent context, 2026-05-09 11:40pm CDT
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (15,557t read) | 753,903t work | 98% savings
+Stats: 50 obs (15,303t read) | 676,357t work | 98% savings
 
-### May 2, 2026
-S6 Refactor confirmation dialog patterns across three Svelte route files to standardize using HTML5 `&lt;dialog&gt;` elements instead of boolean state + conditional div overlays (May 2, 9:23 PM)
-S7 Standardize confirmation dialog patterns across Svelte route files by refactoring from boolean state + conditional div overlays to HTML5 `&lt;dialog&gt;` elements (May 2, 9:25 PM)
-S8 Create plan: show today's activities in inventory matrix "Current" dropdown view, above current inventory row, with future-row formatting (May 2, 9:29 PM)
-S9 User requested usage statistics (May 2, 9:44 PM)
-### May 3, 2026
-19 12:01a ✅ Removed Unproduce links from work order confirmation page
-23 12:02a 🟣 Implemented new unproduce page with date filtering and run selection
-24 " ✅ Removed individual run unproduce route; added admin button to production list header
-25 " ✅ Enhanced shortfall run creation to merge into existing open runs
-26 12:03a ✅ Optimized SQL query for eligible runs; moved calculations to database layer
-28 12:05a ✅ Fixed Svelte state initialization and cleaned up unused code
-S10 Continue from where left off: Review audit findings and implement 3 identified fixes for production unproduce, PO unreceive, and error handling (May 3, 12:11 AM)
-31 12:12a 🟣 Unproduce and unreceive operations with ledger-based reversals
-32 " 🔵 Code audit completed on 3-commit batch (unproduce, unreceive, ledger refactor)
-33 " ⚖️ Implementation plan created for 3 code fixes (deferred execution pending bash approval)
-34 12:23a 🔵 Code review identified 3 real issues and 1 false positive in recent changes
-S11 Summarize and commit review fixes for PO unreceive and unproduce features (May 3, 12:24 AM)
-35 12:29a 🔴 Disable unreceive button during submission to prevent double-submit
-36 " 🔴 Fix HTTP error code for unproduceRun server errors
-S12 Fix back navigation from confirm page - should return to production list, not work order detail (May 3, 12:30 AM)
-37 12:35a 🔵 Back navigation from confirm page broken
-38 " 🔵 Back links hardcoded to incorrect route
-S13 Review and verify code changes from overnight work; fix back navigation on confirm page (May 3, 12:35 AM)
-S14 Implement TDD in PandS project; write plan and understand current state (May 3, 12:36 AM)
-### May 4, 2026
-41 7:54p 🔵 Project has vitest test infrastructure already configured
-42 7:55p 🔵 Vitest test infrastructure configured but no tests exist yet
-43 7:59p 🔵 Ripgrep executable inaccessible on Windows after installation
-44 8:05p 🟣 TDD plan and initial purchasing service tests
-45 8:06p 🟣 Purchasing service tests verified and build passes
-46 8:07p ✅ TDD plan moved to project root for version control
-47 8:08p ✅ .gitignore refined to allow tracked docs/ files
-48 8:17p 🔵 Git index lock prevents staging files
-49 " ✅ TDD plan and purchasing tests staged for commit
-50 " ✅ TDD plan and purchasing tests committed
-51 8:19p 🟣 Expanded purchasing service test coverage
-### May 5, 2026
-52 7:41p 🟣 Test-Driven Development (TDD) implementation started
-53 " 🔵 Git index lock permission denied on staging
-54 7:42p 🟣 TDD test suite expanded to shipments list page loader
-55 7:44p 🟣 TDD coverage extended to receiving/purchase orders page loaders
-56 7:45p 🟣 TDD escalated to complex multi-query loaders with nested result attachment
-59 7:46p 🟣 TDD coverage expanded to sales order list loader with status filtering patterns
-65 7:47p 🟣 TDD applied to complex detail loaders with multi-query async orchestration
-68 7:49p ✅ Successfully committed SO detail test; WO routes show existing TDD coverage patterns
-76 7:50p 🟣 TDD extended to work order detail loader with creation flag parsing
-### May 6, 2026
-85 3:10p 🔵 Test coverage audit identified 5 missing backend unit tests
-S16 Identify missing test coverage across server-side route handlers, utilities, and services to complete test suite for PandS project (May 6, 3:37 PM)
-86 3:37p 🔵 PandS current landing page architecture and route structure
-87 4:00p 🟣 Activity hub landing page replaces calendar as default route
-88 4:01p 🟣 Landing page redesigned with card-based activity links and pastel colors
-89 4:18p ✅ Renamed Sell section to Customers on landing page
-90 4:42p 🟣 Add home navigation link to landing page
-91 4:44p 🟣 Redesign landing page with activity-grouped navigation
-92 " 🔵 Git index.lock permission denied on git add
-93 4:45p 🔵 Git commit blocked by persistent .git/index.lock permission issue
-94 5:06p 🟣 Activity landing page with card-based navigation
-95 6:29p 🔴 Escape key now works in search popup when input focused
-96 6:39p 🟣 Highlight unscheduled work order customer name in amber on matrix
-97 6:45p ⚖️ PO list formatting approach clarified
-98 " ⚖️ PO list design details clarified
-99 6:46p 🟣 Reusable dense-list CSS pattern created
-100 6:48p ✅ PO list page refactored to use dense-list CSS pattern
+### May 9, 2026
+191 3:49p ⚖️ WO detail lines table UI redesign: merge Type column into Width cell
+192 " ✅ Removed Type column header from WO lines table
+193 3:50p ✅ Removed Type data cells from billing/unbranched lines table
+194 " 🟣 Width cell redesigned to show branched cuts inline with badges
+195 " ✅ Fixed total row colspan after Type column removal
+196 3:54p 🔴 Fixed Svelte const tag invalid placement error in work order table
+197 4:00p 🔵 Unknown 'active' column in work order diff query
+198 " 🔴 Remove non-existent 'active' column filter from material_skus query
+199 4:34p ✅ Diff page UI refactored to compact billing/production display
+200 7:56p 🔴 Fixed HTML entity escaping in placeholder attributes on branch page
+201 7:57p ✅ Committed step 11: diff view layout and WO billing tab width display
+S48 Filter cutdown page to show only lines eligible for cut-down operations (May 9, 7:57 PM)
+202 8:38p ✅ Filter cutdown page to show only eligible lines
+S49 Filter cutdown page to show only lines eligible for cut-down (May 9, 8:39 PM)
+203 8:40p ✅ Add production lines query to cutdown page
+204 8:41p ✅ Add production lines to cutdown page UI with parent mapping
+205 " 🟣 Display production lines under each billing line in cutdown page
+206 " ✅ Remove redundant child_count check from button visibility
+S50 Commit step 12 (cutdown page with billing->production line display), then identify next layer (May 9, 8:41 PM)
+207 8:53p 🟣 Cutdown page billing and production line display
+S51 Update docs/cutdown/01_feature_spec.md to clarify user-facing terminology for line types (UNBRANCHED/BILLING/PRODUCTION) (May 9, 8:53 PM)
+S52 Update docs/cutdown/01_feature_spec.md with spec-level decisions from session (May 9, 9:01 PM)
+208 9:02p ✅ Added user-facing terminology clarification to feature spec
+S53 Update docs/cutdown/01_feature_spec.md to document spec-level decisions from session (May 9, 9:03 PM)
+209 9:03p ✅ Committed feature spec clarification to main branch
+S54 Clarification on sqft_scheduled semantics: planned raw source sqft may exceed billing line sqft due to raw roll count rounding up; need architectural decision on field meaning, consumption basis, and overage tracking. (May 9, 9:03 PM)
+210 9:09p 🔵 Cut-Down feature implemented across schema, services, and UI
+211 9:28p 🔄 Extracted cutdown line-path helpers into shared service
+214 10:26p ⚖️ Lookup table strategy for insulation product lengths
+215 10:36p 🔵 sqft_scheduled vs billing line sqft relationship clarified
+S55 Review plan and implement if 90% confident; implementation plan created for multi-file refactor involving migration, schema, seed data, service layer, and API routes (May 9, 10:36 PM)
+216 10:39p ⚖️ Raw roll lookup implementation plan for cut-down scheduling
+217 10:40p 🔵 Current cut-down scheduling UI and API accept manual roll counts
+218 " 🔵 Project uses numbered migration files for schema changes
+219 " 🔵 Confirmation flow collects actual rolls/sqft and scrap disposition
+S56 Review and implement cut-down scheduling refactor: replace manual rolls input with vendor-driven auto-calculation and fix WIP allocation to prorate usable output sqft instead of raw source sqft. (May 9, 10:44 PM)
+220 10:46p 🟣 Raw Roll Lookup Migration Created
+221 10:47p ✅ Schema Updated with Raw Roll Lookup Table
+222 " ✅ cut_downs Table Extended with Raw Roll Tracking
+223 " ✅ cut_downs Foreign Key Constraint Added
+224 " ✅ Seed Data Updated with R-Value Mappings
+225 10:48p 🟣 Raw Roll Lookup Seeding Added to Seed Script
+226 " 🔄 Cut-down Service Refactored for Raw Roll Auto-Calculation
+227 " 🔄 Group Cut-down Scheduling Updated for Raw Roll Auto-Calculation
+228 10:52p 🔴 Cut-down WIP allocation now uses usable output sqft instead of raw source sqft
+229 " ✅ Raw roll lookup data added to cut-down page load
+230 " ✅ Cut-down scheduling action signature updated to use vendor parameter
+231 " ✅ Added inline documentation for scheduleCutDownGroup items format
+232 " 🟣 UI now supports vendor selection with roll preview calculations
+233 " 🟣 Cut-down scheduling form redesigned with vendor selection and roll preview
+234 10:53p ✅ Cut-down confirmation page preview now uses billing line sqft (usable output)
+235 10:57p 🔵 Svelte {@const} tag placement violation in cutdown route
+S57 Fix Svelte compilation error: {@const} tag invalid placement in cutdown page (May 9, 10:57 PM)
+236 11:01p 🟣 Raw roll lookup system for cut-down scheduling
+237 11:02p 🔵 Lint error: missing key on roll preview each block
+238 11:13p ⚖️ Cut-down overage and source rolls simplification
+239 11:14p 🟣 Cut-down overage and field refactoring implemented
+242 11:26p ⚖️ Cut-down duplicate policy: Block duplicates
+243 11:30p 🟣 Duplicate and blocking validation for cut-down group scheduling
+244 11:32p 🟣 Database schema migration for raw roll lookup completed
 
-Access 754k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 676k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

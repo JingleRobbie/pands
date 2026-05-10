@@ -303,6 +303,15 @@ export async function scheduleCutDownGroup(woId, items, runDate, userId) {
 	try {
 		await conn.beginTransaction();
 
+		const seenBillingLineIds = new Set();
+		for (const { billingLineId } of items) {
+			const normalizedId = Number(billingLineId);
+			if (seenBillingLineIds.has(normalizedId)) {
+				throw new Error(`Line ${billingLineId} was selected more than once.`);
+			}
+			seenBillingLineIds.add(normalizedId);
+		}
+
 		// Validate all billing lines belong to this WO
 		for (const { billingLineId } of items) {
 			const [[line]] = await conn.query('SELECT wo_id FROM work_order_lines WHERE id = ?', [
@@ -310,6 +319,16 @@ export async function scheduleCutDownGroup(woId, items, runDate, userId) {
 			]);
 			if (!line || Number(line.wo_id) !== Number(woId))
 				throw new Error(`Line ${billingLineId} does not belong to WO ${woId}.`);
+
+			const [[existing]] = await conn.query(
+				"SELECT id FROM cut_downs WHERE billing_line_id = ? AND status != 'COMPLETED' LIMIT 1",
+				[billingLineId]
+			);
+			if (existing) {
+				throw new Error(
+					`An active cut-down already exists for line ${billingLineId}. Delete it first.`
+				);
+			}
 		}
 
 		const [{ insertId: groupId }] = await conn.query(
