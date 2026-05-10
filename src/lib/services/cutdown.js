@@ -7,6 +7,24 @@ function calcSqft(line, rolls) {
 	return Math.round(Number(rolls) * (Number(line.width_in) / 12) * Number(line.length_ft));
 }
 
+function calcRawRollSqft(cutDown, rolls) {
+	if (!cutDown.raw_roll_width_in || !cutDown.raw_roll_length_ft) {
+		throw new Error('Cut-down is missing raw roll dimensions.');
+	}
+	return Math.round(
+		Number(rolls) *
+			(Number(cutDown.raw_roll_width_in) / 12) *
+			Number(cutDown.raw_roll_length_ft)
+	);
+}
+
+function calcScheduledRawRolls(line, lookup) {
+	const sqftPerRoll = (Number(lookup.width_in) / 12) * Number(lookup.roll_length_ft);
+	const rollsScheduled = Math.ceil(Number(line.sqft) / sqftPerRoll);
+	const sqftScheduled = Math.round(rollsScheduled * sqftPerRoll);
+	return { rollsScheduled, sqftScheduled };
+}
+
 async function nextCutDownNumber(conn) {
 	const [[{ last }]] = await conn.query(
 		"SELECT MAX(cut_down_number) AS last FROM cut_downs WHERE cut_down_number LIKE 'CD-%'"
@@ -173,6 +191,21 @@ async function getCutDownWipBalance(conn, cutDownId) {
 	return Number(balance);
 }
 
+async function findRawRollLookup(conn, line, vendorName) {
+	const [[lookup]] = await conn.query(
+		`SELECT rrl.*
+		 FROM raw_roll_lookup rrl
+		 JOIN material_skus ms ON ms.id = ?
+		 WHERE rrl.vendor = ?
+		   AND rrl.r_value = ms.r_value
+		   AND rrl.thickness_in = ?
+		   AND rrl.width_in = ?
+		 LIMIT 1`,
+		[line.sku_id, vendorName, line.thickness_in, line.width_in]
+	);
+	return lookup;
+}
+
 function validateCutDownConfirmable(cutDown, rollsActual) {
 	if (!cutDown) throw new Error('Cut-down not found.');
 	if (cutDown.status === 'COMPLETED') throw new Error('Cut-down is already completed.');
@@ -193,7 +226,7 @@ async function markBillingLineStale(conn, billingLineId) {
 
 // ─── Cut-down scheduling ───────────────────────────────────────────────────────
 
-export async function scheduleCutDown(billingLineId, rollsScheduled, runDate, userId) {
+export async function scheduleCutDown(billingLineId, vendor, runDate, userId) {
 	const conn = await db.getConnection();
 	try {
 		await conn.beginTransaction();
@@ -213,31 +246,21 @@ export async function scheduleCutDown(billingLineId, rollsScheduled, runDate, us
 		if (Number(childCount) === 0)
 			throw new Error('Line must be branched before scheduling a cut-down.');
 
-		if (!rollsScheduled || rollsScheduled <= 0)
-			throw new Error('Rolls scheduled must be greater than zero.');
-
-		const sqftScheduled = calcSqft(line, rollsScheduled);
-
-		// Merge into existing non-completed cut-down for same date if one exists
 		const [[existing]] = await conn.query(
-			`SELECT id FROM cut_downs
-			 WHERE billing_line_id = ? AND status != 'COMPLETED'
-			   AND (run_date = ? OR (run_date IS NULL AND ? IS NULL))
-			 LIMIT 1`,
-			[billingLineId, runDate ?? null, runDate ?? null]
+			"SELECT id FROM cut_downs WHERE billing_line_id = ? AND status != 'COMPLETED' LIMIT 1",
+			[billingLineId]
 		);
+		if (existing)
+			throw new Error('An active cut-down already exists for this line. Delete it first.');
 
-		if (existing) {
-			await conn.query(
-				`UPDATE cut_downs
-				 SET rolls_scheduled = rolls_scheduled + ?,
-				     sqft_scheduled  = sqft_scheduled  + ?
-				 WHERE id = ?`,
-				[rollsScheduled, sqftScheduled, existing.id]
+		const vendorName = vendor === 'CT' ? 'Certainteed' : 'Johns Manville';
+		const lookup = await findRawRollLookup(conn, line, vendorName);
+		if (!lookup)
+			throw new Error(
+				`No raw roll data for ${line.thickness_in}"×${line.width_in}" (${vendorName}). Contact admin.`
 			);
-			await conn.commit();
-			return null;
-		}
+
+		const { rollsScheduled, sqftScheduled } = calcScheduledRawRolls(line, lookup);
 
 		const cutDownNumber = await nextCutDownNumber(conn);
 		const status = runDate ? 'SCHEDULED' : 'UNSCHEDULED';
@@ -245,8 +268,9 @@ export async function scheduleCutDown(billingLineId, rollsScheduled, runDate, us
 		await conn.query(
 			`INSERT INTO cut_downs
 			 (cut_down_number, wo_id, billing_line_id, sku_id, run_date, status,
-			  rolls_scheduled, sqft_scheduled, created_by)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			  rolls_scheduled, raw_roll_lookup_id, raw_vendor, raw_roll_length_ft, raw_roll_width_in,
+			  sqft_scheduled, created_by)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			[
 				cutDownNumber,
 				line.wo_id,
@@ -255,6 +279,10 @@ export async function scheduleCutDown(billingLineId, rollsScheduled, runDate, us
 				runDate ?? null,
 				status,
 				rollsScheduled,
+				lookup.id,
+				vendorName,
+				lookup.roll_length_ft,
+				lookup.width_in,
 				sqftScheduled,
 				userId ?? null,
 			]
@@ -289,20 +317,27 @@ export async function scheduleCutDownGroup(woId, items, runDate, userId) {
 			[woId, userId ?? null]
 		);
 
-		for (const { billingLineId, rollsScheduled } of items) {
+		for (const { billingLineId, vendor } of items) {
 			const [[line]] = await conn.query(
 				'SELECT * FROM work_order_lines WHERE id = ? FOR UPDATE',
 				[billingLineId]
 			);
-			const sqftScheduled = calcSqft(line, rollsScheduled);
+			const vendorName = vendor === 'CT' ? 'Certainteed' : 'Johns Manville';
+			const lookup = await findRawRollLookup(conn, line, vendorName);
+			if (!lookup)
+				throw new Error(
+					`No raw roll data for ${line.thickness_in}"×${line.width_in}" (${vendorName}).`
+				);
+			const { rollsScheduled, sqftScheduled } = calcScheduledRawRolls(line, lookup);
 			const cutDownNumber = await nextCutDownNumber(conn);
 			const status = runDate ? 'SCHEDULED' : 'UNSCHEDULED';
 
 			await conn.query(
 				`INSERT INTO cut_downs
 				 (cut_down_number, group_id, wo_id, billing_line_id, sku_id, run_date, status,
-				  rolls_scheduled, sqft_scheduled, created_by)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				  rolls_scheduled, raw_roll_lookup_id, raw_vendor, raw_roll_length_ft, raw_roll_width_in,
+				  sqft_scheduled, created_by)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 				[
 					cutDownNumber,
 					groupId,
@@ -312,6 +347,10 @@ export async function scheduleCutDownGroup(woId, items, runDate, userId) {
 					runDate ?? null,
 					status,
 					rollsScheduled,
+					lookup.id,
+					vendorName,
+					lookup.roll_length_ft,
+					lookup.width_in,
 					sqftScheduled,
 					userId ?? null,
 				]
@@ -335,7 +374,6 @@ export async function confirmCutDown(
 	rollsActual,
 	sqftActualOverride,
 	wasteActual,
-	sourceRollCount,
 	scrapDisposition,
 	operatorNotes,
 	userId
@@ -357,7 +395,7 @@ export async function confirmCutDown(
 			[cutDown.billing_line_id]
 		);
 
-		const sqftActual = sqftActualOverride ?? calcSqft(billingLine, rollsActual);
+		const sqftActual = sqftActualOverride ?? calcRawRollSqft(cutDown, rollsActual);
 
 		// Write inventory CONSUMPTION for the source SKU
 		await conn.query(
@@ -373,20 +411,27 @@ export async function confirmCutDown(
 			]
 		);
 
-		// Write WIP CUT_IN entries — one per production child
+		// Write WIP CUT_IN entries — prorate billing line sqft (usable output), not raw source sqft
 		const [productionLines] = await conn.query(
 			'SELECT * FROM work_order_lines WHERE parent_line_id = ?',
 			[cutDown.billing_line_id]
 		);
 
+		const usableOutputSqft = Number(billingLine.sqft);
 		const totalChildWidth = productionLines.reduce((s, l) => s + Number(l.width_in), 0);
+		let allocatedSqft = 0;
 
-		for (const prodLine of productionLines) {
-			const ratio =
-				totalChildWidth > 0
-					? Number(prodLine.width_in) / totalChildWidth
-					: 1 / productionLines.length;
-			const proratedSqft = Math.round(sqftActual * ratio);
+		for (let i = 0; i < productionLines.length; i++) {
+			const prodLine = productionLines[i];
+			const isLast = i === productionLines.length - 1;
+			const proratedSqft = isLast
+				? usableOutputSqft - allocatedSqft
+				: Math.round(
+						totalChildWidth > 0
+							? (Number(prodLine.width_in) / totalChildWidth) * usableOutputSqft
+							: usableOutputSqft / productionLines.length
+					);
+			allocatedSqft += proratedSqft;
 			await insertWipLedgerEntry(conn, {
 				transactionType: 'CUT_IN',
 				cutDownId,
@@ -398,15 +443,20 @@ export async function confirmCutDown(
 			});
 		}
 
-		// Handle scrap disposition
-		const usedSqft = productionLines.reduce((s, l) => {
-			const ratio =
-				totalChildWidth > 0
-					? Number(l.width_in) / totalChildWidth
-					: 1 / productionLines.length;
-			return s + Math.round(sqftActual * ratio);
-		}, 0);
-		const scrapSqft = sqftActual - usedSqft;
+		// Scrap = raw source consumed minus usable cut output (raw roll overage)
+		const scrapSqft = sqftActual - usableOutputSqft;
+
+		if (scrapSqft > 0) {
+			await insertWipLedgerEntry(conn, {
+				transactionType: 'SCRAP',
+				cutDownId,
+				woLineId: null,
+				widthIn: billingLine.width_in,
+				sqftQuantity: scrapSqft,
+				memo: `Cut-down ${cutDown.cut_down_number} — scrap saved`,
+				userId,
+			});
+		}
 
 		if (scrapDisposition === 'DISCARDED' && scrapSqft > 0) {
 			await insertWipLedgerEntry(conn, {
@@ -423,14 +473,13 @@ export async function confirmCutDown(
 		await conn.query(
 			`UPDATE cut_downs
 			 SET rolls_actual = ?, sqft_actual = ?, waste_sqft_actual = ?,
-			     source_roll_count = ?, scrap_disposition = ?, operator_notes = ?,
+			     scrap_disposition = ?, operator_notes = ?,
 			     status = 'COMPLETED', confirmed_at = NOW(), confirmed_by = ?
 			 WHERE id = ?`,
 			[
 				rollsActual,
 				sqftActual,
 				wasteActual ?? null,
-				sourceRollCount ?? null,
 				scrapDisposition ?? null,
 				operatorNotes ?? null,
 				userId ?? null,
@@ -746,3 +795,8 @@ export async function splitBillingLine(billingLineId, newLines, _userId) {
 		conn.release();
 	}
 }
+
+export const __cutdownTest = {
+	calcRawRollSqft,
+	calcScheduledRawRolls,
+};

@@ -155,16 +155,6 @@
 							class="form-input"
 						/>
 					</div>
-					<div>
-						<label for="sourceRollCount" class="form-label">Source Rolls Used</label>
-						<input
-							id="sourceRollCount"
-							name="sourceRollCount"
-							type="number"
-							min="1"
-							class="form-input"
-						/>
-					</div>
 				</div>
 
 				<div>

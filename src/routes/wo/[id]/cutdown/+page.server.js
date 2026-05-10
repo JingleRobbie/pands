@@ -8,7 +8,7 @@ export async function load({ params }) {
 	if (!wo) error(404, 'Work order not found');
 
 	const [billingLines] = await db.query(
-		`SELECT wol.*, ms.display_label,
+		`SELECT wol.*, ms.display_label, ms.r_value,
 		        (SELECT COUNT(*) FROM work_order_lines c WHERE c.parent_line_id = wol.id) AS child_count
 		 FROM work_order_lines wol
 		 JOIN material_skus ms ON ms.id = wol.sku_id
@@ -38,7 +38,11 @@ export async function load({ params }) {
 		[params.id]
 	);
 
-	return { wo, billingLines, productionLines, cutDowns };
+	const [rawRollLookups] = await db.query(
+		'SELECT * FROM raw_roll_lookup ORDER BY thickness_in, width_in, vendor'
+	);
+
+	return { wo, billingLines, productionLines, cutDowns, rawRollLookups };
 }
 
 export const actions = {
@@ -46,13 +50,11 @@ export const actions = {
 		requireAdmin(locals);
 		const data = await request.formData();
 		const billingLineId = parseInt(data.get('billingLineId'));
-		const rollsScheduled = parseInt(data.get('rollsScheduled'));
+		const vendor = data.get('vendor') || 'JM';
 		const runDate = data.get('runDate') || null;
 		if (!billingLineId) return fail(400, { error: 'Billing line is required.' });
-		if (!rollsScheduled || rollsScheduled < 1)
-			return fail(400, { error: 'Rolls must be ≥ 1.' });
 		try {
-			await scheduleCutDown(billingLineId, rollsScheduled, runDate, locals.appUser.id);
+			await scheduleCutDown(billingLineId, vendor, runDate, locals.appUser.id);
 		} catch (err) {
 			return fail(400, { error: err.message });
 		}
@@ -64,7 +66,7 @@ export const actions = {
 		const data = await request.formData();
 		const runDate = data.get('runDate') || null;
 		const rawItems = data.get('items');
-		let items;
+		let items; // expected: [{ billingLineId, vendor }]
 		try {
 			items = JSON.parse(rawItems);
 		} catch {

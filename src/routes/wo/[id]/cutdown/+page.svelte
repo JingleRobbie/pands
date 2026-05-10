@@ -2,9 +2,36 @@
 	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { wo, billingLines, productionLines, cutDowns } = $derived(data);
+	const { wo, billingLines, productionLines, cutDowns, rawRollLookups } = $derived(data);
 
 	let showScheduleFor = $state(null);
+	let vendorFor = $state({});
+
+	const lookupMap = $derived(
+		(rawRollLookups ?? []).reduce((m, r) => {
+			const v = r.vendor === 'Johns Manville' ? 'JM' : 'CT';
+			m[`${r.r_value}_${r.thickness_in}_${r.width_in}_${v}`] = r;
+			return m;
+		}, {})
+	);
+
+	function getVendor(lineId) {
+		return vendorFor[lineId] ?? 'JM';
+	}
+
+	function setVendor(lineId, v) {
+		vendorFor = { ...vendorFor, [lineId]: v };
+	}
+
+	function getRollPreview(line, vendor) {
+		const key = `${line.r_value}_${line.thickness_in}_${line.width_in}_${vendor}`;
+		const lookup = lookupMap[key];
+		if (!lookup) return null;
+		const sqftPerRoll = (lookup.width_in / 12) * lookup.roll_length_ft;
+		const rolls = Math.ceil(line.sqft / sqftPerRoll);
+		const sqft = Math.round(rolls * sqftPerRoll);
+		return { rolls, sqft, rollLengthFt: lookup.roll_length_ft };
+	}
 
 	const cutDownsByLine = $derived(
 		cutDowns.reduce((map, cd) => {
@@ -85,28 +112,77 @@
 				<form
 					method="POST"
 					action="?/scheduleCutDown"
-					use:enhance={{ onResult: () => (showScheduleFor = null) }}
-					class="card-body border-b border-gray-100 grid grid-cols-3 gap-3 text-sm"
+					use:enhance={{
+						onResult: () => {
+							showScheduleFor = null;
+							vendorFor = { ...vendorFor, [line.id]: undefined };
+						},
+					}}
+					class="card-body border-b border-gray-100 space-y-3 text-sm"
 				>
 					<input type="hidden" name="billingLineId" value={line.id} />
-					<div>
-						<label for="rolls-{line.id}" class="form-label">Rolls *</label>
-						<input
-							id="rolls-{line.id}"
-							name="rollsScheduled"
-							type="number"
-							min="1"
-							class="form-input"
-							required
-						/>
+					<div class="grid grid-cols-3 gap-3">
+						<div>
+							<span class="form-label">Vendor *</span>
+							<div class="flex gap-4 mt-1">
+								<label class="flex items-center gap-1.5 cursor-pointer">
+									<input
+										type="radio"
+										name="vendor"
+										value="JM"
+										checked={getVendor(line.id) === 'JM'}
+										onchange={() => setVendor(line.id, 'JM')}
+									/>
+									<span>Johns Manville</span>
+								</label>
+								<label class="flex items-center gap-1.5 cursor-pointer">
+									<input
+										type="radio"
+										name="vendor"
+										value="CT"
+										checked={getVendor(line.id) === 'CT'}
+										onchange={() => setVendor(line.id, 'CT')}
+									/>
+									<span>Certainteed</span>
+								</label>
+							</div>
+							{#if getVendor(line.id) === 'CT'}
+								<p class="text-amber-600 text-xs mt-1">
+									Vendor mixing discouraged.
+								</p>
+							{/if}
+						</div>
+						<div>
+							<label for="date-{line.id}" class="form-label">Run Date</label>
+							<input
+								id="date-{line.id}"
+								name="runDate"
+								type="date"
+								class="form-input"
+							/>
+						</div>
+						<div class="flex items-end">
+							<button type="submit" class="btn-primary btn-sm">Schedule</button>
+						</div>
 					</div>
-					<div>
-						<label for="date-{line.id}" class="form-label">Run Date</label>
-						<input id="date-{line.id}" name="runDate" type="date" class="form-input" />
-					</div>
-					<div class="flex items-end">
-						<button type="submit" class="btn-primary btn-sm">Schedule</button>
-					</div>
+					{#each [getRollPreview(line, getVendor(line.id))] as preview (preview ? `${line.id}-${preview.rollLengthFt}` : `${line.id}-missing`)}
+						{#if preview}
+							<p class="text-gray-500 text-xs">
+								→ {preview.rolls} rolls × {preview.rollLengthFt} ft = {fmtSqft(
+									preview.sqft
+								)} sqft source
+								{#if preview.sqft > line.sqft}
+									<span class="text-amber-600"
+										>({fmtSqft(preview.sqft - line.sqft)} sqft overage)</span
+									>
+								{/if}
+							</p>
+						{:else}
+							<p class="text-red-500 text-xs">
+								No lookup data for this SKU + vendor. Contact admin.
+							</p>
+						{/if}
+					{/each}
 				</form>
 			{/if}
 

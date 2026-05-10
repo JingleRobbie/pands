@@ -25,15 +25,21 @@ export async function load({ params }) {
 		[cutDown.billing_line_id]
 	);
 
-	// Preview of WIP CUT_IN entries that will be written on confirmation
+	// Preview of WIP CUT_IN entries — prorates billing line sqft (usable output), not raw source
+	const usableOutputSqft = Number(billingLine.sqft);
 	const totalChildWidth = productionLines.reduce((s, l) => s + Number(l.width_in), 0);
-	const wipPreview = productionLines.map((l) => {
-		const ratio =
-			totalChildWidth > 0 ? Number(l.width_in) / totalChildWidth : 1 / productionLines.length;
-		return {
-			...l,
-			estimatedSqft: Math.round((cutDown.sqft_scheduled ?? 0) * ratio),
-		};
+	let allocatedSqft = 0;
+	const wipPreview = productionLines.map((l, i) => {
+		const isLast = i === productionLines.length - 1;
+		const estimatedSqft = isLast
+			? usableOutputSqft - allocatedSqft
+			: Math.round(
+					totalChildWidth > 0
+						? (Number(l.width_in) / totalChildWidth) * usableOutputSqft
+						: usableOutputSqft / productionLines.length
+				);
+		allocatedSqft += estimatedSqft;
+		return { ...l, estimatedSqft };
 	});
 
 	return { wo, cutDown, billingLine, productionLines, wipPreview };
@@ -47,9 +53,6 @@ export const actions = {
 		const rollsActual = parseInt(data.get('rollsActual'));
 		const sqftActual = data.get('sqftActual') ? parseInt(data.get('sqftActual')) : null;
 		const wasteActual = data.get('wasteActual') ? parseInt(data.get('wasteActual')) : null;
-		const sourceRollCount = data.get('sourceRollCount')
-			? parseInt(data.get('sourceRollCount'))
-			: null;
 		const scrapDisposition = data.get('scrapDisposition') || null;
 		const operatorNotes = data.get('operatorNotes') || null;
 
@@ -63,7 +66,6 @@ export const actions = {
 				rollsActual,
 				sqftActual,
 				wasteActual,
-				sourceRollCount,
 				scrapDisposition,
 				operatorNotes,
 				locals.appUser.id

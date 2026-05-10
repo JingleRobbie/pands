@@ -20,9 +20,20 @@ CREATE TABLE IF NOT EXISTS material_skus (
   sku_code      VARCHAR(20) UNIQUE NOT NULL,
   thickness_in  DECIMAL(2,1) NOT NULL,
   width_in      INT NOT NULL,
+  r_value       VARCHAR(10) NULL,
   display_label VARCHAR(30) NOT NULL,
   sort_order    INT DEFAULT 0,
   is_active     BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS raw_roll_lookup (
+  id             INT AUTO_INCREMENT PRIMARY KEY,
+  vendor         ENUM('Johns Manville','Certainteed') NOT NULL,
+  r_value        VARCHAR(10) NOT NULL,
+  thickness_in   DECIMAL(2,1) NOT NULL,
+  width_in       INT NOT NULL,
+  roll_length_ft INT NOT NULL,
+  UNIQUE KEY uq_raw_roll (vendor, r_value, thickness_in, width_in)
 );
 
 CREATE TABLE IF NOT EXISTS customers (
@@ -185,6 +196,10 @@ CREATE TABLE IF NOT EXISTS cut_downs (
   run_date          DATE NULL,
   status            ENUM('UNSCHEDULED','SCHEDULED','COMPLETED') NOT NULL DEFAULT 'UNSCHEDULED',
   rolls_scheduled   INT NOT NULL DEFAULT 0,
+  raw_roll_lookup_id INT NULL,
+  raw_vendor        ENUM('Johns Manville','Certainteed') NULL,
+  raw_roll_length_ft INT NULL,
+  raw_roll_width_in  INT NULL,
   sqft_scheduled    INT NOT NULL DEFAULT 0,
   rolls_actual      INT NULL,
   sqft_actual       INT NULL,
@@ -201,7 +216,8 @@ CREATE TABLE IF NOT EXISTS cut_downs (
   CONSTRAINT fk_cd_billing_line FOREIGN KEY (billing_line_id) REFERENCES work_order_lines(id),
   CONSTRAINT fk_cd_sku FOREIGN KEY (sku_id) REFERENCES material_skus(id),
   CONSTRAINT fk_cd_confirmed_by FOREIGN KEY (confirmed_by) REFERENCES app_users(id),
-  CONSTRAINT fk_cd_created_by FOREIGN KEY (created_by) REFERENCES app_users(id)
+  CONSTRAINT fk_cd_created_by FOREIGN KEY (created_by) REFERENCES app_users(id),
+  CONSTRAINT fk_cd_raw_roll FOREIGN KEY (raw_roll_lookup_id) REFERENCES raw_roll_lookup(id)
 );
 
 CREATE INDEX idx_cd_wo ON cut_downs(wo_id);
