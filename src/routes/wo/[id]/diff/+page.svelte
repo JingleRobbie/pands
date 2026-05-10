@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { wo, diffRows, skus } = $derived(data);
+	// const { wo, diffRows, skus } = $derived(data);
 
 	let expandedSplit = $state(null); // billingLineId of open split form
 	let splitLines = $state([{ skuId: '', widthIn: '', qty: '', lengthFt: '' }]);
@@ -23,12 +23,14 @@
 	};
 </script>
 
-<svelte:head><title>Diff — WO {wo.so_number} — PandS</title></svelte:head>
+<svelte:head><title>Diff - WO {data.wo.so_number} - PandS</title></svelte:head>
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
-	<a href="/wo/{wo.id}" class="text-gray-400 hover:text-gray-600 text-sm">← WO {wo.so_number}</a>
+	<a href="/wo/{data.wo.id}" class="text-gray-400 hover:text-gray-600 text-sm"
+		>← WO {data.wo.so_number}</a
+	>
 	<h1 class="text-lg font-semibold text-gray-900">Billing / Production Diff</h1>
-	{#if diffRows.some((r) => r.needsReconciliation)}
+	{#if data.diffRows.some((r) => r.needsReconciliation)}
 		<span class="badge-amber">Stale lines need reconciliation</span>
 	{/if}
 </header>
@@ -40,95 +42,134 @@
 		</div>
 	{/if}
 
-	{#each diffRows as row (row.billingLine.id)}
+	<div>
+		<div class="grid grid-cols-2 divide-x-4 divide-gray-100 text-sm">
+			<!-- Billing column -->
+			<div class="py-0 px-1">
+				<table class="w-full text-xs">
+					<tbody>
+						<tr class="border-t border-gray-50">
+							<td class="py-0"
+								><p
+									class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2"
+								>
+									Billing
+								</p></td
+							>
+							<td class="text-right py-0"
+								><p
+									class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2"
+								>
+									Sq Ft
+								</p></td
+							>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="py-0 px-1">
+				<table class="w-full text-xs">
+					<tbody>
+						<tr class="border-t border-gray-50">
+							<td class="py-0"
+								><p
+									class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2"
+								>
+									Production
+								</p></td
+							>
+							<td class="text-right py-0"
+								><p
+									class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2"
+								>
+									Sq Ft
+								</p></td
+							>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	{#each data.diffRows as row (row.billingLine.id)}
 		{@const bl = row.billingLine}
 		{@const isSuperseded = bl.reconciliation_status === 'SUPERSEDED'}
 
 		<div class="card {row.needsReconciliation ? 'border-amber-300' : ''}">
 			<!-- Row header -->
-			<div
-				class="card-header flex items-center justify-between {row.needsReconciliation
-					? 'bg-amber-50'
-					: ''}"
-			>
-				<div class="flex items-center gap-2 text-sm">
-					<span class="font-semibold text-gray-700">
-						{bl.display_label} — {bl.width_in}" × {bl.length_ft}' — {fmtSqft(bl.sqft)} sqft
-					</span>
-					<span class={statusBadge[bl.reconciliation_status] ?? 'badge-gray'}>
-						{bl.reconciliation_status}
-					</span>
-					{#if row.isUnbranched}
-						<span class="badge-gray">Unbranched</span>
-					{/if}
+			<!-- <div class="flex items-center gap-2 text-sm">
 					{#if row.cutDown}
 						<span class="text-xs text-gray-400">
 							Cut-down: {row.cutDown.status}
 							{#if row.cutDown.confirmed_at}· {fmtDate(row.cutDown.confirmed_at)}{/if}
 						</span>
 					{/if}
-				</div>
-			</div>
+				</div> -->
 
 			{#if isSuperseded}
 				<div class="card-body text-sm text-gray-400 italic">
-					Superseded — replaced by new billing lines below.
+					Superseded - replaced by new billing lines below.
 				</div>
 			{:else}
 				<!-- Side-by-side: billing left, production right -->
-				<div class="grid grid-cols-2 divide-x divide-gray-100 text-sm">
+				<div
+					class="grid grid-cols-2 divide-x-4 {row.isUnbranched
+						? 'divide-gray-100'
+						: 'divide-red-100'} text-sm"
+				>
 					<!-- Billing column -->
-					<div class="p-4 space-y-1">
-						<p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
-							Billing
-						</p>
-						<p><span class="text-gray-500">SKU:</span> {bl.display_label}</p>
-						<p>
-							<span class="text-gray-500">Width:</span>
-							<span class="font-mono">{bl.width_in}"</span>
-						</p>
-						<p><span class="text-gray-500">Qty:</span> {bl.qty} rolls</p>
-						<p>
-							<span class="text-gray-500">Length:</span>
-							<span class="font-mono">{bl.length_ft}'</span>
-						</p>
-						<p>
-							<span class="text-gray-500">Sqft:</span>
-							<span class="font-mono">{fmtSqft(bl.sqft)}</span>
-						</p>
+					<div class="py-0 px-1">
+						<!-- <span class={statusBadge[bl.reconciliation_status] ?? 'badge-gray'}>
+								{bl.reconciliation_status}
+							</span>
+							{#if row.cutDown}
+								<span class="text-xs text-gray-400">
+									Cut-down: {row.cutDown.status}
+									{#if row.cutDown.confirmed_at}· {fmtDate(row.cutDown.confirmed_at)}{/if}
+								</span>
+							{/if} -->
+						<table class="w-full text-xs">
+							<tbody>
+								<tr class="border-t border-gray-50">
+									<td class="font-mono py-1 text-xs"
+										>{bl.facing}
+										{bl.tab_type}
+										{bl.thickness_in}" × {bl.width_in}" × {bl.length_ft}'</td
+									>
+									<td class="text-right font-mono py-1">{fmtSqft(bl.sqft)}</td>
+								</tr>
+							</tbody>
+						</table>
 					</div>
 
 					<!-- Production column -->
-					<div class="p-4">
-						<p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
-							Production {row.isUnbranched
-								? '(same — unbranched)'
-								: `(${row.productionLines.length} lines)`}
-						</p>
+					<div class="py-0 px-1">
 						{#if row.isUnbranched}
-							<p class="text-gray-400 italic text-xs">
-								No production lines — ships direct from inventory.
-							</p>
+							<table class="w-full text-xs">
+								<tbody>
+									<tr class="border-t border-gray-50">
+										<td class="font-mono py-1 text-xs"
+											>{bl.facing}
+											{bl.tab_type}
+											{bl.thickness_in}" × {bl.width_in}" × {bl.length_ft}'</td
+										>
+										<td class="text-right font-mono py-1">{fmtSqft(bl.sqft)}</td
+										>
+									</tr>
+								</tbody>
+							</table>
 						{:else}
 							<table class="w-full text-xs">
-								<thead>
-									<tr class="text-gray-400">
-										<th class="text-left pb-1">Width</th>
-										<th class="text-right pb-1">Qty</th>
-										<th class="text-right pb-1">Sqft</th>
-										<th class="text-left pb-1 pl-2">Path</th>
-									</tr>
-								</thead>
 								<tbody>
 									{#each row.productionLines as pl (pl.id)}
 										<tr class="border-t border-gray-50">
-											<td class="font-mono py-1">{pl.width_in}"</td>
-											<td class="text-right py-1">{pl.qty}</td>
+											<td class="font-mono py-1 text-xs"
+												>{bl.facing}
+												{bl.tab_type}
+												{bl.thickness_in}" × {pl.width_in}" × {bl.length_ft}'</td
+											>
 											<td class="text-right font-mono py-1"
 												>{fmtSqft(pl.sqft)}</td
-											>
-											<td class="pl-2 py-1 text-gray-400"
-												>{pl.path_type ?? '—'}</td
 											>
 										</tr>
 									{/each}
@@ -159,8 +200,8 @@
 									name="newSkuId"
 									class="form-select text-sm py-1"
 								>
-									<option value="">— unchanged —</option>
-									{#each skus as sku (sku.id)}
+									<option value="">- unchanged -</option>
+									{#each data.skus as sku (sku.id)}
 										<option value={sku.id} selected={sku.id === bl.sku_id}
 											>{sku.display_label}</option
 										>
@@ -231,15 +272,15 @@
 											bind:value={sl.skuId}
 											class="form-select text-xs py-1 w-40"
 										>
-											<option value="">— SKU —</option>
-											{#each skus as sku (sku.id)}
+											<option value="">- SKU -</option>
+											{#each data.skus as sku (sku.id)}
 												<option value={sku.id}>{sku.display_label}</option>
 											{/each}
 										</select>
 										<input
 											type="number"
 											step="0.5"
-											placeholder="Width""
+											placeholder="Width"
 											bind:value={sl.widthIn}
 											class="form-input w-20 text-xs py-1"
 										/>
@@ -297,8 +338,7 @@
 			{/if}
 		</div>
 	{/each}
-
-	{#if diffRows.length === 0}
+	{#if data.diffRows.length === 0}
 		<div class="card card-body text-sm text-gray-400">No lines on this work order.</div>
 	{/if}
 </main>

@@ -117,7 +117,7 @@
 						type="number"
 						step="0.5"
 						min="0.5"
-						placeholder="Width ""
+						placeholder="Width &quot;"
 						class="form-input w-28"
 						bind:value={shortcutWidth}
 					/>
@@ -154,7 +154,7 @@
 							step="0.5"
 							min="0.5"
 							max={line.width_in}
-							placeholder="{line.width_in}""
+							placeholder="{line.width_in}&quot;"
 							class="form-input"
 							bind:value={row.width_in}
 							required

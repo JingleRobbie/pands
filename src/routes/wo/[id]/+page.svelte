@@ -208,7 +208,6 @@
 			<table class="w-full text-sm">
 				<thead>
 					<tr class="border-b border-gray-100 bg-gray-50">
-						<th class="px-4 py-2 text-left text-gray-500 font-medium">Type</th>
 						<th class="px-4 py-2 text-left text-gray-500 font-medium">Roll For</th>
 						<th class="px-4 py-2 text-left text-gray-500 font-medium">Facing</th>
 						<th class="px-4 py-2 text-right text-gray-500 font-medium">Qty</th>
@@ -221,31 +220,45 @@
 				</thead>
 				<tbody>
 					{#each [...billingLines, ...unbrandedLines] as line (line.id)}
+						{@const children = productionLines.filter(
+							(p) => p.parent_line_id === line.id
+						)}
 						<tr
 							class="border-b border-gray-100 {line.reconciliation_status === 'STALE'
 								? 'bg-amber-50'
 								: ''}"
 						>
-							<td class="px-4 py-2">
-								{#if line.line_type === 'BILLING'}
-									<span class="badge-blue">Billing</span>
-								{:else}
-									<span class="badge-gray">Unbranched</span>
-								{/if}
-								{#if line.reconciliation_status === 'STALE'}
-									<span class="badge-amber ml-1">Stale</span>
-								{:else if line.reconciliation_status === 'RECONCILED'}
-									<span class="badge-green ml-1">Reconciled</span>
-								{/if}
-							</td>
 							<td class="px-4 py-2 text-gray-500">{line.rollfor}</td>
 							<td class="px-4 py-2 text-gray-500">{line.facing}</td>
 							<td class="px-4 py-2 text-right text-gray-600 tabular-nums"
 								>{line.qty}</td
 							>
-							<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
-								>{line.width_in}"</td
-							>
+							<td class="px-4 py-2 text-right font-mono">
+								{#if line.line_type === 'BILLING' && children.length > 0}
+									<div class="flex flex-col items-end gap-0.5">
+										{#if line.reconciliation_status === 'STALE'}
+											<span class="badge-amber text-xs mb-1">Stale</span>
+										{:else if line.reconciliation_status === 'RECONCILED'}
+											<span class="badge-green text-xs mb-1">Reconciled</span>
+										{/if}
+										<span class="text-gray-600"
+											>{line.width_in}" → {children[0].width_in}"</span
+										>
+										{#each children.slice(1) as child (child.id)}
+											<span class="text-gray-400">→ {child.width_in}"</span>
+										{/each}
+									</div>
+								{:else}
+									<div class="flex flex-col items-end gap-0.5">
+										{#if line.reconciliation_status === 'STALE'}
+											<span class="badge-amber text-xs mb-1">Stale</span>
+										{:else if line.reconciliation_status === 'RECONCILED'}
+											<span class="badge-green text-xs mb-1">Reconciled</span>
+										{/if}
+										<span class="text-gray-600">{line.width_in}"</span>
+									</div>
+								{/if}
+							</td>
 							<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
 								>{line.length_ft}'</td
 							>
@@ -274,7 +287,7 @@
 						</tr>
 					{/each}
 					<tr class="border-t border-gray-200 bg-gray-50">
-						<td colspan="6" class="px-4 py-2 text-sm text-gray-500 font-medium"
+						<td colspan="5" class="px-4 py-2 text-sm text-gray-500 font-medium"
 							>Total</td
 						>
 						<td class="px-4 py-2 text-right font-mono font-medium text-gray-700"
