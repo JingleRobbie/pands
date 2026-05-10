@@ -4,7 +4,12 @@
 	let { data, form } = $props();
 	const { wo, line } = $derived(data);
 
-	let rows = $state([{ width_in: '', qty: String(line.qty), length_ft: String(line.length_ft) }]);
+	let rows = $state([]);
+
+	$effect(() => {
+		if (rows.length > 0) return;
+		rows = [{ width_in: '', qty: String(line.qty), length_ft: String(line.length_ft) }];
+	});
 
 	function addRow() {
 		rows = [

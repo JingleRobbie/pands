@@ -2,6 +2,11 @@ import { db } from '$lib/db.js';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { getAllCustomers } from '$lib/services/customers.js';
 import { requireAdmin } from '$lib/auth.js';
+import {
+	canLineBlockWoCompletion,
+	deriveLineType,
+	isLineProductionComplete,
+} from '$lib/services/line-paths.js';
 
 export async function load({ params, locals, url }) {
 	const [[wo]] = await db.query(
@@ -45,29 +50,19 @@ export async function load({ params, locals, url }) {
 		[params.id]
 	);
 
-	// Derive line_type from parent_line_id / child_count (no stored column)
 	const lines = rawLines.map((l) => ({
 		...l,
-		line_type:
-			l.parent_line_id !== null
-				? 'PRODUCTION'
-				: Number(l.child_count) > 0
-					? 'BILLING'
-					: 'UNBRANCHED',
+		line_type: deriveLineType(l),
 	}));
 
 	const billingLines = lines.filter((l) => l.line_type === 'BILLING');
 	const productionLines = lines.filter((l) => l.line_type === 'PRODUCTION');
-	const unbrandedLines = lines.filter((l) => l.line_type === 'UNBRANCHED');
+	const unbranchedLines = lines.filter((l) => l.line_type === 'UNBRANCHED');
 
-	// WO can be completed when no line is STALE and all lines are fully produced
 	const canComplete =
 		wo.status !== 'COMPLETE' &&
-		lines.every(
-			(l) =>
-				Number(l.rolls_produced) >= Number(l.qty) &&
-				(l.line_type === 'PRODUCTION' || l.reconciliation_status !== 'STALE')
-		);
+		lines.every(isLineProductionComplete) &&
+		!lines.some(canLineBlockWoCompletion);
 
 	const [contacts] = await db.query('SELECT * FROM contacts WHERE wo_id = ? ORDER BY id', [
 		params.id,
@@ -80,7 +75,7 @@ export async function load({ params, locals, url }) {
 		lines,
 		billingLines,
 		productionLines,
-		unbrandedLines,
+		unbranchedLines,
 		canComplete,
 		contacts,
 		customers,
@@ -129,7 +124,15 @@ export const actions = {
 		);
 		const [[{ incomplete }]] = await db.query(
 			`SELECT COUNT(*) AS incomplete FROM work_order_lines
-			 WHERE wo_id = ? AND rolls_produced < qty`,
+			 WHERE wo_id = ?
+			   AND rolls_produced < qty
+			   AND (
+			     parent_line_id IS NOT NULL
+			     OR NOT EXISTS (
+			       SELECT 1 FROM work_order_lines child
+			       WHERE child.parent_line_id = work_order_lines.id
+			     )
+			   )`,
 			[woId]
 		);
 		if (Number(stale) > 0)

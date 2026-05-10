@@ -1,6 +1,7 @@
 import { db } from '$lib/db.js';
 import { localDate } from '$lib/utils.js';
 import { getConfirmedCutDownForProductionLine } from '$lib/services/cutdown.js';
+import { isProductionLine } from '$lib/services/line-paths.js';
 
 function todayStr() {
 	return localDate();
@@ -330,9 +331,7 @@ export async function confirmRun(runId, rollsActual, userId, runDate = null) {
 		);
 
 		const sqftActual = calcSqft(line, rollsActual);
-		const isProductionLine = line.parent_line_id !== null;
-
-		if (isProductionLine) {
+		if (isProductionLine(line)) {
 			// PRODUCTION line (CUT_LAMINATE path) — write WIP CUT_OUT, not inventory CONSUMPTION
 			const cutDown = await getConfirmedCutDownForProductionLine(conn, run.wo_line_id);
 			await conn.query(
@@ -427,8 +426,6 @@ export async function unproduceRun(runId, rollsToUnproduce, userId) {
 		if (run.status !== 'COMPLETED') throw new Error('Only completed runs can be unproduced.');
 
 		const line = await getLockedWoLine(conn, run.wo_line_id);
-		const isProductionLine = line.parent_line_id !== null;
-
 		const [[shipped]] = await conn.query(
 			`SELECT COALESCE(SUM(COALESCE(rolls, 0)), 0) AS shippedRolls
 			 FROM shipment_lines
@@ -441,7 +438,7 @@ export async function unproduceRun(runId, rollsToUnproduce, userId) {
 
 		const sqftToUnproduce = prorateUnproduceSqft(line, run, rollsToUnproduce);
 
-		if (isProductionLine) {
+		if (isProductionLine(line)) {
 			// PRODUCTION line — reverse WIP CUT_OUT by inserting a CUT_IN
 			const [[wipEntry]] = await conn.query(
 				`SELECT id FROM wip_ledger

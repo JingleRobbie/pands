@@ -50,7 +50,7 @@ describe('new shipment action', () => {
 		expect(createShipment).not.toHaveBeenCalled();
 	});
 
-	it('requires at least one production run before calling the service', async () => {
+	it('requires at least one shipment source before calling the service', async () => {
 		const result = await actions.default({
 			request: requestWithForm([
 				['wo_id', '22'],
@@ -62,7 +62,7 @@ describe('new shipment action', () => {
 
 		expect(result).toEqual({
 			status: 400,
-			data: { error: 'Select at least one production run.' },
+			data: { error: 'Select at least one source.' },
 		});
 		expect(createShipment).not.toHaveBeenCalled();
 	});
@@ -93,7 +93,10 @@ describe('new shipment action', () => {
 			22,
 			5,
 			'2026-05-01',
-			[77, 78],
+			[
+				{ type: 'PRODUCTION_RUN', id: 77 },
+				{ type: 'PRODUCTION_RUN', id: 78 },
+			],
 			9,
 			{ 77: 2 }
 		);

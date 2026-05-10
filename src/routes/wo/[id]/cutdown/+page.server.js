@@ -42,7 +42,7 @@ export async function load({ params }) {
 }
 
 export const actions = {
-	scheduleCutDown: async ({ request, params, locals }) => {
+	scheduleCutDown: async ({ request, locals }) => {
 		requireAdmin(locals);
 		const data = await request.formData();
 		const billingLineId = parseInt(data.get('billingLineId'));

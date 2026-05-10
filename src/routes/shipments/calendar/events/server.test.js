@@ -18,13 +18,17 @@ function urlWithParams(params) {
 	return new URL(`http://pands.local/shipments/calendar/events?${new URLSearchParams(params)}`);
 }
 
+function authedEvent(params) {
+	return { url: urlWithParams(params), locals: { appUser: { id: 1 } } };
+}
+
 describe('shipment calendar events endpoint', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
 	it('returns an empty calendar when start or end is missing', async () => {
-		const result = await GET({ url: urlWithParams({ start: '2026-05-01' }) });
+		const result = await GET(authedEvent({ start: '2026-05-01' }));
 
 		expect(result).toEqual({ json: {} });
 		expect(db.query).not.toHaveBeenCalled();
@@ -54,9 +58,7 @@ describe('shipment calendar events endpoint', () => {
 			],
 		]);
 
-		const result = await GET({
-			url: urlWithParams({ start: '2026-05-01', end: '2026-05-31' }),
-		});
+		const result = await GET(authedEvent({ start: '2026-05-01', end: '2026-05-31' }));
 
 		expect(result).toEqual({
 			json: {
@@ -113,13 +115,13 @@ describe('shipment calendar events endpoint', () => {
 				],
 			]);
 
-		const result = await GET({
-			url: urlWithParams({
+		const result = await GET(
+			authedEvent({
 				start: '2026-05-01',
 				end: '2026-05-31',
 				past_drafts: '1',
-			}),
-		});
+			})
+		);
 
 		expect(result).toEqual({
 			json: {
@@ -149,8 +151,10 @@ describe('shipment calendar events endpoint', () => {
 			'2026-05-01',
 			'2026-05-31',
 		]);
-		expect(db.query).toHaveBeenNthCalledWith(2, expect.stringContaining("s.status != 'SHIPPED'"), [
-			'2026-05-01',
-		]);
+		expect(db.query).toHaveBeenNthCalledWith(
+			2,
+			expect.stringContaining("s.status != 'SHIPPED'"),
+			['2026-05-01']
+		);
 	});
 });

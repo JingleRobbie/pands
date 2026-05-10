@@ -1,5 +1,6 @@
 import { db } from '$lib/db.js';
 import { localDate } from '$lib/utils.js';
+import { inferPathType } from '$lib/services/line-paths.js';
 
 // NOTE: Duplicate of nextRunNumber() in runs.js.
 // Copy is intentional — do not import across service files.
@@ -111,7 +112,8 @@ export async function createShipment(woId, customerId, shipDate, sources, userId
 			const ph = runSources.map(() => '?').join(',');
 			const [rows] = await conn.query(
 				`SELECT pr.id, pr.run_number, pr.sku_id, pr.wo_line_id, pr.group_id,
-				        pr.rolls_actual, pr.sqft_actual, pr.run_date, wol.wo_id
+				        pr.rolls_actual, pr.sqft_actual, pr.run_date,
+				        wol.wo_id, wol.parent_line_id, wol.facing
 				 FROM production_runs pr
 				 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
 				 WHERE pr.id IN (${ph}) AND pr.status = 'COMPLETED'`,
@@ -148,7 +150,8 @@ export async function createShipment(woId, customerId, shipDate, sources, userId
 		if (woLineSources.length > 0) {
 			const ph = woLineSources.map(() => '?').join(',');
 			const [rows] = await conn.query(
-				`SELECT wol.id, wol.sku_id, wol.sqft, wol.wo_id, wol.width_in, wol.length_ft
+				`SELECT wol.id, wol.sku_id, wol.sqft, wol.wo_id, wol.width_in,
+				        wol.length_ft, wol.parent_line_id, wol.facing
 				 FROM work_order_lines wol
 				 WHERE wol.id IN (${ph}) AND wol.parent_line_id IS NULL
 				   AND NOT EXISTS (SELECT 1 FROM work_order_lines c WHERE c.parent_line_id = wol.id)`,
@@ -183,12 +186,12 @@ export async function createShipment(woId, customerId, shipDate, sources, userId
 				 VALUES (?, ?, ?, ?, ?)`,
 				[shipmentId, run.id, run.sku_id, shipped.rolls, shipped.sqft]
 			);
-			// Lock path_type on the WO line (STANDARD or CUT_LAMINATE based on parent)
+			const pathType = inferPathType(run);
 			await conn.query(
 				`UPDATE work_order_lines
-				 SET path_type = IF(parent_line_id IS NULL, 'STANDARD', 'CUT_LAMINATE')
+				 SET path_type = ?
 				 WHERE id = ? AND path_type IS NULL`,
-				[run.wo_line_id]
+				[pathType, run.wo_line_id]
 			);
 		}
 
@@ -235,10 +238,10 @@ export async function createShipment(woId, customerId, shipDate, sources, userId
 					userId ?? null,
 				]
 			);
-			// Lock path_type
+			const pathType = inferPathType(wol);
 			await conn.query(
-				`UPDATE work_order_lines SET path_type = 'DIRECT_SHIP' WHERE id = ? AND path_type IS NULL`,
-				[wol.id]
+				`UPDATE work_order_lines SET path_type = ? WHERE id = ? AND path_type IS NULL`,
+				[pathType, wol.id]
 			);
 		}
 

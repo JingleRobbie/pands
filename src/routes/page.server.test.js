@@ -1,19 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('@sveltejs/kit', () => ({
-	redirect: vi.fn((status, location) => {
-		throw { type: 'redirect', status, location };
-	}),
-}));
+import { describe, expect, it } from 'vitest';
 
 const { load } = await import('./+page.server.js');
 
 describe('root page', () => {
-	it('redirects to the calendar', async () => {
-		await expect(load()).rejects.toEqual({
-			type: 'redirect',
-			status: 302,
-			location: '/calendar',
-		});
+	it('returns the current app user for the activity landing page', async () => {
+		const appUser = { id: 7, display_name: 'Admin' };
+
+		expect(load({ locals: { appUser } })).toEqual({ appUser });
 	});
 });

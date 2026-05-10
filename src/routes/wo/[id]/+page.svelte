@@ -8,7 +8,7 @@
 	const lines = $derived(data.lines);
 	const billingLines = $derived(data.billingLines);
 	const productionLines = $derived(data.productionLines);
-	const unbrandedLines = $derived(data.unbrandedLines);
+	const unbranchedLines = $derived(data.unbranchedLines);
 	const canComplete = $derived(data.canComplete);
 	const contacts = $derived(data.contacts);
 	const customers = $derived(data.customers);
@@ -23,7 +23,7 @@
 	const hasBranched = $derived(productionLines.length > 0);
 	const hasStale = $derived(
 		billingLines.some((l) => l.reconciliation_status === 'STALE') ||
-			unbrandedLines.some((l) => l.reconciliation_status === 'STALE')
+			unbranchedLines.some((l) => l.reconciliation_status === 'STALE')
 	);
 </script>
 
@@ -181,7 +181,8 @@
 					class="px-3 py-1 text-sm rounded {activeTab === 'billing'
 						? 'bg-gray-200 font-medium text-gray-800'
 						: 'text-gray-500 hover:text-gray-700'}"
-					onclick={() => (activeTab = 'billing')}>
+					onclick={() => (activeTab = 'billing')}
+				>
 					Billing
 					{#if hasStale}<span class="ml-1 text-amber-500">●</span>{/if}
 				</button>
@@ -218,12 +219,13 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each [...billingLines, ...unbrandedLines] as line (line.id)}
+					{#each [...billingLines, ...unbranchedLines] as line (line.id)}
 						{@const children = productionLines.filter(
 							(p) => p.parent_line_id === line.id
 						)}
 						<tr
-							class="align-top border-b border-gray-100 {line.reconciliation_status === 'STALE'
+							class="align-top border-b border-gray-100 {line.reconciliation_status ===
+							'STALE'
 								? 'bg-amber-50'
 								: ''}"
 						>
@@ -298,20 +300,24 @@
 			</table>
 		{:else}
 			<!-- Production lines grouped by billing parent -->
-					
-					<table class="w-full text-sm">
-						<tbody>
-						{#each billingLines as billing (billing.id)}
-							{@const children = productionLines.filter((p) => p.parent_line_id === billing.id)}
-							{#if children.length > 0}
+
+			<table class="w-full text-sm">
+				<tbody>
+					{#each billingLines as billing (billing.id)}
+						{@const children = productionLines.filter(
+							(p) => p.parent_line_id === billing.id
+						)}
+						{#if children.length > 0}
 							<tr>
-								<td colspan="8" class="px-4 py-2 text-sm text-gray-500 font-medium bg-gray-50">
+								<td
+									colspan="8"
+									class="px-4 py-2 text-sm text-gray-500 font-medium bg-gray-50"
+								>
 									<div
 										class="border-b border-gray-100 px-4 py-2 bg-gray-50 text-xs text-gray-500 font-medium"
 									>
-										{billing.thickness_in}" × {billing.width_in}" × {billing.length_ft}' — {fmtSqft(
-											billing.sqft
-										)} sqft
+										{billing.thickness_in}" × {billing.width_in}" × {billing.length_ft}'
+										— {fmtSqft(billing.sqft)} sqft
 									</div>
 								</td>
 							</tr>
@@ -354,10 +360,10 @@
 									{/if}
 								</tr>
 							{/each}
-							{/if}
-						{/each}
-						</tbody>
-					</table>
+						{/if}
+					{/each}
+				</tbody>
+			</table>
 		{/if}
 	</div>
 

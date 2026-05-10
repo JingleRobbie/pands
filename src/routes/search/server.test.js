@@ -18,13 +18,17 @@ function urlWithParams(params) {
 	return new URL(`http://pands.local/search?${new URLSearchParams(params)}`);
 }
 
+function authedEvent(params) {
+	return { url: urlWithParams(params), locals: { appUser: { id: 1 } } };
+}
+
 describe('search endpoint', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
 	it('returns an empty result without a search query or work order id', async () => {
-		const result = await GET({ url: urlWithParams({ q: '   ' }) });
+		const result = await GET(authedEvent({ q: '   ' }));
 
 		expect(result).toEqual({ json: [] });
 		expect(db.query).not.toHaveBeenCalled();
@@ -34,7 +38,7 @@ describe('search endpoint', () => {
 		const wos = [{ id: 12, so_number: 'SO-1', customer_name: 'Acme', job_name: 'North Wing' }];
 		db.query.mockResolvedValueOnce([wos]);
 
-		const result = await GET({ url: urlWithParams({ q: ' SO- ' }) });
+		const result = await GET(authedEvent({ q: ' SO- ' }));
 
 		expect(result).toEqual({ json: wos });
 		expect(db.query).toHaveBeenCalledWith(
@@ -47,7 +51,7 @@ describe('search endpoint', () => {
 	it('returns null when a requested work order is missing', async () => {
 		db.query.mockResolvedValueOnce([[]]);
 
-		const result = await GET({ url: urlWithParams({ wo_id: '12' }) });
+		const result = await GET(authedEvent({ wo_id: '12' }));
 
 		expect(result).toEqual({ json: null });
 		expect(db.query).toHaveBeenCalledTimes(1);
@@ -73,7 +77,7 @@ describe('search endpoint', () => {
 			.mockResolvedValueOnce([allRuns])
 			.mockResolvedValueOnce([shipments]);
 
-		const result = await GET({ url: urlWithParams({ wo_id: '12' }) });
+		const result = await GET(authedEvent({ wo_id: '12' }));
 
 		expect(result).toEqual({
 			json: {
@@ -88,12 +92,16 @@ describe('search endpoint', () => {
 			'SELECT id, so_number, customer_name, job_name, status FROM work_orders WHERE id = ?',
 			[12]
 		);
-		expect(db.query).toHaveBeenNthCalledWith(2, expect.stringContaining("pr.status != 'COMPLETED'"), [
-			12,
-		]);
-		expect(db.query).toHaveBeenNthCalledWith(3, expect.stringContaining('WHERE wol.wo_id = ?'), [
-			12,
-		]);
+		expect(db.query).toHaveBeenNthCalledWith(
+			2,
+			expect.stringContaining("pr.status != 'COMPLETED'"),
+			[12]
+		);
+		expect(db.query).toHaveBeenNthCalledWith(
+			3,
+			expect.stringContaining('WHERE wol.wo_id = ?'),
+			[12]
+		);
 		expect(db.query).toHaveBeenNthCalledWith(
 			4,
 			'SELECT id, shipment_number, status, ship_date FROM shipments WHERE wo_id = ? ORDER BY ship_date DESC',

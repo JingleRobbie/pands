@@ -43,7 +43,7 @@ describe('login page', () => {
 		await expect(load({ locals: { appUser: { id: 7 } } })).rejects.toEqual({
 			type: 'redirect',
 			status: 302,
-			location: '/calendar',
+			location: '/',
 		});
 		expect(db.query).not.toHaveBeenCalled();
 	});
@@ -66,7 +66,7 @@ describe('login page', () => {
 				locals: { appUser: { id: 7 } },
 				request: requestWithForm([]),
 			})
-		).rejects.toEqual({ type: 'redirect', status: 302, location: '/calendar' });
+		).rejects.toEqual({ type: 'redirect', status: 302, location: '/' });
 		expect(db.query).not.toHaveBeenCalled();
 	});
 
@@ -128,7 +128,7 @@ describe('login page', () => {
 					['password', 'secret'],
 				]),
 			})
-		).rejects.toEqual({ type: 'redirect', status: 303, location: '/calendar' });
+		).rejects.toEqual({ type: 'redirect', status: 303, location: '/' });
 
 		expect(cookies.set).toHaveBeenCalledWith('app_user_id', '7', {
 			path: '/',

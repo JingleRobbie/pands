@@ -1,6 +1,6 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
 	// const { wo, diffRows, skus } = $derived(data);
 
@@ -14,13 +14,6 @@
 		if (splitLines.length <= 2) return;
 		splitLines = splitLines.filter((_, idx) => idx !== i);
 	}
-
-	const statusBadge = {
-		CURRENT: 'badge-green',
-		STALE: 'badge-amber',
-		RECONCILED: 'badge-green',
-		SUPERSEDED: 'badge-gray',
-	};
 </script>
 
 <svelte:head><title>Diff - WO {data.wo.so_number} - PandS</title></svelte:head>

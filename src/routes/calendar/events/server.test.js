@@ -18,6 +18,10 @@ function urlWithParams(params) {
 	return new URL(`http://pands.local/calendar/events?${new URLSearchParams(params)}`);
 }
 
+function authedEvent(params) {
+	return { url: urlWithParams(params), locals: { appUser: { id: 1 } } };
+}
+
 describe('calendar events endpoint', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -53,9 +57,7 @@ describe('calendar events endpoint', () => {
 				],
 			]);
 
-		const result = await GET({
-			url: urlWithParams({ year: '2026', month: '5' }),
-		});
+		const result = await GET(authedEvent({ year: '2026', month: '5' }));
 
 		expect(result).toEqual({
 			json: {
@@ -81,26 +83,24 @@ describe('calendar events endpoint', () => {
 	it('filters production runs to scheduled status when requested', async () => {
 		db.query.mockResolvedValueOnce([[]]).mockResolvedValueOnce([[]]);
 
-		await GET({
-			url: urlWithParams({ year: '2026', month: '2', status: 'scheduled' }),
-		});
+		await GET(authedEvent({ year: '2026', month: '2', status: 'scheduled' }));
 
-		expect(db.query).toHaveBeenNthCalledWith(2, expect.stringContaining("pr.status = 'SCHEDULED'"), [
-			'2026-02-01',
-			'2026-02-28',
-		]);
+		expect(db.query).toHaveBeenNthCalledWith(
+			2,
+			expect.stringContaining("pr.status = 'SCHEDULED'"),
+			['2026-02-01', '2026-02-28']
+		);
 	});
 
 	it('filters production runs to completed status when requested', async () => {
 		db.query.mockResolvedValueOnce([[]]).mockResolvedValueOnce([[]]);
 
-		await GET({
-			url: urlWithParams({ year: '2026', month: '4', status: 'completed' }),
-		});
+		await GET(authedEvent({ year: '2026', month: '4', status: 'completed' }));
 
-		expect(db.query).toHaveBeenNthCalledWith(2, expect.stringContaining("pr.status = 'COMPLETED'"), [
-			'2026-04-01',
-			'2026-04-30',
-		]);
+		expect(db.query).toHaveBeenNthCalledWith(
+			2,
+			expect.stringContaining("pr.status = 'COMPLETED'"),
+			['2026-04-01', '2026-04-30']
+		);
 	});
 });

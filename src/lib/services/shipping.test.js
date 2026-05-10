@@ -23,6 +23,8 @@ const { __shippingTest, confirmShipment, createShipment } = await import('./ship
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	conn.query.mockReset();
+	mockDb.getConnection.mockReturnValue(conn);
 });
 
 describe('shipping helpers', () => {
@@ -62,9 +64,12 @@ describe('shipping services', () => {
 				.mockResolvedValueOnce([[{ so_number: 'SO-1' }]])
 				.mockResolvedValueOnce([[{ n: 0 }]])
 				.mockResolvedValueOnce([{ insertId: 123 }])
+				.mockResolvedValueOnce([{}])
 				.mockResolvedValueOnce([{}]);
 
-			await expect(createShipment(22, 5, '2026-05-02', [77], 9)).resolves.toEqual({
+			await expect(
+				createShipment(22, 5, '2026-05-02', [{ type: 'PRODUCTION_RUN', id: 77 }], 9)
+			).resolves.toEqual({
 				shipmentId: 123,
 				shipmentNumber: 'SO-1-S1',
 			});
@@ -108,9 +113,12 @@ describe('shipping services', () => {
 				.mockResolvedValueOnce([{}])
 				.mockResolvedValueOnce([[{ last: null }]])
 				.mockResolvedValueOnce([{}])
+				.mockResolvedValueOnce([{}])
 				.mockResolvedValueOnce([{}]);
 
-			await createShipment(22, 5, '2026-05-02', [77], 9, { 77: 2 });
+			await createShipment(22, 5, '2026-05-02', [{ type: 'PRODUCTION_RUN', id: 77 }], 9, {
+				77: 2,
+			});
 
 			expect(conn.query).toHaveBeenNthCalledWith(
 				5,
@@ -134,9 +142,9 @@ describe('shipping services', () => {
 		it('rolls back when a selected run is not completed or does not exist', async () => {
 			conn.query.mockResolvedValueOnce([[]]);
 
-			await expect(createShipment(22, 5, '2026-05-02', [77], 9)).rejects.toThrow(
-				'One or more selected runs are not completed or do not exist.'
-			);
+			await expect(
+				createShipment(22, 5, '2026-05-02', [{ type: 'PRODUCTION_RUN', id: 77 }], 9)
+			).rejects.toThrow('One or more selected runs are not completed or do not exist.');
 
 			expect(conn.beginTransaction).toHaveBeenCalledOnce();
 			expect(conn.commit).not.toHaveBeenCalled();

@@ -148,6 +148,7 @@ CREATE TABLE cut_downs (
   id                  INT AUTO_INCREMENT PRIMARY KEY,
   cut_down_number     VARCHAR(30) UNIQUE NOT NULL,
   group_id            INT NULL,
+  wo_id               INT NOT NULL,
   billing_line_id     INT NOT NULL,
   sku_id              INT NOT NULL,
   run_date            DATE NULL,
@@ -165,6 +166,7 @@ CREATE TABLE cut_downs (
   created_by          INT NOT NULL,
   created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (group_id) REFERENCES cut_down_groups(id),
+  FOREIGN KEY (wo_id) REFERENCES work_orders(id),
   FOREIGN KEY (billing_line_id) REFERENCES work_order_lines(id),
   FOREIGN KEY (sku_id) REFERENCES material_skus(id),
   FOREIGN KEY (confirmed_by) REFERENCES app_users(id),
@@ -265,9 +267,9 @@ ALTER TABLE shipment_lines
   ADD CONSTRAINT fk_sl_wo_line FOREIGN KEY (wo_line_id)
     REFERENCES work_order_lines(id),
   ADD CONSTRAINT chk_sl_source CHECK (
-    (production_run_id IS NOT NULL)::int +
-    (cut_down_id IS NOT NULL)::int +
-    (wo_line_id IS NOT NULL)::int = 1
+    (production_run_id IS NOT NULL) +
+    (cut_down_id IS NOT NULL) +
+    (wo_line_id IS NOT NULL) = 1
   );
 ```
 

@@ -70,6 +70,7 @@ CREATE INDEX idx_cdg_wo ON cut_down_groups(wo_id);
 
 CREATE TABLE IF NOT EXISTS cut_downs (
   id                INT AUTO_INCREMENT PRIMARY KEY,
+  cut_down_number   VARCHAR(30) UNIQUE NOT NULL,
 
   -- Grouping & scheduling
   group_id          INT NULL

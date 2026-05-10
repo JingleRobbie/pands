@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { wo, cutDown, billingLine, wipPreview } = $derived(data);
+	const { wo, cutDown, wipPreview } = $derived(data);
 
 	let showUnconfirmWarning = $state(false);
 </script>

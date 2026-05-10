@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS contacts (
 CREATE TABLE IF NOT EXISTS work_order_lines (
   id             INT AUTO_INCREMENT PRIMARY KEY,
   wo_id          INT NOT NULL,
+  parent_line_id INT NULL,
   sku_id         INT NOT NULL,
   thickness_in   DECIMAL(4,1) NOT NULL DEFAULT 0.0,
   width_in       INT NOT NULL DEFAULT 0,
@@ -113,9 +114,15 @@ CREATE TABLE IF NOT EXISTS work_order_lines (
   instructions   TEXT,
   tab_type       VARCHAR(100) NULL,
   rolls_produced INT NOT NULL DEFAULT 0,
+  path_type      ENUM('STANDARD','CUT_LAMINATE','CUT_SHIP','DIRECT_SHIP') NULL,
+  reconciliation_status ENUM('CURRENT','STALE','RECONCILED','SUPERSEDED') NOT NULL DEFAULT 'CURRENT',
   FOREIGN KEY (wo_id) REFERENCES work_orders(id) ON DELETE CASCADE,
+  CONSTRAINT fk_wol_parent FOREIGN KEY (parent_line_id) REFERENCES work_order_lines(id),
   FOREIGN KEY (sku_id) REFERENCES material_skus(id)
 );
+
+CREATE INDEX idx_wol_parent ON work_order_lines(parent_line_id);
+CREATE INDEX idx_wol_reconciliation ON work_order_lines(wo_id, reconciliation_status);
 
 CREATE TABLE IF NOT EXISTS wo_accessories (
   id          INT AUTO_INCREMENT PRIMARY KEY,
@@ -157,6 +164,72 @@ CREATE TABLE IF NOT EXISTS production_runs (
   FOREIGN KEY (created_by) REFERENCES app_users(id)
 );
 
+CREATE TABLE IF NOT EXISTS cut_down_groups (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  wo_id      INT NOT NULL,
+  created_by INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (wo_id) REFERENCES work_orders(id),
+  FOREIGN KEY (created_by) REFERENCES app_users(id)
+);
+
+CREATE INDEX idx_cdg_wo ON cut_down_groups(wo_id);
+
+CREATE TABLE IF NOT EXISTS cut_downs (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  cut_down_number   VARCHAR(30) UNIQUE NOT NULL,
+  group_id          INT NULL,
+  wo_id             INT NOT NULL,
+  billing_line_id   INT NOT NULL,
+  sku_id            INT NOT NULL,
+  run_date          DATE NULL,
+  status            ENUM('UNSCHEDULED','SCHEDULED','COMPLETED') NOT NULL DEFAULT 'UNSCHEDULED',
+  rolls_scheduled   INT NOT NULL DEFAULT 0,
+  sqft_scheduled    INT NOT NULL DEFAULT 0,
+  rolls_actual      INT NULL,
+  sqft_actual       INT NULL,
+  waste_sqft_actual INT NULL,
+  source_roll_count INT NULL,
+  scrap_disposition ENUM('SAVED','DISCARDED','DELIVERED') NULL,
+  operator_notes    TEXT NULL,
+  confirmed_at      TIMESTAMP NULL,
+  confirmed_by      INT NULL,
+  created_by        INT NOT NULL,
+  created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_cd_group FOREIGN KEY (group_id) REFERENCES cut_down_groups(id),
+  CONSTRAINT fk_cd_wo FOREIGN KEY (wo_id) REFERENCES work_orders(id),
+  CONSTRAINT fk_cd_billing_line FOREIGN KEY (billing_line_id) REFERENCES work_order_lines(id),
+  CONSTRAINT fk_cd_sku FOREIGN KEY (sku_id) REFERENCES material_skus(id),
+  CONSTRAINT fk_cd_confirmed_by FOREIGN KEY (confirmed_by) REFERENCES app_users(id),
+  CONSTRAINT fk_cd_created_by FOREIGN KEY (created_by) REFERENCES app_users(id)
+);
+
+CREATE INDEX idx_cd_wo ON cut_downs(wo_id);
+CREATE INDEX idx_cd_billing_line ON cut_downs(billing_line_id);
+CREATE INDEX idx_cd_group ON cut_downs(group_id);
+CREATE INDEX idx_cd_status ON cut_downs(status);
+
+CREATE TABLE IF NOT EXISTS wip_ledger (
+  id               INT AUTO_INCREMENT PRIMARY KEY,
+  transaction_type ENUM('CUT_IN','CUT_OUT','SCRAP','ADJUSTMENT') NOT NULL,
+  cut_down_id      INT NULL,
+  wo_line_id       INT NULL,
+  width_in         INT NOT NULL,
+  sqft_quantity    INT NOT NULL,
+  effective_date   DATE NOT NULL DEFAULT (CURDATE()),
+  memo             TEXT NULL,
+  created_by       INT NOT NULL,
+  created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_wip_cut_down FOREIGN KEY (cut_down_id) REFERENCES cut_downs(id),
+  CONSTRAINT fk_wip_wo_line FOREIGN KEY (wo_line_id) REFERENCES work_order_lines(id),
+  CONSTRAINT fk_wip_created_by FOREIGN KEY (created_by) REFERENCES app_users(id)
+);
+
+CREATE INDEX idx_wip_cut_down ON wip_ledger(cut_down_id);
+CREATE INDEX idx_wip_wo_line ON wip_ledger(wo_line_id);
+CREATE INDEX idx_wip_effective ON wip_ledger(effective_date);
+CREATE INDEX idx_wip_type ON wip_ledger(transaction_type);
+
 CREATE TABLE IF NOT EXISTS shipments (
   id                INT AUTO_INCREMENT PRIMARY KEY,
   shipment_number   VARCHAR(60) UNIQUE NOT NULL,
@@ -175,14 +248,26 @@ CREATE TABLE IF NOT EXISTS shipments (
 CREATE TABLE IF NOT EXISTS shipment_lines (
   id                INT AUTO_INCREMENT PRIMARY KEY,
   shipment_id       INT NOT NULL,
-  production_run_id INT NOT NULL,
+  production_run_id INT NULL,
+  cut_down_id       INT NULL,
+  wo_line_id        INT NULL,
   sku_id            INT NOT NULL,
-  rolls             INT NOT NULL,
+  rolls             INT NULL,
   sqft              INT NOT NULL,
   FOREIGN KEY (shipment_id) REFERENCES shipments(id) ON DELETE CASCADE,
   FOREIGN KEY (production_run_id) REFERENCES production_runs(id),
+  CONSTRAINT fk_sl_cut_down FOREIGN KEY (cut_down_id) REFERENCES cut_downs(id),
+  CONSTRAINT fk_sl_wo_line FOREIGN KEY (wo_line_id) REFERENCES work_order_lines(id),
+  CONSTRAINT chk_sl_one_source CHECK (
+    (production_run_id IS NOT NULL) +
+    (cut_down_id IS NOT NULL) +
+    (wo_line_id IS NOT NULL) = 1
+  ),
   FOREIGN KEY (sku_id) REFERENCES material_skus(id)
 );
+
+CREATE INDEX idx_sl_cut_down ON shipment_lines(cut_down_id);
+CREATE INDEX idx_sl_wo_line ON shipment_lines(wo_line_id);
 
 CREATE TABLE IF NOT EXISTS inventory_counts (
   id         INT AUTO_INCREMENT PRIMARY KEY,
@@ -200,7 +285,7 @@ CREATE TABLE IF NOT EXISTS inventory_transactions (
   sqft_quantity    INT NOT NULL,
   counted_sqft     INT NULL,
   effective_date    DATE NOT NULL DEFAULT (CURDATE()),
-  reference_type   ENUM('PO_LINE','PRODUCTION_RUN','MANUAL','INVENTORY_COUNT') DEFAULT 'MANUAL',
+  reference_type   ENUM('PO_LINE','PRODUCTION_RUN','MANUAL','INVENTORY_COUNT','CUT_DOWN') DEFAULT 'MANUAL',
   reference_id     INT,
   reverses_transaction_id INT NULL,
   memo             TEXT,

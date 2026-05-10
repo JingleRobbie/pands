@@ -28,7 +28,7 @@ async function nextCutDownNumber(conn) {
  * @param {number} userId
  * @returns {Promise<number[]>} ids of the new production lines
  */
-export async function branchLine(woLineId, productionWidths, userId) {
+export async function branchLine(woLineId, productionWidths, _userId) {
 	const conn = await db.getConnection();
 	try {
 		await conn.beginTransaction();
@@ -242,7 +242,7 @@ export async function scheduleCutDown(billingLineId, rollsScheduled, runDate, us
 		const cutDownNumber = await nextCutDownNumber(conn);
 		const status = runDate ? 'SCHEDULED' : 'UNSCHEDULED';
 
-		const [{ insertId }] = await conn.query(
+		await conn.query(
 			`INSERT INTO cut_downs
 			 (cut_down_number, wo_id, billing_line_id, sku_id, run_date, status,
 			  rolls_scheduled, sqft_scheduled, created_by)
@@ -610,7 +610,7 @@ export async function assignScrap(sourceCutDownId, destinationWoLineId, sqftToAs
 export async function reconcileBillingLine(
 	billingLineId,
 	{ newSkuId, newWidthIn, newQty, newLengthFt } = {},
-	userId
+	_userId
 ) {
 	const conn = await db.getConnection();
 	try {
@@ -659,7 +659,7 @@ export async function reconcileBillingLine(
 	}
 }
 
-export async function splitBillingLine(billingLineId, newLines, userId) {
+export async function splitBillingLine(billingLineId, newLines, _userId) {
 	const conn = await db.getConnection();
 	try {
 		await conn.beginTransaction();
