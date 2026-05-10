@@ -1,6 +1,7 @@
 # Cut-Down Feature Specification
+
 **P&S Inventory System — Work Order Line Branching**
-*Generated from design session — May 2026*
+_Generated from design session — May 2026_
 
 ---
 
@@ -25,13 +26,15 @@ An **unbranched line** is any line that has never been branched. It behaves exac
 
 Line type is derived from the `parent_line_id` relationship:
 
-| Condition | Derived Type |
-|---|---|
+| Condition                                      | Derived Type |
+| ---------------------------------------------- | ------------ |
 | `parent_line_id IS NULL` AND no children exist | `UNBRANCHED` |
-| `parent_line_id IS NULL` AND children exist | `BILLING` |
-| `parent_line_id IS NOT NULL` | `PRODUCTION` |
+| `parent_line_id IS NULL` AND children exist    | `BILLING`    |
+| `parent_line_id IS NOT NULL`                   | `PRODUCTION` |
 
 No `line_type` column is stored. All queries derive type from the relationship.
+
+**User-facing terminology:** Both `UNBRANCHED` and `BILLING` internal types are displayed to users as "Billing." The distinction is internal only — both drive QB invoicing identically. `PRODUCTION` lines are shown under a separate "Production" tab.
 
 ### 2.3 Schema Change: `work_order_lines`
 
@@ -48,18 +51,18 @@ ALTER TABLE work_order_lines
 
 ### 2.4 Fields Inherited by Production Lines at Branch Time
 
-| Field | Inherited | Editable After Branch |
-|---|---|---|
-| `sku_id` | Yes | No (follows cut-down SKU) |
-| `thickness_in` | Yes | No |
-| `width_in` | Cut width | Yes |
-| `qty` | Yes | Yes |
-| `length_ft` | Yes | Yes |
-| `sqft` | Recalculated | Derived |
-| `facing` | Yes | No |
-| `rollfor` | Yes | No |
-| `tab_type` | Yes | No |
-| `instructions` | Yes | No |
+| Field          | Inherited    | Editable After Branch     |
+| -------------- | ------------ | ------------------------- |
+| `sku_id`       | Yes          | No (follows cut-down SKU) |
+| `thickness_in` | Yes          | No                        |
+| `width_in`     | Cut width    | Yes                       |
+| `qty`          | Yes          | Yes                       |
+| `length_ft`    | Yes          | Yes                       |
+| `sqft`         | Recalculated | Derived                   |
+| `facing`       | Yes          | No                        |
+| `rollfor`      | Yes          | No                        |
+| `tab_type`     | Yes          | No                        |
+| `instructions` | Yes          | No                        |
 
 ---
 
@@ -69,42 +72,50 @@ Each line follows exactly one fulfillment path. Path is inferred from facing and
 
 ### 3.1 Path Inference Rules
 
-| Line State | Facing | Inferred Path |
-|---|---|---|
-| Unbranched | Raw or Unfaced | `DIRECT_SHIP` |
-| Unbranched | Any other | `STANDARD` |
-| Production child | Raw or Unfaced | `CUT_SHIP` |
-| Production child | Any other | `CUT_LAMINATE` |
+| Line State       | Facing         | Inferred Path  |
+| ---------------- | -------------- | -------------- |
+| Unbranched       | Raw or Unfaced | `DIRECT_SHIP`  |
+| Unbranched       | Any other      | `STANDARD`     |
+| Production child | Raw or Unfaced | `CUT_SHIP`     |
+| Production child | Any other      | `CUT_LAMINATE` |
 
 Branching is forced by a cut-down order. Unbranched lines cannot have cut-down orders.
 
 ### 3.2 Path Flows and Inventory Events
 
 **Path 1 — STANDARD**
+
 ```
 production run → confirm → ship
 ```
+
 Inventory `CONSUMPTION` written at production run confirmation (current behavior).
 
 **Path 2 — CUT_LAMINATE**
+
 ```
 cut-down order → confirm → production run → confirm → ship
 ```
+
 - Cut-down confirmation writes inventory `CONSUMPTION` for source SKU
 - Production run confirmation writes `CUT_OUT` to WIP ledger
 - No inventory transaction at production run confirmation
 
 **Path 3 — CUT_SHIP**
+
 ```
 cut-down order → confirm → ship
 ```
+
 - Cut-down confirmation writes inventory `CONSUMPTION` for source SKU
 - `CUT_OUT` written to WIP ledger at shipment
 
 **Path 4 — DIRECT_SHIP**
+
 ```
 ship straight from inventory
 ```
+
 Inventory `CONSUMPTION` written at shipment confirmation.
 
 ---
@@ -116,6 +127,7 @@ Cut-Down is the physical shop floor operation of cutting source material rolls t
 ### 4.1 New Tables
 
 #### `cut_down_groups`
+
 ```sql
 CREATE TABLE cut_down_groups (
   id         INT AUTO_INCREMENT PRIMARY KEY,
@@ -130,6 +142,7 @@ CREATE TABLE cut_down_groups (
 Groups are scoped to a single work order, enforced by the `wo_id` FK. To batch cut-downs across multiple work orders, create a separate group per work order.
 
 #### `cut_downs`
+
 ```sql
 CREATE TABLE cut_downs (
   id                  INT AUTO_INCREMENT PRIMARY KEY,
@@ -205,21 +218,21 @@ CREATE TABLE wip_ledger (
 
 ### 5.2 Transaction Types
 
-| Type | When Written | Notes |
-|---|---|---|
-| `CUT_IN` | Cut-down confirmed | One entry per production line yielded |
-| `CUT_OUT` | Production run confirmed (path 2) or shipment created (path 3) | Consumes WIP |
-| `SCRAP` | Scrap disposition set to `DISCARDED` at cut-down confirmation | Writes off leftover |
-| `ADJUSTMENT` | Manual admin action | For discrepancies |
+| Type         | When Written                                                   | Notes                                 |
+| ------------ | -------------------------------------------------------------- | ------------------------------------- |
+| `CUT_IN`     | Cut-down confirmed                                             | One entry per production line yielded |
+| `CUT_OUT`    | Production run confirmed (path 2) or shipment created (path 3) | Consumes WIP                          |
+| `SCRAP`      | Scrap disposition set to `DISCARDED` at cut-down confirmation  | Writes off leftover                   |
+| `ADJUSTMENT` | Manual admin action                                            | For discrepancies                     |
 
 ### 5.3 Scrap Disposition
 
 Recorded at cut-down confirmation. Three outcomes:
 
-| Disposition | WIP Ledger Effect |
-|---|---|
-| `SAVED` | `CUT_IN` entry remains as available balance |
-| `DISCARDED` | `SCRAP` transaction written off immediately |
+| Disposition | WIP Ledger Effect                                      |
+| ----------- | ------------------------------------------------------ |
+| `SAVED`     | `CUT_IN` entry remains as available balance            |
+| `DISCARDED` | `SCRAP` transaction written off immediately            |
 | `DELIVERED` | Goes with the order it was cut from; noted on shipment |
 
 ### 5.4 Scrap Reuse Across Jobs
@@ -229,6 +242,7 @@ Scrap reuse is user-initiated. A user searches available WIP balance and assigns
 **Width tolerance rule:** Scrap width may be 1–2 inches wider than the production line's required width. Narrower scrap is blocked by the system. The system warns but does not block on width mismatch within tolerance — no additional cutting is performed.
 
 When scrap from Job A is used on Job B:
+
 - The WIP ledger `CUT_OUT` entry on Job B references both the source `cut_down_id` (Job A) and the destination `wo_line_id` (Job B production line)
 - No new inventory transaction is written — consumption already occurred at Job A's cut-down confirmation
 - The billing line on Job B may reflect zero SKU consumption for that production line, which is a valid reconciliation outcome
@@ -261,12 +275,12 @@ Exactly one of the three source FKs must be non-null, enforced by check constrai
 
 ### 6.2 Source FK by Path
 
-| Path | `production_run_id` | `cut_down_id` | `wo_line_id` |
-|---|---|---|---|
-| STANDARD | ✓ | — | — |
-| CUT_LAMINATE | ✓ | — | — |
-| CUT_SHIP | — | ✓ | — |
-| DIRECT_SHIP | — | — | ✓ |
+| Path         | `production_run_id` | `cut_down_id` | `wo_line_id` |
+| ------------ | ------------------- | ------------- | ------------ |
+| STANDARD     | ✓                   | —             | —            |
+| CUT_LAMINATE | ✓                   | —             | —            |
+| CUT_SHIP     | —                   | ✓             | —            |
+| DIRECT_SHIP  | —                   | —             | ✓            |
 
 ### 6.3 Path Locking
 
@@ -284,11 +298,11 @@ When scrap disposition is `DELIVERED`, it goes with the order it was cut from. R
 
 `reconciliation_status` on `work_order_lines` (billing and unbranched lines only):
 
-| Status | Meaning |
-|---|---|
-| `CURRENT` | Billing line matches cut-down reality |
-| `STALE` | Cut-down was modified; billing line needs review |
-| `RECONCILED` | User has reviewed and accepted the billing line |
+| Status       | Meaning                                                                     |
+| ------------ | --------------------------------------------------------------------------- |
+| `CURRENT`    | Billing line matches cut-down reality                                       |
+| `STALE`      | Cut-down was modified; billing line needs review                            |
+| `RECONCILED` | User has reviewed and accepted the billing line                             |
 | `SUPERSEDED` | Billing line was split during complex reconciliation; replaced by new lines |
 
 ### 7.2 When Staleness Is Triggered
@@ -356,23 +370,23 @@ User-initiated. A search interface allows browsing available WIP balance (saved 
 
 ### 9.1 New Services / Functions
 
-| Function | Description |
-|---|---|
-| `branchLine()` | Creates billing line (mutates original) + one or more production lines |
-| `scheduleCutDown()` | Create or merge cut-down for a billing line |
-| `scheduleCutDownGroup()` | Batch schedule; creates `cut_down_groups` |
-| `confirmCutDown()` | CONSUMPTION txn + WIP `CUT_IN` entries + scrap disposition |
-| `unconfirmCutDown()` | Reverse CONSUMPTION, reopen WIP, invalidate downstream (soft) |
-| `deleteCutDown()` | Remove unscheduled/unconfirmed cut-downs |
-| `assignScrap()` | Link saved WIP from another job to a production line |
-| `reconcileBillingLine()` | Mark STALE line as RECONCILED or trigger split |
+| Function                 | Description                                                            |
+| ------------------------ | ---------------------------------------------------------------------- |
+| `branchLine()`           | Creates billing line (mutates original) + one or more production lines |
+| `scheduleCutDown()`      | Create or merge cut-down for a billing line                            |
+| `scheduleCutDownGroup()` | Batch schedule; creates `cut_down_groups`                              |
+| `confirmCutDown()`       | CONSUMPTION txn + WIP `CUT_IN` entries + scrap disposition             |
+| `unconfirmCutDown()`     | Reverse CONSUMPTION, reopen WIP, invalidate downstream (soft)          |
+| `deleteCutDown()`        | Remove unscheduled/unconfirmed cut-downs                               |
+| `assignScrap()`          | Link saved WIP from another job to a production line                   |
+| `reconcileBillingLine()` | Mark STALE line as RECONCILED or trigger split                         |
 
 ### 9.2 Modified Services
 
-| Function | Change |
-|---|---|
-| `confirmRun()` | Skip CONSUMPTION for production lines (path 2); write WIP `CUT_OUT` instead |
-| `unproduceRun()` | Reverse WIP `CUT_OUT` for production lines; reverse CONSUMPTION for billing/unbranched |
+| Function           | Change                                                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `confirmRun()`     | Skip CONSUMPTION for production lines (path 2); write WIP `CUT_OUT` instead                                  |
+| `unproduceRun()`   | Reverse WIP `CUT_OUT` for production lines; reverse CONSUMPTION for billing/unbranched                       |
 | `createShipment()` | Write CONSUMPTION for DIRECT_SHIP path; write WIP `CUT_OUT` for CUT_SHIP path; lock `path_type` on all lines |
 
 ---
@@ -392,8 +406,8 @@ These items were identified during design but deferred:
 
 Previously open questions, now resolved:
 
-| Question | Decision |
-|---|---|
-| Cut-down group scope | Groups are scoped to a single work order. Create separate groups for separate work orders. |
+| Question               | Decision                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------- |
+| Cut-down group scope   | Groups are scoped to a single work order. Create separate groups for separate work orders.  |
 | Cut-down number format | System-generated internal key only (`CD-000001`). Not user-facing or shop floor referenced. |
-| Diff view depth | Current state only. No reconciliation history view. |
+| Diff view depth        | Current state only. No reconciliation history view.                                         |
