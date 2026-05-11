@@ -251,7 +251,7 @@ export const actions = {
 
 					for (const line of wo.lines) {
 						await conn.query(
-							'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+							'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, field_instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 							[
 								woId,
 								line.sku_id,
@@ -262,6 +262,7 @@ export const actions = {
 								line.sqft,
 								line.rollfor,
 								line.facing,
+								line.instructions,
 								line.instructions,
 								line.tab_type || null,
 							]
@@ -314,7 +315,7 @@ export const actions = {
 
 					for (const line of wo.lines) {
 						await conn.query(
-							'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+							'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, field_instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 							[
 								wo.existing_id,
 								line.sku_id,
@@ -325,6 +326,7 @@ export const actions = {
 								line.sqft,
 								line.rollfor,
 								line.facing,
+								line.instructions,
 								line.instructions,
 								line.tab_type || null,
 							]

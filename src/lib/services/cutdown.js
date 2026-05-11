@@ -66,6 +66,7 @@ async function insertProductionLines(conn, line, productionWidths) {
 			rollfor: line.rollfor,
 			tab_type: line.tab_type,
 			instructions: line.instructions,
+			field_instructions: line.field_instructions,
 			rolls_produced: 0,
 			reconciliation_status: 'CURRENT',
 			path_type: null,
@@ -75,8 +76,8 @@ async function insertProductionLines(conn, line, productionWidths) {
 		const [{ insertId }] = await conn.query(
 			`INSERT INTO work_order_lines
 			 (wo_id, parent_line_id, sku_id, thickness_in, width_in, qty, length_ft, sqft,
-			  facing, rollfor, tab_type, instructions, rolls_produced, reconciliation_status, path_type)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			  facing, rollfor, tab_type, instructions, field_instructions, rolls_produced, reconciliation_status, path_type)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			[
 				prodLine.wo_id,
 				prodLine.parent_line_id,
@@ -90,6 +91,7 @@ async function insertProductionLines(conn, line, productionWidths) {
 				prodLine.rollfor,
 				prodLine.tab_type,
 				prodLine.instructions,
+				prodLine.field_instructions,
 				prodLine.rolls_produced,
 				prodLine.reconciliation_status,
 				prodLine.path_type,
@@ -257,6 +259,54 @@ export async function updateBranchLine(billingLineId, woId, productionWidths, _u
  * Exported pure read — used by runs.js inside its own transaction.
  * Finds the confirmed cut-down linked to a production line via its billing parent.
  */
+/**
+ * Delete the production children for an existing branch. The billing/source row
+ * remains unchanged and becomes unbranched by derived line type.
+ *
+ * @param {number} billingLineId - the existing billing/source line
+ * @param {number} woId - owning work order id
+ * @param {number} userId
+ * @returns {Promise<number>} number of deleted child rows
+ */
+export async function deleteBranchLine(billingLineId, woId, _userId) {
+	const conn = await db.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		const [[line]] = await conn.query(
+			'SELECT * FROM work_order_lines WHERE id = ? AND wo_id = ? FOR UPDATE',
+			[billingLineId, woId]
+		);
+		if (!line) throw new Error('WO line not found.');
+		if (line.parent_line_id !== null)
+			throw new Error('Cannot delete a branch from a production child line.');
+
+		const [children] = await conn.query(
+			'SELECT * FROM work_order_lines WHERE parent_line_id = ? ORDER BY id FOR UPDATE',
+			[billingLineId]
+		);
+		if (children.length === 0) throw new Error('Line has not been branched.');
+
+		const blockers = await queryBranchEditBlockers(conn, billingLineId);
+		if (blockers.length > 0)
+			throw new Error(
+				`Cannot delete branch because it has downstream ${blockers.join(', ')} activity.`
+			);
+
+		const [result] = await conn.query('DELETE FROM work_order_lines WHERE parent_line_id = ?', [
+			billingLineId,
+		]);
+
+		await conn.commit();
+		return result.affectedRows ?? children.length;
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+}
+
 export async function getConfirmedCutDownForProductionLine(conn, woLineId) {
 	const [[line]] = await conn.query('SELECT parent_line_id FROM work_order_lines WHERE id = ?', [
 		woLineId,
@@ -873,8 +923,8 @@ export async function splitBillingLine(billingLineId, newLines, _userId) {
 			const [{ insertId }] = await conn.query(
 				`INSERT INTO work_order_lines
 				 (wo_id, parent_line_id, sku_id, thickness_in, width_in, qty, length_ft, sqft,
-				  facing, rollfor, tab_type, instructions, rolls_produced, reconciliation_status, path_type)
-				 VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'RECONCILED', NULL)`,
+				  facing, rollfor, tab_type, instructions, field_instructions, rolls_produced, reconciliation_status, path_type)
+				 VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'RECONCILED', NULL)`,
 				[
 					original.wo_id,
 					nl.skuId ?? original.sku_id,
@@ -887,6 +937,7 @@ export async function splitBillingLine(billingLineId, newLines, _userId) {
 					original.rollfor,
 					original.tab_type,
 					original.instructions,
+					original.field_instructions,
 					0,
 				]
 			);

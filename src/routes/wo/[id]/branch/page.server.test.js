@@ -68,6 +68,7 @@ describe('work order branch page', () => {
 			productionLines: [],
 			isEditMode: false,
 			editBlockers: [],
+			cutDownBlockers: [],
 		});
 		expect(getBranchEditBlockers).not.toHaveBeenCalled();
 	});
@@ -94,8 +95,49 @@ describe('work order branch page', () => {
 			productionLines,
 			isEditMode: true,
 			editBlockers: [],
+			cutDownBlockers: [],
 		});
 		expect(getBranchEditBlockers).toHaveBeenCalledWith(34);
+	});
+
+	it('loads cut-down blocker details for edit mode when cut-down activity blocks editing', async () => {
+		const wo = { id: 42, so_number: 'SO-42' };
+		const line = { id: 34, wo_id: 42, parent_line_id: null, width_in: 60 };
+		const productionLines = [{ id: 44, parent_line_id: 34, width_in: 48 }];
+		const cutDownBlockers = [
+			{
+				id: 9,
+				cut_down_number: 'CD-000009',
+				status: 'SCHEDULED',
+				run_date: '2026-05-15',
+				rolls_scheduled: 2,
+				sqft_scheduled: 800,
+				sku_label: '3"x48"',
+			},
+		];
+		db.query
+			.mockResolvedValueOnce([[wo]])
+			.mockResolvedValueOnce([[line]])
+			.mockResolvedValueOnce([[{ childCount: 1 }]])
+			.mockResolvedValueOnce([productionLines])
+			.mockResolvedValueOnce([cutDownBlockers]);
+		getBranchEditBlockers.mockResolvedValueOnce(['cut-down']);
+
+		const result = await load({ params: { id: '42' }, url: branchUrl(34) });
+
+		expect(result).toEqual({
+			wo,
+			line,
+			productionLines,
+			isEditMode: true,
+			editBlockers: ['cut-down'],
+			cutDownBlockers,
+		});
+		expect(db.query).toHaveBeenNthCalledWith(
+			5,
+			expect.stringContaining('FROM cut_downs cd'),
+			[34, '42']
+		);
 	});
 
 	it('dispatches edit submissions to updateBranchLine', async () => {

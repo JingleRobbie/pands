@@ -23,6 +23,7 @@ const {
 	__cutdownTest,
 	branchLine,
 	confirmCutDown,
+	deleteBranchLine,
 	scheduleCutDown,
 	scheduleCutDownGroup,
 	updateBranchLine,
@@ -135,6 +136,7 @@ describe('cut-down services', () => {
 				'Roof',
 				'BILLING',
 				'Keep dry',
+				undefined,
 				0,
 				'CURRENT',
 				null,
@@ -156,15 +158,14 @@ describe('cut-down services', () => {
 				'Roof',
 				'BILLING',
 				'Keep dry',
+				undefined,
 				0,
 				'CURRENT',
 				null,
 			]
 		);
 		expect(
-			conn.query.mock.calls.some(([sql]) =>
-				String(sql).startsWith('UPDATE work_order_lines')
-			)
+			conn.query.mock.calls.some(([sql]) => String(sql).startsWith('UPDATE work_order_lines'))
 		).toBe(false);
 		expect(conn.commit).toHaveBeenCalledOnce();
 		expect(conn.rollback).not.toHaveBeenCalled();
@@ -198,28 +199,28 @@ describe('cut-down services', () => {
 		expect(conn.release).toHaveBeenCalledOnce();
 	});
 
-	it.each([
-		['cut-down'],
-		['production run'],
-		['WIP ledger entry'],
-		['shipment'],
-	])('rejects editing a branch with downstream %s activity', async (blocker) => {
-		conn.query
-			.mockResolvedValueOnce([[{ id: 34, parent_line_id: null, width_in: 60 }]])
-			.mockResolvedValueOnce([[{ id: 44 }]])
-			.mockResolvedValueOnce([[{ blocker }]]);
+	it.each([['cut-down'], ['production run'], ['WIP ledger entry'], ['shipment']])(
+		'rejects editing a branch with downstream %s activity',
+		async (blocker) => {
+			conn.query
+				.mockResolvedValueOnce([[{ id: 34, parent_line_id: null, width_in: 60 }]])
+				.mockResolvedValueOnce([[{ id: 44 }]])
+				.mockResolvedValueOnce([[{ blocker }]]);
 
-		await expect(
-			updateBranchLine(34, 12, [{ width_in: 48, qty: 1, length_ft: 75 }], 9)
-		).rejects.toThrow(`Cannot edit branch because it has downstream ${blocker} activity.`);
+			await expect(
+				updateBranchLine(34, 12, [{ width_in: 48, qty: 1, length_ft: 75 }], 9)
+			).rejects.toThrow(`Cannot edit branch because it has downstream ${blocker} activity.`);
 
-		expect(
-			conn.query.mock.calls.some(([sql]) => String(sql).includes('DELETE FROM work_order_lines'))
-		).toBe(false);
-		expect(conn.commit).not.toHaveBeenCalled();
-		expect(conn.rollback).toHaveBeenCalledOnce();
-		expect(conn.release).toHaveBeenCalledOnce();
-	});
+			expect(
+				conn.query.mock.calls.some(([sql]) =>
+					String(sql).includes('DELETE FROM work_order_lines')
+				)
+			).toBe(false);
+			expect(conn.commit).not.toHaveBeenCalled();
+			expect(conn.rollback).toHaveBeenCalledOnce();
+			expect(conn.release).toHaveBeenCalledOnce();
+		}
+	);
 
 	it('rolls back when replacing branch children fails', async () => {
 		conn.query
@@ -308,6 +309,107 @@ describe('cut-down services', () => {
 		await expect(
 			branchLine(34, 99, [{ width_in: 48, qty: 5, length_ft: 75 }], 9)
 		).rejects.toThrow('WO line not found.');
+
+		expect(conn.query).toHaveBeenNthCalledWith(
+			1,
+			'SELECT * FROM work_order_lines WHERE id = ? AND wo_id = ? FOR UPDATE',
+			[34, 99]
+		);
+		expect(conn.commit).not.toHaveBeenCalled();
+		expect(conn.rollback).toHaveBeenCalledOnce();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
+
+	it('deletes a clean branch by removing only production child rows', async () => {
+		conn.query
+			.mockResolvedValueOnce([[{ id: 34, wo_id: 12, parent_line_id: null }]])
+			.mockResolvedValueOnce([[{ id: 44 }, { id: 45 }]])
+			.mockResolvedValueOnce([[]])
+			.mockResolvedValueOnce([{ affectedRows: 2 }]);
+
+		await expect(deleteBranchLine(34, 12, 9)).resolves.toBe(2);
+
+		expect(conn.query).toHaveBeenNthCalledWith(
+			1,
+			'SELECT * FROM work_order_lines WHERE id = ? AND wo_id = ? FOR UPDATE',
+			[34, 12]
+		);
+		expect(conn.query).toHaveBeenNthCalledWith(
+			4,
+			'DELETE FROM work_order_lines WHERE parent_line_id = ?',
+			[34]
+		);
+		expect(conn.commit).toHaveBeenCalledOnce();
+		expect(conn.rollback).not.toHaveBeenCalled();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
+
+	it('rejects deleting an unbranched line', async () => {
+		conn.query
+			.mockResolvedValueOnce([[{ id: 34, wo_id: 12, parent_line_id: null }]])
+			.mockResolvedValueOnce([[]]);
+
+		await expect(deleteBranchLine(34, 12, 9)).rejects.toThrow('Line has not been branched.');
+
+		expect(conn.commit).not.toHaveBeenCalled();
+		expect(conn.rollback).toHaveBeenCalledOnce();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
+
+	it('rejects deleting a branch from a production child line', async () => {
+		conn.query.mockResolvedValueOnce([[{ id: 44, wo_id: 12, parent_line_id: 34 }]]);
+
+		await expect(deleteBranchLine(44, 12, 9)).rejects.toThrow(
+			'Cannot delete a branch from a production child line.'
+		);
+
+		expect(conn.query).toHaveBeenCalledTimes(1);
+		expect(conn.commit).not.toHaveBeenCalled();
+		expect(conn.rollback).toHaveBeenCalledOnce();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
+
+	it.each([['cut-down'], ['production run'], ['WIP ledger entry'], ['shipment']])(
+		'rejects deleting a branch with downstream %s activity',
+		async (blocker) => {
+			conn.query
+				.mockResolvedValueOnce([[{ id: 34, wo_id: 12, parent_line_id: null }]])
+				.mockResolvedValueOnce([[{ id: 44 }]])
+				.mockResolvedValueOnce([[{ blocker }]]);
+
+			await expect(deleteBranchLine(34, 12, 9)).rejects.toThrow(
+				`Cannot delete branch because it has downstream ${blocker} activity.`
+			);
+
+			expect(
+				conn.query.mock.calls.some(([sql]) =>
+					String(sql).includes('DELETE FROM work_order_lines')
+				)
+			).toBe(false);
+			expect(conn.commit).not.toHaveBeenCalled();
+			expect(conn.rollback).toHaveBeenCalledOnce();
+			expect(conn.release).toHaveBeenCalledOnce();
+		}
+	);
+
+	it('rolls back when deleting branch children fails', async () => {
+		conn.query
+			.mockResolvedValueOnce([[{ id: 34, wo_id: 12, parent_line_id: null }]])
+			.mockResolvedValueOnce([[{ id: 44 }]])
+			.mockResolvedValueOnce([[]])
+			.mockRejectedValueOnce(new Error('delete failed'));
+
+		await expect(deleteBranchLine(34, 12, 9)).rejects.toThrow('delete failed');
+
+		expect(conn.commit).not.toHaveBeenCalled();
+		expect(conn.rollback).toHaveBeenCalledOnce();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
+
+	it('rejects branch deletion for lines outside the route work order', async () => {
+		conn.query.mockResolvedValueOnce([[]]);
+
+		await expect(deleteBranchLine(34, 99, 9)).rejects.toThrow('WO line not found.');
 
 		expect(conn.query).toHaveBeenNthCalledWith(
 			1,

@@ -39,8 +39,20 @@ export async function load({ params, url }) {
 			)
 		: [[]];
 	const editBlockers = isEditMode ? await getBranchEditBlockers(lineId) : [];
+	const [cutDownBlockers] =
+		isEditMode && editBlockers.includes('cut-down')
+			? await db.query(
+					`SELECT cd.id, cd.cut_down_number, cd.status, cd.run_date, cd.rolls_scheduled,
+					        cd.sqft_scheduled, ms.display_label AS sku_label
+					 FROM cut_downs cd
+					 JOIN material_skus ms ON ms.id = cd.sku_id
+					 WHERE cd.billing_line_id = ? AND cd.wo_id = ?
+					 ORDER BY cd.run_date, cd.id`,
+					[lineId, params.id]
+				)
+			: [[]];
 
-	return { wo, line, productionLines, isEditMode, editBlockers };
+	return { wo, line, productionLines, isEditMode, editBlockers, cutDownBlockers };
 }
 
 export const actions = {

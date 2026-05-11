@@ -179,8 +179,8 @@ describe('work order import page', () => {
 		);
 		expect(conn.query).toHaveBeenNthCalledWith(
 			3,
-			'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-			[101, 7, 3, 48, 4, 100, 1600, 'Wall', 'FSK', 'Label A', '1-6']
+			'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, field_instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+			[101, 7, 3, 48, 4, 100, 1600, 'Wall', 'FSK', 'Label A', 'Label A', '1-6']
 		);
 		expect(conn.query).toHaveBeenNthCalledWith(
 			4,
@@ -306,8 +306,8 @@ describe('work order import page', () => {
 		);
 		expect(conn.query).toHaveBeenNthCalledWith(
 			6,
-			'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-			[101, 7, 3, 48, 4, 100, 1600, 'Wall', 'FSK', 'Label A', '1-6']
+			'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, field_instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+			[101, 7, 3, 48, 4, 100, 1600, 'Wall', 'FSK', 'Label A', 'Label A', '1-6']
 		);
 		expect(conn.query).toHaveBeenNthCalledWith(
 			7,
@@ -545,8 +545,8 @@ describe('work order import page', () => {
 			expect(result).toEqual({ success: true, created: 1, updated: 0 });
 			expect(conn.query).toHaveBeenNthCalledWith(
 				3,
-				'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-				[101, 7, 3, 48, 4, 100, 1600, 'Wall', 'Unfaced', 'Label A', null]
+				'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, field_instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+				[101, 7, 3, 48, 4, 100, 1600, 'Wall', 'Unfaced', 'Label A', 'Label A', null]
 			);
 		});
 

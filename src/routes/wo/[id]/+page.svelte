@@ -8,6 +8,7 @@
 	const lines = $derived(data.lines);
 	const billingLines = $derived(data.billingLines);
 	const productionLines = $derived(data.productionLines);
+	const productionGroupsByParent = $derived(data.productionGroupsByParent ?? {});
 	const unbranchedLines = $derived(data.unbranchedLines);
 	const canComplete = $derived(data.canComplete);
 	const contacts = $derived(data.contacts);
@@ -18,6 +19,10 @@
 	let addingContact = $state(false);
 	let dismissed = $state(false);
 	let activeTab = $state('billing');
+	let pendingBranchDelete = $state(null);
+	let deleteBranchDialog = $state(null);
+	let pendingInstructionsLine = $state(null);
+	let instructionsDialog = $state(null);
 
 	const totalSqft = $derived(lines.reduce((s, l) => s + l.sqft, 0));
 	const hasBranched = $derived(productionLines.length > 0);
@@ -25,6 +30,20 @@
 		billingLines.some((l) => l.reconciliation_status === 'STALE') ||
 			unbranchedLines.some((l) => l.reconciliation_status === 'STALE')
 	);
+
+	function requestBranchDelete(line) {
+		pendingBranchDelete = line;
+		deleteBranchDialog.showModal();
+	}
+
+	function childWidthLabel(child) {
+		return child.width_display ?? child.width_in;
+	}
+
+	function requestInstructionEdit(line) {
+		pendingInstructionsLine = line;
+		instructionsDialog.showModal();
+	}
 </script>
 
 <svelte:head><title>WO {wo.so_number} — PandS</title></svelte:head>
@@ -204,35 +223,53 @@
 		</div>
 
 		{#if activeTab === 'billing'}
+			{#if form?.branchError}
+				<div
+					class="mx-4 mt-4 px-4 py-3 rounded-md text-sm bg-red-50 text-red-800 border border-red-200"
+				>
+					{form.branchError}
+				</div>
+			{/if}
 			<!-- Billing + unbranched lines -->
 			<table class="w-full text-sm">
 				<thead>
 					<tr class="border-b border-gray-100 bg-gray-50">
-						<th class="px-4 py-2 text-left text-gray-500 font-medium">Roll For</th>
 						<th class="px-4 py-2 text-left text-gray-500 font-medium">Facing</th>
 						<th class="px-4 py-2 text-right text-gray-500 font-medium">Qty</th>
-						<th class="px-4 py-2 text-right text-gray-500 font-medium">Width</th>
+						<th class="px-4 py-2 text-right text-gray-500 font-medium">Th</th>
+						<th class="px-4 py-2 text-right text-gray-500 font-medium min-w-28"
+							>Width</th
+						>
 						<th class="px-4 py-2 text-right text-gray-500 font-medium">Length</th>
+						<th class="px-4 py-2 text-left text-gray-500 font-medium">Instructions</th>
 						<th class="px-4 py-2 text-right text-gray-500 font-medium">Sq Ft</th>
-						<th class="px-4 py-2 text-right text-gray-500 font-medium">Progress</th>
+						<th class="px-4 py-2 text-right text-gray-500 font-medium">Path / Status</th
+						>
 						<th class="px-4 py-2 text-right text-gray-500 font-medium">Actions</th>
 					</tr>
 				</thead>
 				<tbody>
 					{#each [...billingLines, ...unbranchedLines] as line (line.id)}
-						{@const children = productionLines.filter(
+						{@const rawChildren = productionLines.filter(
 							(p) => p.parent_line_id === line.id
 						)}
+						{@const children = productionGroupsByParent[line.id] ?? rawChildren}
+						{@const canEdit =
+							data.user?.role === 'admin' &&
+							wo.status !== 'COMPLETE' &&
+							wo.status !== 'CANCELLED'}
 						<tr
 							class="align-top border-b border-gray-100 {line.reconciliation_status ===
 							'STALE'
 								? 'bg-amber-50'
 								: ''}"
 						>
-							<td class="px-4 py-2 text-gray-500">{line.rollfor}</td>
 							<td class="px-4 py-2 text-gray-500">{line.facing}</td>
 							<td class="px-4 py-2 text-right text-gray-600 tabular-nums"
 								>{line.qty}</td
+							>
+							<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
+								>{line.thickness_in}"</td
 							>
 							<td class="px-4 py-2 text-right font-mono">
 								{#if line.line_type === 'BILLING' && children.length > 0}
@@ -242,11 +279,11 @@
 										{:else if line.reconciliation_status === 'RECONCILED'}
 											<span class="badge-green text-xs mb-1">Reconciled</span>
 										{/if}
-										<span class="text-gray-600"
-											>{line.width_in}" → {children[0].width_in}"</span
-										>
-										{#each children.slice(1) as child (child.id)}
-											<span class="text-gray-600">→ {child.width_in}"</span>
+										<span class="text-gray-600">{line.width_in}"</span>
+										{#each children as child (child.group_key ?? child.id)}
+											<span class="text-gray-600"
+												>→ {childWidthLabel(child)}"</span
+											>
 										{/each}
 									</div>
 								{:else}
@@ -263,12 +300,38 @@
 							<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
 								>{line.length_ft}'</td
 							>
+							<td class="px-4 py-2 text-gray-500">
+								{#if line.display_instructions}
+									<button
+										type="button"
+										class="text-left hover:text-blue-700 hover:underline {line.display_instructions !==
+										(line.instructions ?? '').trim()
+											? 'text-blue-700'
+											: ''}"
+										onclick={() => requestInstructionEdit(line)}
+										disabled={!canEdit}>{line.display_instructions}</button
+									>
+								{:else}
+									<button
+										type="button"
+										class="text-gray-300 hover:text-blue-700 hover:underline"
+										onclick={() => requestInstructionEdit(line)}
+										disabled={!canEdit}>—</button
+									>
+								{/if}
+							</td>
 							<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
 								>{fmtSqft(line.sqft)}</td
 							>
-							<td class="px-4 py-2 text-right tabular-nums text-xs">
-								<span class="text-green-600 font-medium">{line.rolls_produced}</span
-								><span class="text-gray-400"> / {line.qty}</span>
+							<td class="px-4 py-2 text-right text-xs">
+								<div class="flex flex-col items-end gap-1">
+									<span class="{line.progress.path.class} text-xs"
+										>{line.progress.path.label}</span
+									>
+									<span class="{line.progress.status.class} text-xs"
+										>{line.progress.status.label}</span
+									>
+								</div>
 							</td>
 							<td class="px-4 py-2 text-right">
 								{#if line.line_type === 'UNBRANCHED' && wo.status !== 'COMPLETE'}
@@ -282,6 +345,12 @@
 										href="/wo/{wo.id}/branch?lineId={line.id}"
 										class="text-blue-600 hover:underline text-xs">Edit Branch</a
 									>
+									<button
+										type="button"
+										class="text-red-600 hover:underline text-xs ml-2"
+										onclick={() => requestBranchDelete(line)}
+										>Delete Branch</button
+									>
 								{/if}
 								{#if line.reconciliation_status === 'STALE'}
 									<a
@@ -294,7 +363,7 @@
 						</tr>
 					{/each}
 					<tr class="border-t border-gray-200 bg-gray-50">
-						<td colspan="5" class="px-4 py-2 text-sm text-gray-500 font-medium"
+						<td colspan="6" class="px-4 py-2 text-sm text-gray-500 font-medium"
 							>Total</td
 						>
 						<td class="px-4 py-2 text-right font-mono font-medium text-gray-700"
@@ -313,6 +382,7 @@
 						{@const children = productionLines.filter(
 							(p) => p.parent_line_id === billing.id
 						)}
+						{@const childGroups = productionGroupsByParent[billing.id] ?? []}
 						{#if children.length > 0}
 							<tr>
 								<td
@@ -327,7 +397,7 @@
 									</div>
 								</td>
 							</tr>
-							{#each children as line (line.id)}
+							{#each childGroups as line (line.group_key)}
 								<tr class="border-b border-gray-100">
 									<td class="px-4 py-2 text-gray-500">{line.rollfor}</td>
 									<td class="px-4 py-2 text-gray-500">{line.facing}</td>
@@ -336,7 +406,8 @@
 									>
 									<td
 										class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
-										>{line.width_in}"</td
+										>{#if line.child_count > 1}{line.child_count} @
+										{/if}{line.width_in}"</td
 									>
 									<td
 										class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
@@ -372,6 +443,100 @@
 			</table>
 		{/if}
 	</div>
+
+	<dialog bind:this={deleteBranchDialog} class="modal-dialog modal-dialog-sm">
+		<p class="text-sm font-medium text-gray-900 mb-1">Delete branch?</p>
+		{#if pendingBranchDelete}
+			<p class="text-sm text-gray-600 mb-3">
+				This will remove the production child rows for
+				<span class="font-medium">{pendingBranchDelete.facing}</span>
+				{pendingBranchDelete.thickness_in}" × {pendingBranchDelete.width_in}" ×
+				{pendingBranchDelete.length_ft}'.
+			</p>
+			<p class="text-xs text-gray-500 mb-4">
+				The original billing/source line will remain and can be branched again. Branches
+				with downstream cut-downs, production runs, WIP, or shipments cannot be deleted.
+			</p>
+			<form
+				method="POST"
+				action="?/deleteBranch"
+				use:enhance={() => {
+					return async ({ update }) => {
+						deleteBranchDialog.close();
+						pendingBranchDelete = null;
+						await update();
+					};
+				}}
+				class="flex justify-end gap-2"
+			>
+				<input type="hidden" name="line_id" value={pendingBranchDelete.id} />
+				<button
+					type="button"
+					class="btn-secondary btn-sm"
+					onclick={() => {
+						deleteBranchDialog.close();
+						pendingBranchDelete = null;
+					}}>Cancel</button
+				>
+				<button type="submit" class="btn-danger btn-sm">Delete Branch</button>
+			</form>
+		{/if}
+	</dialog>
+
+	<dialog bind:this={instructionsDialog} class="modal-dialog modal-dialog-md">
+		{#if pendingInstructionsLine}
+			<div class="space-y-4">
+				<div>
+					<p class="text-sm font-medium text-gray-900 mb-1">Edit field instructions</p>
+					<p class="text-xs text-gray-500">
+						Original import instructions are read-only. Field instructions override the
+						line list when they differ.
+					</p>
+				</div>
+				<div>
+					<p class="form-label">Imported Instructions</p>
+					<div class="min-h-16 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 whitespace-pre-wrap">
+						{pendingInstructionsLine.instructions || '—'}
+					</div>
+				</div>
+				<form
+					method="POST"
+					action="?/updateFieldInstructions"
+					use:enhance={() => {
+						return async ({ update }) => {
+							instructionsDialog.close();
+							pendingInstructionsLine = null;
+							await update();
+						};
+					}}
+					class="space-y-3"
+				>
+					<input type="hidden" name="line_id" value={pendingInstructionsLine.id} />
+					<div>
+						<label for="field-instructions" class="form-label">Field Instructions</label>
+						<textarea
+							id="field-instructions"
+							name="field_instructions"
+							class="form-input"
+							rows="4"
+							>{pendingInstructionsLine.field_instructions ?? ''}</textarea
+						>
+					</div>
+					<div class="flex justify-end gap-2">
+						<button
+							type="button"
+							class="btn-secondary btn-sm"
+							onclick={() => {
+								instructionsDialog.close();
+								pendingInstructionsLine = null;
+							}}>Cancel</button
+						>
+						<button type="submit" class="btn-primary btn-sm">Save</button>
+					</div>
+				</form>
+			</div>
+		{/if}
+	</dialog>
 
 	<!-- Contacts -->
 	<div class="card">

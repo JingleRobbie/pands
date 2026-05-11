@@ -1,11 +1,13 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { wo, line, productionLines, isEditMode, editBlockers } = $derived(data);
+	const { wo, line, productionLines, isEditMode, editBlockers, cutDownBlockers } =
+		$derived(data);
 	const canSubmit = $derived(!isEditMode || editBlockers.length === 0);
 
 	let rows = $state([]);
+	let cutDownDialog = $state(null);
 
 	$effect(() => {
 		if (rows.length > 0) return;
@@ -69,8 +71,19 @@
 	{/if}
 	{#if isEditMode && editBlockers.length > 0}
 		<div class="px-4 py-3 rounded-md text-sm bg-amber-50 text-amber-800 border border-amber-200">
-			This branch cannot be edited because it has downstream {editBlockers.join(', ')}
-			activity.
+			<div class="flex flex-wrap items-center justify-between gap-3">
+				<span>
+					This branch cannot be edited because it has downstream {editBlockers.join(', ')}
+					activity.
+				</span>
+				{#if cutDownBlockers.length > 0}
+					<button
+						type="button"
+						class="btn-secondary btn-sm"
+						onclick={() => cutDownDialog.showModal()}>View cut-down activity</button
+					>
+				{/if}
+			</div>
 		</div>
 	{/if}
 
@@ -115,7 +128,7 @@
 			{#if line.instructions}
 				<div class="col-span-2">
 					<p class="form-label">Instructions</p>
-					<p class="text-gray-600 italic text-xs">{line.instructions}</p>
+					<p class="text-gray-900">{line.instructions}</p>
 				</div>
 			{/if}
 		</div>
@@ -241,4 +254,43 @@
 			</div>
 		</form>
 	</div>
+
+	<dialog bind:this={cutDownDialog} class="modal-dialog modal-dialog-md">
+		<div class="space-y-4">
+			<div>
+				<p class="text-sm font-medium text-gray-900 mb-1">Blocking cut-down activity</p>
+				<p class="text-xs text-gray-500">
+					This branch cannot be edited while these cut-down records exist.
+				</p>
+			</div>
+
+			<div class="space-y-2">
+				{#each cutDownBlockers as cutDown (cutDown.id)}
+					<div class="border border-gray-200 rounded-md px-3 py-2 text-xs space-y-1">
+						<div class="flex items-center justify-between gap-2">
+							<span class="font-semibold text-gray-800">{cutDown.cut_down_number}</span>
+							<span class="badge-gray text-xs">{cutDown.status}</span>
+						</div>
+						<div class="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-600">
+							<span>{cutDown.sku_label}</span>
+							<span>Run: {cutDown.run_date ? fmtDate(cutDown.run_date) : 'Unscheduled'}</span>
+							<span>Rolls: {cutDown.rolls_scheduled}</span>
+							<span>Sq Ft: {fmtSqft(cutDown.sqft_scheduled)}</span>
+						</div>
+						<a
+							href="/wo/{wo.id}/cutdown/{cutDown.id}/confirm"
+							class="text-blue-600 hover:underline">View cut-down</a
+						>
+					</div>
+				{/each}
+			</div>
+
+			<div class="flex justify-end gap-2">
+				<a href="/wo/{wo.id}/cutdown" class="btn-secondary btn-sm">Open Cut-Downs</a>
+				<button type="button" class="btn-primary btn-sm" onclick={() => cutDownDialog.close()}>
+					Close
+				</button>
+			</div>
+		</div>
+	</dialog>
 </main>
