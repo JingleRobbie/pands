@@ -107,8 +107,8 @@
 				<!-- Side-by-side: billing left, production right -->
 				<div
 					class="grid grid-cols-2 divide-x-4 {row.isUnbranched
-						? 'divide-gray-100'
-						: 'divide-red-100'} text-sm"
+						? 'divide-green-300'
+						: 'divide-red-600'} text-sm"
 				>
 					<!-- Billing column -->
 					<div class="py-0 px-1">
@@ -125,9 +125,9 @@
 							<tbody>
 								<tr class="border-t border-gray-50">
 									<td class="font-mono py-1 text-xs"
-										>{bl.facing}
-										{bl.tab_type}
-										{bl.thickness_in}" × {bl.width_in}" × {bl.length_ft}'</td
+										>{bl.thickness_in} @ {bl.thickness_in}" × <span class="{!row.isUnbranched ? 'text-red-700 font-bold' : ''}">{bl.width_in}"</span> × {bl.length_ft}'
+											{bl.facing}
+											{bl.tab_type}</td
 									>
 									<td class="text-right font-mono py-1">{fmtSqft(bl.sqft)}</td>
 								</tr>
@@ -142,9 +142,9 @@
 								<tbody>
 									<tr class="border-t border-gray-50">
 										<td class="font-mono py-1 text-xs"
-											>{bl.facing}
-											{bl.tab_type}
-											{bl.thickness_in}" × {bl.width_in}" × {bl.length_ft}'</td
+										>{bl.thickness_in} @ {bl.thickness_in}" × {bl.width_in}" × {bl.length_ft}'
+												{bl.facing}
+												{bl.tab_type}</td
 										>
 										<td class="text-right font-mono py-1">{fmtSqft(bl.sqft)}</td
 										>
@@ -157,10 +157,10 @@
 									{#each row.productionLines as pl (pl.id)}
 										<tr class="border-t border-gray-50">
 											<td class="font-mono py-1 text-xs"
-												>{bl.facing}
+												>{bl.thickness_in} @ {bl.thickness_in}" × <span class="text-red-700 font-bold">{pl.width_in}"</span> × {bl.length_ft}'
+												{bl.facing}
 												{bl.tab_type}
-												{bl.thickness_in}" × {pl.width_in}" × {bl.length_ft}'</td
-											>
+											</td>
 											<td class="text-right font-mono py-1"
 												>{fmtSqft(pl.sqft)}</td
 											>

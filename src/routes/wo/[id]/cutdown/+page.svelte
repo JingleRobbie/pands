@@ -108,9 +108,10 @@
 				<div class="flex flex-col gap-0.5">
 					<div class="flex items-center gap-2 text-sm font-semibold text-gray-700">
 						<span class="font-mono"
-							>{line.facing}
+							>{line.qty} rolls:{line.thickness_in}" × {line.width_in}" × {line.length_ft}'
+							{line.facing}
 							{line.tab_type}
-							{line.thickness_in}" × {line.width_in}" × {line.length_ft}'</span
+							</span
 						>
 						<span class="text-gray-400 font-normal">{fmtSqft(line.sqft)} sqft</span>
 					</div>
@@ -217,8 +218,7 @@
 				<table class="w-full text-sm">
 					<thead>
 						<tr class="border-b border-gray-100 bg-gray-50">
-							<th class="px-4 py-2 text-left text-gray-500 font-medium">Status</th>
-							<th class="px-4 py-2 text-left text-gray-500 font-medium">SKU</th>
+							<!-- <th class="px-4 py-2 text-left text-gray-500 font-medium">SKU</th> -->
 							<th class="px-4 py-2 text-right text-gray-500 font-medium"
 								>Rolls Sched</th
 							>
@@ -226,18 +226,14 @@
 								>Sqft Sched</th
 							>
 							<th class="px-4 py-2 text-left text-gray-500 font-medium">Run Date</th>
+							<th class="px-4 py-2 text-left text-gray-500 font-medium">Status</th>
 							<th class="px-4 py-2 text-right text-gray-500 font-medium">Actions</th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each lineCutDowns as cd (cd.id)}
 							<tr class="border-b border-gray-100 last:border-0">
-								<td class="px-4 py-2">
-									<span class={statusBadge[cd.status] ?? 'badge-gray'}
-										>{cd.status}</span
-									>
-								</td>
-								<td class="px-4 py-2 text-gray-600">{cd.sku_label}</td>
+								<!-- <td class="px-4 py-2 text-gray-600">{cd.sku_label}</td> -->
 								<td class="px-4 py-2 text-right tabular-nums"
 									>{cd.rolls_scheduled}</td
 								>
@@ -247,6 +243,11 @@
 								<td class="px-4 py-2 text-gray-600"
 									>{cd.run_date ? fmtDate(cd.run_date) : '-'}</td
 								>
+								<td class="px-4 py-2">
+									<span class={statusBadge[cd.status] ?? 'badge-gray'}
+										>{cd.status}</span
+									>
+								</td>
 								<td
 									class="px-4 py-2 text-right flex items-center justify-end gap-2"
 								>
