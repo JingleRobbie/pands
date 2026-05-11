@@ -100,7 +100,7 @@
 	</div>
 {/if}
 
-<dialog bind:this={revertDialog} class="rounded-lg shadow-xl p-6 w-96 backdrop:bg-black/30">
+<dialog bind:this={revertDialog} class="modal-dialog modal-dialog-md">
 	<p class="text-sm font-medium text-gray-900 mb-1">Revert shipment to DRAFT?</p>
 	<p class="text-xs text-gray-500 mb-4">
 		The shipment will return to DRAFT status and can be edited or re-shipped. Production run

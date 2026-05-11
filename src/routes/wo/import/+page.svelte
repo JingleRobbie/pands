@@ -1,7 +1,6 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
-	import { SvelteSet } from 'svelte/reactivity';
 	let { data, form } = $props();
 	const user = $derived(data.user);
 
@@ -11,35 +10,9 @@
 		unchanged: { label: 'No change', badge: 'badge-gray', defaultAccepted: false },
 	};
 
-	const accepted = new SvelteSet();
-	$effect(() => {
-		accepted.clear();
-		if (form?.preview) {
-			for (const wo of form.preview.filter((p) => STATUS[p.status].defaultAccepted)) {
-				accepted.add(wo.so_number);
-			}
-		}
-	});
-
-	function toggle(soNum) {
-		accepted.has(soNum) ? accepted.delete(soNum) : accepted.add(soNum);
-	}
-
-	const selectable = $derived(
+	const importable = $derived(
 		(form?.preview ?? []).filter((p) => p.status !== 'unchanged').map((p) => p.so_number)
 	);
-	const allAccepted = $derived(selectable.length > 0 && selectable.every((n) => accepted.has(n)));
-	const someAccepted = $derived(selectable.some((n) => accepted.has(n)) && !allAccepted);
-	function toggleAll() {
-		accepted.clear();
-		if (!allAccepted) {
-			for (const soNumber of selectable) accepted.add(soNumber);
-		}
-	}
-	let masterCb = $state(null);
-	$effect(() => {
-		if (masterCb) masterCb.indeterminate = someAccepted;
-	});
 </script>
 
 <svelte:head><title>Import Work Orders — PandS</title></svelte:head>
@@ -70,38 +43,13 @@
 		<form method="POST" action="?/import" use:enhance>
 			<input type="hidden" name="csv_data" value={JSON.stringify(form.preview)} />
 
-			{#if selectable.length > 0}
-				<div class="flex items-center gap-2 mb-2">
-					<input
-						type="checkbox"
-						bind:this={masterCb}
-						checked={allAccepted}
-						onchange={toggleAll}
-					/>
-					<span class="text-sm text-gray-600">Select all</span>
-				</div>
-			{/if}
 			<div class="space-y-4">
 				{#each form.preview as wo (wo.so_number)}
 					{@const s = STATUS[wo.status]}
 					<div class="card">
 						<div class="card-header flex items-center justify-between">
 							<div class="flex items-center gap-3">
-								{#if wo.status !== 'unchanged'}
-									<input
-										type="checkbox"
-										id="accept-{wo.so_number}"
-										checked={accepted.has(wo.so_number)}
-										onchange={() => toggle(wo.so_number)}
-										class="rounded border-gray-300"
-									/>
-								{/if}
-								<label
-									for="accept-{wo.so_number}"
-									class="font-semibold text-sm text-gray-900"
-								>
-									SO #{wo.so_number}
-								</label>
+								<span class="font-semibold text-sm text-gray-900">SO #{wo.so_number}</span>
 								<span class="badge {s.badge}">{s.label}</span>
 							</div>
 							<span class="text-sm text-gray-500">
@@ -130,6 +78,46 @@
 									>
 								{/if}
 							</div>
+
+							{#if wo.accessories?.length}
+								<div class="border-t border-gray-100 px-4 py-2">
+									<p class="text-xs font-medium text-gray-500 mb-1">
+										Accessories
+									</p>
+									<table class="w-full text-xs border-collapse">
+										<thead>
+											<tr class="bg-gray-50">
+												<th
+													class="py-1 pr-4 text-left text-gray-500 font-medium w-16"
+													>Qty</th
+												>
+												<th
+													class="py-1 pr-4 text-left text-gray-500 font-medium w-32"
+													>Part #</th
+												>
+												<th class="py-1 text-left text-gray-500 font-medium"
+													>Description</th
+												>
+											</tr>
+										</thead>
+										<tbody>
+											{#each wo.accessories as acc, i (i)}
+												<tr class="border-t border-gray-100">
+													<td class="py-1 pr-4 text-gray-600 tabular-nums"
+														>{acc.qty}</td
+													>
+													<td class="py-1 pr-4 text-gray-600 font-mono"
+														>{acc.part_number}</td
+													>
+													<td class="py-1 text-gray-500"
+														>{acc.description}</td
+													>
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
+							{/if}
 
 							<table class="w-full text-xs border-collapse">
 								<thead>
@@ -218,53 +206,13 @@
 									</tr>
 								</tbody>
 							</table>
-
-							{#if wo.accessories?.length}
-								<div class="border-t border-gray-100 px-4 py-2">
-									<p class="text-xs font-medium text-gray-500 mb-1">
-										Accessories
-									</p>
-									<table class="w-full text-xs border-collapse">
-										<thead>
-											<tr class="bg-gray-50">
-												<th
-													class="py-1 pr-4 text-left text-gray-500 font-medium w-16"
-													>Qty</th
-												>
-												<th
-													class="py-1 pr-4 text-left text-gray-500 font-medium w-32"
-													>Part #</th
-												>
-												<th class="py-1 text-left text-gray-500 font-medium"
-													>Description</th
-												>
-											</tr>
-										</thead>
-										<tbody>
-											{#each wo.accessories as acc, i (i)}
-												<tr class="border-t border-gray-100">
-													<td class="py-1 pr-4 text-gray-600 tabular-nums"
-														>{acc.qty}</td
-													>
-													<td class="py-1 pr-4 text-gray-600 font-mono"
-														>{acc.part_number}</td
-													>
-													<td class="py-1 text-gray-500"
-														>{acc.description}</td
-													>
-												</tr>
-											{/each}
-										</tbody>
-									</table>
-								</div>
-							{/if}
 						</div>
 					</div>
 				{/each}
 			</div>
 
 			{#each form.preview as wo (wo.so_number)}
-				{#if accepted.has(wo.so_number)}
+				{#if wo.status !== 'unchanged'}
 					<input type="hidden" name="accepted" value={wo.so_number} />
 				{/if}
 			{/each}
@@ -272,7 +220,7 @@
 			<div class="flex items-center gap-4 mt-6">
 				{#if user?.role === 'admin'}
 					<button type="submit" class="btn-primary">
-						Import {[...accepted].length} work order{accepted.size !== 1 ? 's' : ''}
+						Import {importable.length} work order{importable.length !== 1 ? 's' : ''}
 					</button>
 				{:else}
 					<p class="text-sm text-amber-700">Admin access required to import.</p>

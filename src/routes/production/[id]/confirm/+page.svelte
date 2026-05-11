@@ -140,7 +140,7 @@
 				</div>
 				<dialog
 					bind:this={confirmDialog}
-					class="rounded-lg shadow-xl p-6 w-96 backdrop:bg-black/30"
+					class="modal-dialog modal-dialog-md"
 				>
 					<p class="text-sm font-medium text-gray-900 mb-1">Confirm production?</p>
 					<p class="text-xs text-gray-500 mb-4">

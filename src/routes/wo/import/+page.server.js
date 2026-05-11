@@ -48,11 +48,48 @@ function parseDeliveryAddress(str) {
 	return { addr1: str, city: null, state: null, zip: null };
 }
 
+const TAB_TYPE_MAP = new Map([
+	['1 X 6" TAB', '1-6'],
+	['2 X 3" TAB', '2-3'],
+	['2 X 9" TAB', '2-9'],
+	['1-6', '1-6'],
+	['2-3', '2-3'],
+	['2-9', '2-9'],
+]);
+
+function normalizeTabType(facing, tabType, row) {
+	const normalizedFacing = String(facing ?? '')
+		.trim()
+		.toLowerCase();
+	if (normalizedFacing === 'unfaced') return null;
+
+	const raw = String(tabType ?? '').trim();
+	if (!raw || raw.toUpperCase() === 'N/A') return null;
+
+	const normalized = TAB_TYPE_MAP.get(raw.toUpperCase());
+	if (normalized) return normalized;
+
+	const rowLabel = row ? ` on row ${row}` : '';
+	throw new Error(`Unknown tab type "${raw}"${rowLabel}.`);
+}
+
+function normalizeAcceptedPreviewLines(preview, accepted) {
+	for (const wo of preview) {
+		if (!accepted.has(wo.so_number)) continue;
+		for (const line of wo.lines ?? []) {
+			line.tab_type = normalizeTabType(line.facing, line.tab_type, line.row);
+		}
+	}
+}
+
 export const actions = {
 	parse: async ({ request }) => {
 		const data = await request.formData();
 		const file = data.get('excel');
 		if (!file || file.size === 0) return fail(400, { error: 'No file selected.' });
+
+		const so_number = file.name.trim().split(/\s/)[0];
+		if (!so_number) return fail(400, { error: 'SO number not found in file name.' });
 
 		let parsed;
 		try {
@@ -63,8 +100,6 @@ export const actions = {
 		}
 
 		const { header, accessories, lines } = parsed;
-
-		if (!header.so_number) return fail(400, { error: 'SO number not found in workbook.' });
 
 		const [skus] = await db.query(
 			'SELECT id, thickness_in, width_in, display_label FROM material_skus WHERE is_active = TRUE'
@@ -91,6 +126,14 @@ export const actions = {
 				continue;
 			}
 
+			let tabType;
+			try {
+				tabType = normalizeTabType(ln.facing, ln.tab_type, ln.row);
+			} catch (err) {
+				errors.push(err.message);
+				continue;
+			}
+
 			const sqft = Math.round(qty * (width / 12) * lengthFt);
 			woLines.push({
 				sku_id: sku.id,
@@ -103,7 +146,7 @@ export const actions = {
 				rollfor: ln.roll_for || '',
 				facing: ln.facing || '',
 				instructions: ln.instructions || '',
-				tab_type: ln.tab_type || '',
+				tab_type: tabType,
 			});
 		}
 
@@ -113,7 +156,7 @@ export const actions = {
 		const { addr1, city, state, zip } = parseDeliveryAddress(header.delivery_address);
 
 		const wo = {
-			so_number: header.so_number,
+			so_number,
 			customer_name: header.customer,
 			job_name: header.job_name,
 			branch: header.branch,
@@ -168,6 +211,11 @@ export const actions = {
 			preview = JSON.parse(data.get('csv_data'));
 		} catch {
 			return fail(400, { error: 'Invalid import data.' });
+		}
+		try {
+			normalizeAcceptedPreviewLines(preview, accepted);
+		} catch (err) {
+			return fail(400, { error: err.message });
 		}
 
 		const conn = await db.getConnection();

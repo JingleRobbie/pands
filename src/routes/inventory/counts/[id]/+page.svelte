@@ -79,7 +79,7 @@
 	</div>
 </main>
 
-<dialog bind:this={deleteDialog} class="rounded-lg shadow-xl p-6 w-96 backdrop:bg-black/30">
+<dialog bind:this={deleteDialog} class="modal-dialog modal-dialog-md">
 	<p class="text-sm font-medium text-gray-900 mb-1">Delete this count?</p>
 	<p class="text-xs text-gray-500 mb-4">
 		This will permanently remove the <strong>{fmtDate(count.count_date)}</strong> count and

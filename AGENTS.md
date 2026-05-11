@@ -254,34 +254,19 @@ Edit `scripts/seed-skus.js` — add an entry with a unique `sku_code`, `thicknes
 <claude-mem-context>
 # Memory Context
 
-# [PandS] recent context, 2026-05-09 11:40pm CDT
+# [PandS] recent context, 2026-05-10 9:58am CDT
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (15,303t read) | 676,357t work | 98% savings
+Stats: 50 obs (16,866t read) | 927,570t work | 98% savings
 
 ### May 9, 2026
-191 3:49p ⚖️ WO detail lines table UI redesign: merge Type column into Width cell
-192 " ✅ Removed Type column header from WO lines table
-193 3:50p ✅ Removed Type data cells from billing/unbranched lines table
-194 " 🟣 Width cell redesigned to show branched cuts inline with badges
-195 " ✅ Fixed total row colspan after Type column removal
-196 3:54p 🔴 Fixed Svelte const tag invalid placement error in work order table
-197 4:00p 🔵 Unknown 'active' column in work order diff query
-198 " 🔴 Remove non-existent 'active' column filter from material_skus query
-199 4:34p ✅ Diff page UI refactored to compact billing/production display
-200 7:56p 🔴 Fixed HTML entity escaping in placeholder attributes on branch page
-201 7:57p ✅ Committed step 11: diff view layout and WO billing tab width display
-S48 Filter cutdown page to show only lines eligible for cut-down operations (May 9, 7:57 PM)
-202 8:38p ✅ Filter cutdown page to show only eligible lines
-S49 Filter cutdown page to show only lines eligible for cut-down (May 9, 8:39 PM)
 203 8:40p ✅ Add production lines query to cutdown page
 204 8:41p ✅ Add production lines to cutdown page UI with parent mapping
 205 " 🟣 Display production lines under each billing line in cutdown page
 206 " ✅ Remove redundant child_count check from button visibility
-S50 Commit step 12 (cutdown page with billing->production line display), then identify next layer (May 9, 8:41 PM)
 207 8:53p 🟣 Cutdown page billing and production line display
 S51 Update docs/cutdown/01_feature_spec.md to clarify user-facing terminology for line types (UNBRANCHED/BILLING/PRODUCTION) (May 9, 8:53 PM)
 S52 Update docs/cutdown/01_feature_spec.md with spec-level decisions from session (May 9, 9:01 PM)
@@ -314,8 +299,9 @@ S56 Review and implement cut-down scheduling refactor: replace manual rolls inpu
 232 " 🟣 UI now supports vendor selection with roll preview calculations
 233 " 🟣 Cut-down scheduling form redesigned with vendor selection and roll preview
 234 10:53p ✅ Cut-down confirmation page preview now uses billing line sqft (usable output)
+S57 Fix Svelte compilation error: {@const} tag invalid placement in cutdown page (May 9, 10:53 PM)
 235 10:57p 🔵 Svelte {@const} tag placement violation in cutdown route
-S57 Fix Svelte compilation error: {@const} tag invalid placement in cutdown page (May 9, 10:57 PM)
+S58 Finish P2 (duplicate scheduling validation), migrate raw roll database schema, and verify end-to-end cut-down workflow in running app (May 9, 10:57 PM)
 236 11:01p 🟣 Raw roll lookup system for cut-down scheduling
 237 11:02p 🔵 Lint error: missing key on roll preview each block
 238 11:13p ⚖️ Cut-down overage and source rolls simplification
@@ -323,6 +309,21 @@ S57 Fix Svelte compilation error: {@const} tag invalid placement in cutdown page
 242 11:26p ⚖️ Cut-down duplicate policy: Block duplicates
 243 11:30p 🟣 Duplicate and blocking validation for cut-down group scheduling
 244 11:32p 🟣 Database schema migration for raw roll lookup completed
+S59 Fix invalid permission rule in settings.local.json reported by /doctor — "write" must be capitalized to "Write" (May 9, 11:32 PM)
+### May 10, 2026
+245 8:25a 🟣 Cut-down scheduling with duplicate prevention and multi-line support
+246 " 🔴 Fixed invalid permission rule capitalization in settings.local.json
+S60 Fix /doctor reported issues in PandS project — invalid permission rule "write" needed capitalization to "Write" (May 10, 8:25 AM)
+247 8:35a 🔵 Branch creation system has no edit capability after initial split
+248 8:36a ⚖️ Edit branch feature design: child-row-only edits with downstream activity lock
+249 8:37a ✅ Branch edit support: helper functions for downstream blocker detection
+250 8:42a 🟣 Branch edit mode: full implementation with downstream blocking
+251 8:43a 🟣 Branch edit feature: production build successful
+252 " 🟣 Branch Editing Feature for Work Orders Implemented
+253 9:20a 🔴 Schedule Cut-Down form not submitting due to unstable enhance callback reference
+254 9:28a ✅ Cutdown scheduling guard prevents multiple active cutdowns per line
+255 9:51a 🟣 Confirmation dialog added for scheduled cut-down deletion
+256 9:55a 🔄 Replace window.confirm with styled dialog modal on cutdown delete
 
-Access 676k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 928k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

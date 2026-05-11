@@ -360,7 +360,7 @@
 					</div>
 					<dialog
 						bind:this={confirmDialog}
-						class="rounded-lg shadow-xl p-6 w-96 backdrop:bg-black/30"
+						class="modal-dialog modal-dialog-md"
 					>
 						<p class="text-sm font-medium text-gray-900 mb-1">Confirm production?</p>
 						<p class="text-xs text-gray-500 mb-4">
@@ -431,7 +431,7 @@
 		{/if}
 	</div>
 
-	<dialog bind:this={deleteDialog} class="rounded-lg shadow-xl p-6 w-80 backdrop:bg-black/30">
+	<dialog bind:this={deleteDialog} class="modal-dialog modal-dialog-sm">
 		<p class="text-sm font-medium text-gray-900 mb-1">Delete production run?</p>
 		<p class="text-xs text-gray-500 mb-4">This cannot be undone.</p>
 		<form

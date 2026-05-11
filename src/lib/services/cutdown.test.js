@@ -19,8 +19,14 @@ const { conn, mockDb } = vi.hoisted(() => {
 
 vi.mock('$lib/db.js', () => ({ db: mockDb }));
 
-const { __cutdownTest, confirmCutDown, scheduleCutDown, scheduleCutDownGroup } =
-	await import('./cutdown.js');
+const {
+	__cutdownTest,
+	branchLine,
+	confirmCutDown,
+	scheduleCutDown,
+	scheduleCutDownGroup,
+	updateBranchLine,
+} = await import('./cutdown.js');
 
 describe('cut-down raw roll helpers', () => {
 	it.each([
@@ -62,6 +68,255 @@ describe('cut-down raw roll helpers', () => {
 describe('cut-down services', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+	});
+
+	it('edits a clean branch by replacing production child rows without changing billing sqft', async () => {
+		conn.query
+			.mockResolvedValueOnce([
+				[
+					{
+						id: 34,
+						wo_id: 12,
+						sku_id: 7,
+						parent_line_id: null,
+						thickness_in: 3.5,
+						width_in: 60,
+						qty: 5,
+						length_ft: 75,
+						sqft: 1875,
+						facing: 'VRR+',
+						rollfor: 'Roof',
+						tab_type: 'BILLING',
+						instructions: 'Keep dry',
+					},
+				],
+			])
+			.mockResolvedValueOnce([[{ id: 44 }, { id: 45 }]])
+			.mockResolvedValueOnce([[]])
+			.mockResolvedValueOnce([{}])
+			.mockResolvedValueOnce([{ insertId: 101 }])
+			.mockResolvedValueOnce([{ insertId: 102 }]);
+
+		await expect(
+			updateBranchLine(
+				34,
+				12,
+				[
+					{ width_in: 48, qty: 5, length_ft: 75 },
+					{ width_in: 36, qty: 4, length_ft: 75 },
+				],
+				9
+			)
+		).resolves.toEqual([101, 102]);
+
+		expect(conn.query).toHaveBeenNthCalledWith(
+			1,
+			'SELECT * FROM work_order_lines WHERE id = ? AND wo_id = ? FOR UPDATE',
+			[34, 12]
+		);
+		expect(conn.query).toHaveBeenNthCalledWith(
+			4,
+			'DELETE FROM work_order_lines WHERE parent_line_id = ?',
+			[34]
+		);
+		expect(conn.query).toHaveBeenNthCalledWith(
+			5,
+			expect.stringContaining('INSERT INTO work_order_lines'),
+			[
+				12,
+				34,
+				7,
+				3.5,
+				48,
+				5,
+				75,
+				1500,
+				'VRR+',
+				'Roof',
+				'BILLING',
+				'Keep dry',
+				0,
+				'CURRENT',
+				null,
+			]
+		);
+		expect(conn.query).toHaveBeenNthCalledWith(
+			6,
+			expect.stringContaining('INSERT INTO work_order_lines'),
+			[
+				12,
+				34,
+				7,
+				3.5,
+				36,
+				4,
+				75,
+				900,
+				'VRR+',
+				'Roof',
+				'BILLING',
+				'Keep dry',
+				0,
+				'CURRENT',
+				null,
+			]
+		);
+		expect(
+			conn.query.mock.calls.some(([sql]) =>
+				String(sql).startsWith('UPDATE work_order_lines')
+			)
+		).toBe(false);
+		expect(conn.commit).toHaveBeenCalledOnce();
+		expect(conn.rollback).not.toHaveBeenCalled();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
+
+	it('rejects editing an unbranched line', async () => {
+		conn.query
+			.mockResolvedValueOnce([[{ id: 34, parent_line_id: null, width_in: 60 }]])
+			.mockResolvedValueOnce([[]]);
+
+		await expect(
+			updateBranchLine(34, 12, [{ width_in: 48, qty: 1, length_ft: 75 }], 9)
+		).rejects.toThrow('Line has not been branched.');
+
+		expect(conn.commit).not.toHaveBeenCalled();
+		expect(conn.rollback).toHaveBeenCalledOnce();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
+
+	it('rejects editing from a production child line', async () => {
+		conn.query.mockResolvedValueOnce([[{ id: 44, parent_line_id: 34, width_in: 48 }]]);
+
+		await expect(
+			updateBranchLine(44, 12, [{ width_in: 36, qty: 1, length_ft: 75 }], 9)
+		).rejects.toThrow('Cannot edit a production line branch from a child line.');
+
+		expect(conn.query).toHaveBeenCalledTimes(1);
+		expect(conn.commit).not.toHaveBeenCalled();
+		expect(conn.rollback).toHaveBeenCalledOnce();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
+
+	it.each([
+		['cut-down'],
+		['production run'],
+		['WIP ledger entry'],
+		['shipment'],
+	])('rejects editing a branch with downstream %s activity', async (blocker) => {
+		conn.query
+			.mockResolvedValueOnce([[{ id: 34, parent_line_id: null, width_in: 60 }]])
+			.mockResolvedValueOnce([[{ id: 44 }]])
+			.mockResolvedValueOnce([[{ blocker }]]);
+
+		await expect(
+			updateBranchLine(34, 12, [{ width_in: 48, qty: 1, length_ft: 75 }], 9)
+		).rejects.toThrow(`Cannot edit branch because it has downstream ${blocker} activity.`);
+
+		expect(
+			conn.query.mock.calls.some(([sql]) => String(sql).includes('DELETE FROM work_order_lines'))
+		).toBe(false);
+		expect(conn.commit).not.toHaveBeenCalled();
+		expect(conn.rollback).toHaveBeenCalledOnce();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
+
+	it('rolls back when replacing branch children fails', async () => {
+		conn.query
+			.mockResolvedValueOnce([
+				[
+					{
+						id: 34,
+						wo_id: 12,
+						sku_id: 7,
+						parent_line_id: null,
+						thickness_in: 3.5,
+						width_in: 60,
+						qty: 5,
+						length_ft: 75,
+					},
+				],
+			])
+			.mockResolvedValueOnce([[{ id: 44 }]])
+			.mockResolvedValueOnce([[]])
+			.mockResolvedValueOnce([{}])
+			.mockRejectedValueOnce(new Error('insert failed'));
+
+		await expect(
+			updateBranchLine(34, 12, [{ width_in: 48, qty: 5, length_ft: 75 }], 9)
+		).rejects.toThrow('insert failed');
+
+		expect(conn.commit).not.toHaveBeenCalled();
+		expect(conn.rollback).toHaveBeenCalledOnce();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
+
+	it('rejects branch edits for lines outside the route work order', async () => {
+		conn.query.mockResolvedValueOnce([[]]);
+
+		await expect(
+			updateBranchLine(34, 99, [{ width_in: 48, qty: 5, length_ft: 75 }], 9)
+		).rejects.toThrow('WO line not found.');
+
+		expect(conn.query).toHaveBeenNthCalledWith(
+			1,
+			'SELECT * FROM work_order_lines WHERE id = ? AND wo_id = ? FOR UPDATE',
+			[34, 99]
+		);
+		expect(conn.commit).not.toHaveBeenCalled();
+		expect(conn.rollback).toHaveBeenCalledOnce();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
+
+	it('branches only lines belonging to the route work order', async () => {
+		conn.query
+			.mockResolvedValueOnce([
+				[
+					{
+						id: 34,
+						wo_id: 12,
+						sku_id: 7,
+						parent_line_id: null,
+						thickness_in: 3.5,
+						width_in: 60,
+						qty: 5,
+						length_ft: 75,
+					},
+				],
+			])
+			.mockResolvedValueOnce([[{ childCount: 0 }]])
+			.mockResolvedValueOnce([[{ runCount: 0 }]])
+			.mockResolvedValueOnce([{ insertId: 101 }]);
+
+		await expect(
+			branchLine(34, 12, [{ width_in: 48, qty: 5, length_ft: 75 }], 9)
+		).resolves.toEqual([101]);
+
+		expect(conn.query).toHaveBeenNthCalledWith(
+			1,
+			'SELECT * FROM work_order_lines WHERE id = ? AND wo_id = ? FOR UPDATE',
+			[34, 12]
+		);
+		expect(conn.commit).toHaveBeenCalledOnce();
+		expect(conn.rollback).not.toHaveBeenCalled();
+		expect(conn.release).toHaveBeenCalledOnce();
+	});
+
+	it('rejects branch creation for lines outside the route work order', async () => {
+		conn.query.mockResolvedValueOnce([[]]);
+
+		await expect(
+			branchLine(34, 99, [{ width_in: 48, qty: 5, length_ft: 75 }], 9)
+		).rejects.toThrow('WO line not found.');
+
+		expect(conn.query).toHaveBeenNthCalledWith(
+			1,
+			'SELECT * FROM work_order_lines WHERE id = ? AND wo_id = ? FOR UPDATE',
+			[34, 99]
+		);
+		expect(conn.commit).not.toHaveBeenCalled();
+		expect(conn.rollback).toHaveBeenCalledOnce();
+		expect(conn.release).toHaveBeenCalledOnce();
 	});
 
 	it('schedules rounded raw source sqft without changing billing line sqft', async () => {

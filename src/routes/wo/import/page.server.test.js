@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { conn, db } = vi.hoisted(() => ({
+const { conn, db, parseWorkOrderExcel } = vi.hoisted(() => ({
 	conn: {
 		beginTransaction: vi.fn(),
 		commit: vi.fn(),
@@ -12,6 +12,7 @@ const { conn, db } = vi.hoisted(() => ({
 		getConnection: vi.fn(),
 		query: vi.fn(),
 	},
+	parseWorkOrderExcel: vi.fn(),
 }));
 
 vi.mock('$lib/db.js', () => ({ db }));
@@ -20,9 +21,7 @@ vi.mock('$lib/auth.js', () => ({
 		locals.appUser?.role === 'admin' ? null : { status: 403, data: { error: 'Admin only' } }
 	),
 }));
-vi.mock('$lib/parseWO.js', () => ({
-	parseWorkOrderExcel: vi.fn(),
-}));
+vi.mock('$lib/parseWO.js', () => ({ parseWorkOrderExcel }));
 
 vi.mock('@sveltejs/kit', () => ({
 	fail: vi.fn((status, data) => ({ status, data })),
@@ -39,6 +38,23 @@ function requestWithForm(entries) {
 			}
 			return data;
 		},
+	};
+}
+
+function makeFile(name, content = 'fakecontent') {
+	return {
+		name,
+		size: content.length,
+		arrayBuffer: async () => Buffer.from(content),
+	};
+}
+
+function requestWithFile(file) {
+	return {
+		formData: async () => ({
+			get: (key) => (key === 'excel' ? file : null),
+			getAll: () => [],
+		}),
 	};
 }
 
@@ -115,7 +131,7 @@ describe('work order import page', () => {
 					rollfor: 'Wall',
 					facing: 'FSK',
 					instructions: 'Label A',
-					tab_type: 'A',
+					tab_type: '1 X 6" TAB',
 				},
 			],
 		};
@@ -164,7 +180,7 @@ describe('work order import page', () => {
 		expect(conn.query).toHaveBeenNthCalledWith(
 			3,
 			'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-			[101, 7, 3, 48, 4, 100, 1600, 'Wall', 'FSK', 'Label A', 'A']
+			[101, 7, 3, 48, 4, 100, 1600, 'Wall', 'FSK', 'Label A', '1-6']
 		);
 		expect(conn.query).toHaveBeenNthCalledWith(
 			4,
@@ -241,7 +257,7 @@ describe('work order import page', () => {
 					rollfor: 'Wall',
 					facing: 'FSK',
 					instructions: 'Label A',
-					tab_type: 'A',
+					tab_type: '1 X 6" TAB',
 				},
 			],
 		};
@@ -291,7 +307,7 @@ describe('work order import page', () => {
 		expect(conn.query).toHaveBeenNthCalledWith(
 			6,
 			'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-			[101, 7, 3, 48, 4, 100, 1600, 'Wall', 'FSK', 'Label A', 'A']
+			[101, 7, 3, 48, 4, 100, 1600, 'Wall', 'FSK', 'Label A', '1-6']
 		);
 		expect(conn.query).toHaveBeenNthCalledWith(
 			7,
@@ -306,5 +322,272 @@ describe('work order import page', () => {
 		expect(conn.commit).toHaveBeenCalledOnce();
 		expect(conn.rollback).not.toHaveBeenCalled();
 		expect(conn.release).toHaveBeenCalledOnce();
+	});
+
+	describe('parse action - SO number from filename', () => {
+		const skuRows = [{ id: 7, thickness_in: 3, width_in: 48, display_label: '3"x48"' }];
+		const baseHeader = {
+			customer: 'Acme',
+			job_name: 'North Wing',
+			branch: 'Tulsa',
+			deliver_on: null,
+			delivery_address: null,
+			contact: null,
+			phone: null,
+		};
+		const baseLine = {
+			row: 1,
+			thickness: '3',
+			width: '48',
+			roll_qty: '4',
+			length: '100',
+			roll_for: '',
+			facing: '',
+			instructions: '',
+			tab_type: '',
+		};
+
+		it('uses filename SO number when workbook header.so_number is blank', async () => {
+			parseWorkOrderExcel.mockReturnValue({
+				header: { ...baseHeader, so_number: '' },
+				accessories: [],
+				lines: [baseLine],
+			});
+			db.query.mockResolvedValueOnce([skuRows]).mockResolvedValueOnce([[null]]);
+
+			const result = await actions.parse({
+				request: requestWithFile(makeFile('SO-123 North Wing.xlsx')),
+			});
+
+			expect(result.preview[0].so_number).toBe('SO-123');
+		});
+
+		it('uses filename SO number even when workbook contains a different SO number', async () => {
+			parseWorkOrderExcel.mockReturnValue({
+				header: { ...baseHeader, so_number: 'WRONG-999' },
+				accessories: [],
+				lines: [baseLine],
+			});
+			db.query.mockResolvedValueOnce([skuRows]).mockResolvedValueOnce([[null]]);
+
+			const result = await actions.parse({
+				request: requestWithFile(makeFile('SO-123 North Wing.xlsx')),
+			});
+
+			expect(result.preview[0].so_number).toBe('SO-123');
+		});
+
+		it('queries existing WO detection with filename-derived SO number', async () => {
+			parseWorkOrderExcel.mockReturnValue({
+				header: { ...baseHeader, so_number: '' },
+				accessories: [],
+				lines: [baseLine],
+			});
+			db.query.mockResolvedValueOnce([skuRows]).mockResolvedValueOnce([[null]]);
+
+			await actions.parse({
+				request: requestWithFile(makeFile('SO-456 Job Name.xlsx')),
+			});
+
+			expect(db.query).toHaveBeenNthCalledWith(
+				2,
+				expect.stringContaining('WHERE wo.so_number = ?'),
+				['SO-456']
+			);
+		});
+
+		it('returns fail(400) when filename produces no SO number', async () => {
+			const result = await actions.parse({
+				request: requestWithFile(makeFile('   ')),
+			});
+
+			expect(result).toEqual({
+				status: 400,
+				data: { error: 'SO number not found in file name.' },
+			});
+			expect(db.query).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('tab type normalization', () => {
+		const skuRows = [{ id: 7, thickness_in: 3, width_in: 48, display_label: '3"x48"' }];
+		const baseHeader = {
+			customer: 'Acme',
+			job_name: 'North Wing',
+			branch: 'Tulsa',
+			deliver_on: null,
+			delivery_address: null,
+			contact: null,
+			phone: null,
+		};
+		const baseLine = {
+			row: 1,
+			thickness: '3',
+			width: '48',
+			roll_qty: '4',
+			length: '100',
+			roll_for: '',
+			facing: 'FSK',
+			instructions: '',
+			tab_type: '',
+		};
+
+		it('normalizes workbook tab labels in the parse preview', async () => {
+			parseWorkOrderExcel.mockReturnValue({
+				header: { ...baseHeader, so_number: '' },
+				accessories: [],
+				lines: [
+					{ ...baseLine, row: 1, tab_type: '1 X 6" TAB' },
+					{ ...baseLine, row: 2, tab_type: '2 X 3" TAB' },
+					{ ...baseLine, row: 3, tab_type: '2 X 9" TAB' },
+				],
+			});
+			db.query.mockResolvedValueOnce([skuRows]).mockResolvedValueOnce([[null]]);
+
+			const result = await actions.parse({
+				request: requestWithFile(makeFile('SO-123 North Wing.xlsx')),
+			});
+
+			expect(result.preview[0].lines.map((line) => line.tab_type)).toEqual([
+				'1-6',
+				'2-3',
+				'2-9',
+			]);
+		});
+
+		it('clears tab type for Unfaced lines during parse', async () => {
+			parseWorkOrderExcel.mockReturnValue({
+				header: { ...baseHeader, so_number: '' },
+				accessories: [],
+				lines: [{ ...baseLine, facing: 'Unfaced', tab_type: '1 X 6" TAB' }],
+			});
+			db.query.mockResolvedValueOnce([skuRows]).mockResolvedValueOnce([[null]]);
+
+			const result = await actions.parse({
+				request: requestWithFile(makeFile('SO-123 North Wing.xlsx')),
+			});
+
+			expect(result.preview[0].lines[0].tab_type).toBeNull();
+		});
+
+		it('normalizes blank and N/A tab values to null during parse', async () => {
+			parseWorkOrderExcel.mockReturnValue({
+				header: { ...baseHeader, so_number: '' },
+				accessories: [],
+				lines: [
+					{ ...baseLine, row: 1, tab_type: '' },
+					{ ...baseLine, row: 2, tab_type: 'N/A' },
+				],
+			});
+			db.query.mockResolvedValueOnce([skuRows]).mockResolvedValueOnce([[null]]);
+
+			const result = await actions.parse({
+				request: requestWithFile(makeFile('SO-123 North Wing.xlsx')),
+			});
+
+			expect(result.preview[0].lines.map((line) => line.tab_type)).toEqual([null, null]);
+		});
+
+		it('rejects unknown tab text on a faced line during parse', async () => {
+			parseWorkOrderExcel.mockReturnValue({
+				header: { ...baseHeader, so_number: '' },
+				accessories: [],
+				lines: [{ ...baseLine, row: 42, tab_type: 'Custom Tab' }],
+			});
+			db.query.mockResolvedValueOnce([skuRows]);
+
+			const result = await actions.parse({
+				request: requestWithFile(makeFile('SO-123 North Wing.xlsx')),
+			});
+
+			expect(result).toEqual({
+				status: 400,
+				data: { error: 'Unknown tab type "Custom Tab" on row 42.' },
+			});
+		});
+
+		it('inserts null for Unfaced tab values during final import', async () => {
+			conn.query
+				.mockResolvedValueOnce([[{ id: 44 }]])
+				.mockResolvedValueOnce([{ insertId: 101 }])
+				.mockResolvedValue([{}]);
+			const acceptedWo = {
+				so_number: 'SO-100',
+				customer_name: 'Acme',
+				job_name: 'North Wing',
+				branch: 'Tulsa',
+				ship_date: '2026-05-15',
+				status: 'new',
+				lines: [
+					{
+						sku_id: 7,
+						thickness_in: 3,
+						width_in: 48,
+						qty: 4,
+						length_ft: 100,
+						sqft: 1600,
+						rollfor: 'Wall',
+						facing: 'Unfaced',
+						instructions: 'Label A',
+						tab_type: '1 X 6" TAB',
+					},
+				],
+			};
+
+			const result = await actions.import({
+				request: requestWithForm([
+					['accepted', 'SO-100'],
+					['csv_data', JSON.stringify([acceptedWo])],
+				]),
+				locals: { appUser: { id: 9, role: 'admin' } },
+			});
+
+			expect(result).toEqual({ success: true, created: 1, updated: 0 });
+			expect(conn.query).toHaveBeenNthCalledWith(
+				3,
+				'INSERT INTO work_order_lines (wo_id, sku_id, thickness_in, width_in, qty, length_ft, sqft, rollfor, facing, instructions, tab_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+				[101, 7, 3, 48, 4, 100, 1600, 'Wall', 'Unfaced', 'Label A', null]
+			);
+		});
+
+		it('rejects tampered preview JSON with an invalid faced tab value before opening a transaction', async () => {
+			const tamperedWo = {
+				so_number: 'SO-100',
+				customer_name: 'Acme',
+				job_name: 'North Wing',
+				branch: 'Tulsa',
+				ship_date: '2026-05-15',
+				status: 'new',
+				lines: [
+					{
+						row: 17,
+						sku_id: 7,
+						thickness_in: 3,
+						width_in: 48,
+						qty: 4,
+						length_ft: 100,
+						sqft: 1600,
+						rollfor: 'Wall',
+						facing: 'FSK',
+						instructions: 'Label A',
+						tab_type: 'Custom Tab',
+					},
+				],
+			};
+
+			const result = await actions.import({
+				request: requestWithForm([
+					['accepted', 'SO-100'],
+					['csv_data', JSON.stringify([tamperedWo])],
+				]),
+				locals: { appUser: { id: 9, role: 'admin' } },
+			});
+
+			expect(result).toEqual({
+				status: 400,
+				data: { error: 'Unknown tab type "Custom Tab" on row 17.' },
+			});
+			expect(db.getConnection).not.toHaveBeenCalled();
+		});
 	});
 });

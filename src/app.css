@@ -58,6 +58,19 @@
 		@apply px-5 py-4;
 	}
 
+	.modal-dialog {
+		@apply fixed inset-0 m-auto rounded-lg shadow-xl p-6 bg-white max-h-[calc(100vh-2rem)] overflow-auto;
+	}
+	.modal-dialog::backdrop {
+		@apply bg-black/30;
+	}
+	.modal-dialog-sm {
+		@apply w-[min(20rem,calc(100vw-2rem))];
+	}
+	.modal-dialog-md {
+		@apply w-[min(24rem,calc(100vw-2rem))];
+	}
+
 	.list-table tbody tr:nth-child(odd) {
 		@apply bg-blue-50;
 	}

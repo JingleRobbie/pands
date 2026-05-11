@@ -1,7 +1,11 @@
 import { db } from '$lib/db.js';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { requireAdmin } from '$lib/auth.js';
-import { branchLine } from '$lib/services/cutdown.js';
+import {
+	branchLine,
+	getBranchEditBlockers,
+	updateBranchLine,
+} from '$lib/services/cutdown.js';
 
 export async function load({ params, url }) {
 	const lineId = parseInt(url.searchParams.get('lineId'));
@@ -24,16 +28,30 @@ export async function load({ params, url }) {
 		'SELECT COUNT(*) AS childCount FROM work_order_lines WHERE parent_line_id = ?',
 		[lineId]
 	);
-	if (Number(childCount) > 0) error(400, 'Line has already been branched');
+	const isEditMode = Number(childCount) > 0;
+	const [productionLines] = isEditMode
+		? await db.query(
+				`SELECT *
+				 FROM work_order_lines
+				 WHERE parent_line_id = ?
+				 ORDER BY id`,
+				[lineId]
+			)
+		: [[]];
+	const editBlockers = isEditMode ? await getBranchEditBlockers(lineId) : [];
 
-	return { wo, line };
+	return { wo, line, productionLines, isEditMode, editBlockers };
 }
 
 export const actions = {
 	branch: async ({ request, params, locals }) => {
-		requireAdmin(locals);
+		const denied = requireAdmin(locals);
+		if (denied) return denied;
+
 		const data = await request.formData();
 		const woLineId = parseInt(data.get('woLineId'));
+		const woId = parseInt(params.id);
+		const mode = data.get('mode') === 'edit' ? 'edit' : 'create';
 
 		// Parse repeating width/qty/length_ft fields: width_0, qty_0, length_ft_0, ...
 		const productionWidths = [];
@@ -56,7 +74,11 @@ export const actions = {
 			return fail(400, { error: 'At least one production width is required.' });
 
 		try {
-			await branchLine(woLineId, productionWidths, locals.appUser.id);
+			if (mode === 'edit') {
+				await updateBranchLine(woLineId, woId, productionWidths, locals.appUser.id);
+			} else {
+				await branchLine(woLineId, woId, productionWidths, locals.appUser.id);
+			}
 		} catch (err) {
 			return fail(400, { error: err.message });
 		}

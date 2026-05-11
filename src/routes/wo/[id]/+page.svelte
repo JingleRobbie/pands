@@ -277,6 +277,12 @@
 										class="text-blue-600 hover:underline text-xs">Branch</a
 									>
 								{/if}
+								{#if line.line_type === 'BILLING' && children.length > 0 && wo.status !== 'COMPLETE' && wo.status !== 'CANCELLED'}
+									<a
+										href="/wo/{wo.id}/branch?lineId={line.id}"
+										class="text-blue-600 hover:underline text-xs">Edit Branch</a
+									>
+								{/if}
 								{#if line.reconciliation_status === 'STALE'}
 									<a
 										href="/wo/{wo.id}/diff"

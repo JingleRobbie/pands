@@ -159,7 +159,7 @@
 	</section>
 </main>
 
-<dialog bind:this={deleteDialog} class="rounded-lg shadow-xl p-6 w-80 backdrop:bg-black/30">
+<dialog bind:this={deleteDialog} class="modal-dialog modal-dialog-sm">
 	<p class="text-sm font-medium text-gray-900 mb-1">Delete run?</p>
 	{#if pendingDelete}
 		<p class="text-xs text-gray-600 mb-1">

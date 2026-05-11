@@ -2,13 +2,21 @@
 	import { enhance } from '$app/forms';
 	import { fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { wo, line } = $derived(data);
+	const { wo, line, productionLines, isEditMode, editBlockers } = $derived(data);
+	const canSubmit = $derived(!isEditMode || editBlockers.length === 0);
 
 	let rows = $state([]);
 
 	$effect(() => {
 		if (rows.length > 0) return;
-		rows = [{ width_in: '', qty: String(line.qty), length_ft: String(line.length_ft) }];
+		rows =
+			isEditMode && productionLines.length > 0
+				? productionLines.map((productionLine) => ({
+						width_in: String(productionLine.width_in),
+						qty: String(productionLine.qty),
+						length_ft: String(productionLine.length_ft),
+					}))
+				: [{ width_in: '', qty: String(line.qty), length_ft: String(line.length_ft) }];
 	});
 
 	function addRow() {
@@ -44,11 +52,13 @@
 	const overWidth = $derived(usedWidth > sourceWidth);
 </script>
 
-<svelte:head><title>Branch Line — WO {wo.so_number} — PandS</title></svelte:head>
+<svelte:head><title>{isEditMode ? 'Edit Branch' : 'Branch Line'} - WO {wo.so_number} - PandS</title></svelte:head>
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
 	<a href="/wo/{wo.id}" class="text-gray-400 hover:text-gray-600 text-sm">← WO {wo.so_number}</a>
-	<h1 class="text-lg font-semibold text-gray-900">Branch Line</h1>
+	<h1 class="text-lg font-semibold text-gray-900">
+		{isEditMode ? 'Edit Branch' : 'Branch Line'}
+	</h1>
 </header>
 
 <main class="p-6 max-w-2xl space-y-4">
@@ -57,12 +67,18 @@
 			{form.error}
 		</div>
 	{/if}
+	{#if isEditMode && editBlockers.length > 0}
+		<div class="px-4 py-3 rounded-md text-sm bg-amber-50 text-amber-800 border border-amber-200">
+			This branch cannot be edited because it has downstream {editBlockers.join(', ')}
+			activity.
+		</div>
+	{/if}
 
 	<!-- Billing line reference (read-only) -->
 	<div class="card">
 		<div class="card-header">
 			<span class="font-semibold text-sm text-gray-700"
-				>Source Line (will become billing line)</span
+				>{isEditMode ? 'Billing Source Line' : 'Source Line (will become billing line)'}</span
 			>
 		</div>
 		<div class="card-body grid grid-cols-3 gap-4 text-sm">
@@ -112,6 +128,7 @@
 		</div>
 		<form method="POST" action="?/branch" use:enhance class="card-body space-y-4">
 			<input type="hidden" name="woLineId" value={line.id} />
+			<input type="hidden" name="mode" value={isEditMode ? 'edit' : 'create'} />
 
 			<!-- Equal-cut shortcut -->
 			<div class="flex items-end gap-2 pb-2 border-b border-gray-100">
@@ -125,6 +142,7 @@
 						placeholder="Width &quot;"
 						class="form-input w-28"
 						bind:value={shortcutWidth}
+						disabled={!canSubmit}
 					/>
 				</div>
 				<div>
@@ -136,9 +154,14 @@
 						max="20"
 						class="form-input w-20"
 						bind:value={shortcutCount}
+						disabled={!canSubmit}
 					/>
 				</div>
-				<button type="button" class="btn-secondary btn-sm mb-px" onclick={expandShortcut}
+				<button
+					type="button"
+					class="btn-secondary btn-sm mb-px"
+					onclick={expandShortcut}
+					disabled={!canSubmit}
 					>Expand</button
 				>
 			</div>
@@ -162,6 +185,7 @@
 							placeholder="{line.width_in}&quot;"
 							class="form-input"
 							bind:value={row.width_in}
+							disabled={!canSubmit}
 							required
 						/>
 						<input
@@ -170,6 +194,7 @@
 							min="1"
 							class="form-input"
 							bind:value={row.qty}
+							disabled={!canSubmit}
 						/>
 						<input
 							type="number"
@@ -178,18 +203,21 @@
 							min="1"
 							class="form-input"
 							bind:value={row.length_ft}
+							disabled={!canSubmit}
 						/>
 						<button
 							type="button"
 							class="text-gray-400 hover:text-red-500 text-lg leading-none px-1 disabled:opacity-30"
-							disabled={rows.length <= 1}
+							disabled={rows.length <= 1 || !canSubmit}
 							onclick={() => removeRow(i)}>×</button
 						>
 					</div>
 				{/each}
 			</div>
 
-			<button type="button" class="btn-secondary btn-sm" onclick={addRow}>+ Add Width</button>
+			<button type="button" class="btn-secondary btn-sm" onclick={addRow} disabled={!canSubmit}
+				>+ Add Width</button
+			>
 
 			<!-- Waste calculator -->
 			<div
@@ -206,7 +234,9 @@
 			</div>
 
 			<div class="flex gap-2 pt-2">
-				<button type="submit" class="btn-primary" disabled={overWidth}>Branch Line</button>
+				<button type="submit" class="btn-primary" disabled={overWidth || !canSubmit}
+					>{isEditMode ? 'Save Branch' : 'Branch Line'}</button
+				>
 				<a href="/wo/{wo.id}" class="btn-secondary">Cancel</a>
 			</div>
 		</form>

@@ -6,6 +6,8 @@
 
 	let showScheduleFor = $state(null);
 	let vendorFor = $state({});
+	let deleteDialog = $state(null);
+	let deleteTarget = $state(null);
 
 	const lookupMap = $derived(
 		(rawRollLookups ?? []).reduce((m, r) => {
@@ -21,6 +23,31 @@
 
 	function setVendor(lineId, v) {
 		vendorFor = { ...vendorFor, [lineId]: v };
+	}
+
+	function scheduleEnhance(lineId) {
+		return () => {
+			return async ({ result, update }) => {
+				await update();
+				if (result.type === 'success') {
+					showScheduleFor = null;
+					vendorFor = { ...vendorFor, [lineId]: undefined };
+				}
+			};
+		};
+	}
+
+	function requestDelete(cutDown) {
+		deleteTarget = cutDown;
+		deleteDialog.showModal();
+	}
+
+	function deleteEnhance() {
+		return async ({ update }) => {
+			await update();
+			deleteDialog.close();
+			deleteTarget = null;
+		};
 	}
 
 	function getRollPreview(line, vendor) {
@@ -75,6 +102,7 @@
 	{#each billingLines as line (line.id)}
 		{@const lineCutDowns = cutDownsByLine[line.id] ?? []}
 		{@const children = childrenByParent[line.id] ?? []}
+		{@const hasActiveCutDown = lineCutDowns.some((cd) => cd.status !== 'COMPLETED')}
 		<div class="card">
 			<div class="card-header flex items-center justify-between">
 				<div class="flex flex-col gap-0.5">
@@ -96,7 +124,7 @@
 						</div>
 					{/if}
 				</div>
-				{#if wo.status !== 'COMPLETE'}
+				{#if wo.status !== 'COMPLETE' && !hasActiveCutDown}
 					<button
 						type="button"
 						class="btn-secondary btn-sm"
@@ -105,19 +133,16 @@
 					>
 						{showScheduleFor === line.id ? 'Cancel' : '+ Schedule Cut-Down'}
 					</button>
+				{:else if hasActiveCutDown}
+					<span class="badge-blue text-xs">Cut-Down Scheduled</span>
 				{/if}
 			</div>
 
-			{#if showScheduleFor === line.id}
+			{#if showScheduleFor === line.id && !hasActiveCutDown}
 				<form
 					method="POST"
 					action="?/scheduleCutDown"
-					use:enhance={{
-						onResult: () => {
-							showScheduleFor = null;
-							vendorFor = { ...vendorFor, [line.id]: undefined };
-						},
-					}}
+					use:enhance={scheduleEnhance(line.id)}
 					class="card-body border-b border-gray-100 space-y-3 text-sm"
 				>
 					<input type="hidden" name="billingLineId" value={line.id} />
@@ -232,14 +257,11 @@
 										{cd.status === 'COMPLETED' ? 'View' : 'Confirm'}
 									</a>
 									{#if cd.status !== 'COMPLETED'}
-										<form method="POST" action="?/deleteCutDown" use:enhance>
-											<input type="hidden" name="cutDownId" value={cd.id} />
-											<button
-												type="submit"
-												class="text-red-400 hover:text-red-600 text-xs"
-												>Delete</button
-											>
-										</form>
+										<button
+											type="button"
+											class="text-red-400 hover:text-red-600 text-xs"
+											onclick={() => requestDelete(cd)}>Delete</button
+										>
 									{/if}
 								</td>
 							</tr>
@@ -257,4 +279,30 @@
 			> first.
 		</div>
 	{/if}
+
+	<dialog bind:this={deleteDialog} class="modal-dialog modal-dialog-sm">
+		<p class="text-sm font-medium text-gray-900 mb-1">Delete scheduled cut-down?</p>
+		<p class="text-xs text-gray-500 mb-4">
+			{#if deleteTarget?.cut_down_number}
+				{deleteTarget.cut_down_number} will be deleted.
+			{:else}
+				This scheduled cut-down will be deleted.
+			{/if}
+			This cannot be undone.
+		</p>
+		<form method="POST" action="?/deleteCutDown" use:enhance={deleteEnhance}>
+			<input type="hidden" name="cutDownId" value={deleteTarget?.id ?? ''} />
+			<div class="flex gap-2 justify-end">
+				<button
+					type="button"
+					class="btn-secondary btn-sm"
+					onclick={() => {
+						deleteDialog.close();
+						deleteTarget = null;
+					}}>Cancel</button
+				>
+				<button type="submit" class="btn-danger btn-sm">Delete</button>
+			</div>
+		</form>
+	</dialog>
 </main>

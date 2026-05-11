@@ -168,7 +168,7 @@
 	<MatrixDrawer {matrix} bind:open={outlookOpen} />
 </main>
 
-<dialog bind:this={cancelDialog} class="rounded-lg shadow-xl p-6 w-80 backdrop:bg-black/30">
+<dialog bind:this={cancelDialog} class="modal-dialog modal-dialog-sm">
 	<p class="text-sm font-medium text-gray-900 mb-1">Cancel PO {po.po_number}?</p>
 	<p class="text-xs text-gray-500 mb-4">This will cancel all open lines and cannot be undone.</p>
 	<form method="POST" action="?/cancel" use:enhance>
@@ -182,7 +182,7 @@
 	</form>
 </dialog>
 
-<dialog bind:this={unreceiveDialog} class="rounded-lg shadow-xl p-6 w-96 backdrop:bg-black/30">
+<dialog bind:this={unreceiveDialog} class="modal-dialog modal-dialog-md">
 	<p class="text-sm font-medium text-gray-900 mb-1">
 		{pendingUnreceive ? 'Unreceive PO line?' : `Unreceive PO ${po.po_number}?`}
 	</p>

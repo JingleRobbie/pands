@@ -189,7 +189,7 @@
 	</div>
 </main>
 
-<dialog bind:this={unproduceDialog} class="rounded-lg shadow-xl p-6 w-96 backdrop:bg-black/30">
+<dialog bind:this={unproduceDialog} class="modal-dialog modal-dialog-md">
 	<p class="text-sm font-medium text-gray-900 mb-1">Unproduce production?</p>
 	{#if pendingRun}
 		<p class="text-xs text-gray-500 mb-4">

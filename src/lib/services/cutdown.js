@@ -33,6 +33,120 @@ async function nextCutDownNumber(conn) {
 	return `CD-${String(seq).padStart(6, '0')}`;
 }
 
+function validateProductionWidths(line, productionWidths) {
+	if (!productionWidths || productionWidths.length === 0)
+		throw new Error('At least one production width is required.');
+
+	for (const pw of productionWidths) {
+		if (!pw.width_in || Number(pw.width_in) <= 0)
+			throw new Error('Production width is required.');
+		if (Number(pw.width_in) > Number(line.width_in))
+			throw new Error(
+				`Production width ${pw.width_in}" exceeds source width ${line.width_in}".`
+			);
+		if (pw.qty != null && Number(pw.qty) <= 0)
+			throw new Error('Production quantity must be greater than zero.');
+		if (pw.length_ft != null && Number(pw.length_ft) <= 0)
+			throw new Error('Production length must be greater than zero.');
+	}
+}
+
+async function insertProductionLines(conn, line, productionWidths) {
+	const newIds = [];
+	for (const pw of productionWidths) {
+		const prodLine = {
+			wo_id: line.wo_id,
+			parent_line_id: line.id,
+			sku_id: line.sku_id,
+			thickness_in: line.thickness_in,
+			width_in: pw.width_in,
+			qty: pw.qty ?? line.qty,
+			length_ft: pw.length_ft ?? line.length_ft,
+			facing: line.facing,
+			rollfor: line.rollfor,
+			tab_type: line.tab_type,
+			instructions: line.instructions,
+			rolls_produced: 0,
+			reconciliation_status: 'CURRENT',
+			path_type: null,
+		};
+		prodLine.sqft = calcSqft(prodLine, prodLine.qty);
+
+		const [{ insertId }] = await conn.query(
+			`INSERT INTO work_order_lines
+			 (wo_id, parent_line_id, sku_id, thickness_in, width_in, qty, length_ft, sqft,
+			  facing, rollfor, tab_type, instructions, rolls_produced, reconciliation_status, path_type)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			[
+				prodLine.wo_id,
+				prodLine.parent_line_id,
+				prodLine.sku_id,
+				prodLine.thickness_in,
+				prodLine.width_in,
+				prodLine.qty,
+				prodLine.length_ft,
+				prodLine.sqft,
+				prodLine.facing,
+				prodLine.rollfor,
+				prodLine.tab_type,
+				prodLine.instructions,
+				prodLine.rolls_produced,
+				prodLine.reconciliation_status,
+				prodLine.path_type,
+			]
+		);
+		newIds.push(insertId);
+	}
+	return newIds;
+}
+
+async function queryBranchEditBlockers(queryable, billingLineId) {
+	const [rows] = await queryable.query(
+		`SELECT blocker
+		 FROM (
+		   SELECT 'cut-down' AS blocker
+		   FROM cut_downs
+		   WHERE billing_line_id = ?
+		   LIMIT 1
+		 ) cd
+		 UNION ALL
+		 SELECT blocker
+		 FROM (
+		   SELECT 'production run' AS blocker
+		   FROM production_runs pr
+		   JOIN work_order_lines child ON child.id = pr.wo_line_id
+		   WHERE child.parent_line_id = ?
+		   LIMIT 1
+		 ) pr
+		 UNION ALL
+		 SELECT blocker
+		 FROM (
+		   SELECT 'WIP ledger entry' AS blocker
+		   FROM wip_ledger wl
+		   JOIN work_order_lines child ON child.id = wl.wo_line_id
+		   WHERE child.parent_line_id = ?
+		   LIMIT 1
+		 ) wl
+		 UNION ALL
+		 SELECT blocker
+		 FROM (
+		   SELECT 'shipment' AS blocker
+		   FROM shipment_lines sl
+		   LEFT JOIN work_order_lines direct_child ON direct_child.id = sl.wo_line_id
+		   LEFT JOIN production_runs pr ON pr.id = sl.production_run_id
+		   LEFT JOIN work_order_lines run_child ON run_child.id = pr.wo_line_id
+		   WHERE direct_child.parent_line_id = ? OR run_child.parent_line_id = ?
+		   LIMIT 1
+		 ) sl`,
+		[billingLineId, billingLineId, billingLineId, billingLineId, billingLineId]
+	);
+	return rows.map((row) => row.blocker);
+}
+
+export async function getBranchEditBlockers(billingLineId) {
+	return queryBranchEditBlockers(db, billingLineId);
+}
+
 // ─── Public API ────────────────────────────────────────────────────────────────
 
 /**
@@ -42,18 +156,19 @@ async function nextCutDownNumber(conn) {
  * inserted as children.
  *
  * @param {number} woLineId - the unbranched line to branch
+ * @param {number} woId - owning work order id
  * @param {{ width_in: number, qty?: number, length_ft?: number }[]} productionWidths
  * @param {number} userId
  * @returns {Promise<number[]>} ids of the new production lines
  */
-export async function branchLine(woLineId, productionWidths, _userId) {
+export async function branchLine(woLineId, woId, productionWidths, _userId) {
 	const conn = await db.getConnection();
 	try {
 		await conn.beginTransaction();
 
 		const [[line]] = await conn.query(
-			'SELECT * FROM work_order_lines WHERE id = ? FOR UPDATE',
-			[woLineId]
+			'SELECT * FROM work_order_lines WHERE id = ? AND wo_id = ? FOR UPDATE',
+			[woLineId, woId]
 		);
 		if (!line) throw new Error('WO line not found.');
 		if (line.parent_line_id !== null)
@@ -74,61 +189,59 @@ export async function branchLine(woLineId, productionWidths, _userId) {
 		if (Number(runCount) > 0)
 			throw new Error('Cannot branch a line that has open production runs.');
 
-		if (!productionWidths || productionWidths.length === 0)
-			throw new Error('At least one production width is required.');
+		validateProductionWidths(line, productionWidths);
+		const newIds = await insertProductionLines(conn, line, productionWidths);
 
-		for (const pw of productionWidths) {
-			if (Number(pw.width_in) > Number(line.width_in))
-				throw new Error(
-					`Production width ${pw.width_in}" exceeds source width ${line.width_in}".`
-				);
-		}
+		await conn.commit();
+		return newIds;
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+}
 
-		const newIds = [];
-		for (const pw of productionWidths) {
-			const prodLine = {
-				wo_id: line.wo_id,
-				parent_line_id: woLineId,
-				sku_id: line.sku_id,
-				thickness_in: line.thickness_in,
-				width_in: pw.width_in,
-				qty: pw.qty ?? line.qty,
-				length_ft: pw.length_ft ?? line.length_ft,
-				facing: line.facing,
-				rollfor: line.rollfor,
-				tab_type: line.tab_type,
-				instructions: line.instructions,
-				rolls_produced: 0,
-				reconciliation_status: 'CURRENT',
-				path_type: null,
-			};
-			prodLine.sqft = calcSqft(prodLine, prodLine.qty);
+/**
+ * Replace the production children for an existing branched billing line.
+ * Editing is only allowed before any downstream cut-down, run, WIP, or shipment
+ * activity references the branch.
+ *
+ * @param {number} billingLineId - the existing billing/source line
+ * @param {number} woId - owning work order id
+ * @param {{ width_in: number, qty?: number, length_ft?: number }[]} productionWidths
+ * @param {number} userId
+ * @returns {Promise<number[]>} ids of the replacement production lines
+ */
+export async function updateBranchLine(billingLineId, woId, productionWidths, _userId) {
+	const conn = await db.getConnection();
+	try {
+		await conn.beginTransaction();
 
-			const [{ insertId }] = await conn.query(
-				`INSERT INTO work_order_lines
-				 (wo_id, parent_line_id, sku_id, thickness_in, width_in, qty, length_ft, sqft,
-				  facing, rollfor, tab_type, instructions, rolls_produced, reconciliation_status, path_type)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				[
-					prodLine.wo_id,
-					prodLine.parent_line_id,
-					prodLine.sku_id,
-					prodLine.thickness_in,
-					prodLine.width_in,
-					prodLine.qty,
-					prodLine.length_ft,
-					prodLine.sqft,
-					prodLine.facing,
-					prodLine.rollfor,
-					prodLine.tab_type,
-					prodLine.instructions,
-					prodLine.rolls_produced,
-					prodLine.reconciliation_status,
-					prodLine.path_type,
-				]
+		const [[line]] = await conn.query(
+			'SELECT * FROM work_order_lines WHERE id = ? AND wo_id = ? FOR UPDATE',
+			[billingLineId, woId]
+		);
+		if (!line) throw new Error('WO line not found.');
+		if (line.parent_line_id !== null)
+			throw new Error('Cannot edit a production line branch from a child line.');
+
+		const [children] = await conn.query(
+			'SELECT * FROM work_order_lines WHERE parent_line_id = ? ORDER BY id FOR UPDATE',
+			[billingLineId]
+		);
+		if (children.length === 0) throw new Error('Line has not been branched.');
+
+		const blockers = await queryBranchEditBlockers(conn, billingLineId);
+		if (blockers.length > 0)
+			throw new Error(
+				`Cannot edit branch because it has downstream ${blockers.join(', ')} activity.`
 			);
-			newIds.push(insertId);
-		}
+
+		validateProductionWidths(line, productionWidths);
+
+		await conn.query('DELETE FROM work_order_lines WHERE parent_line_id = ?', [billingLineId]);
+		const newIds = await insertProductionLines(conn, line, productionWidths);
 
 		await conn.commit();
 		return newIds;
