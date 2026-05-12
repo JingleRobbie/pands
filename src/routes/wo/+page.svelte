@@ -100,7 +100,7 @@
 							<td class="text-gray-700">
 								{wo.job_name}
 								{#if wo.has_branched}
-									<span class="badge-blue ml-1 text-xs">Branched</span>
+									<span class="badge-blue ml-1 text-xs">Cut-Down Setup</span>
 								{/if}
 							</td>
 							<td class="text-gray-500">{wo.branch}</td>
@@ -117,7 +117,7 @@
 								><span class="text-gray-400"> / {wo.total_rolls} rolls</span>
 								{#if wo.rolls_scheduled > 0}
 									<div class="text-xs text-blue-500">
-										+{wo.rolls_scheduled} scheduled
+										+{wo.rolls_scheduled} production scheduled
 									</div>
 								{/if}
 							</td>
@@ -127,7 +127,7 @@
 									<a
 										href="/wo/{wo.id}/diff"
 										class="badge-amber ml-1 text-xs"
-										onclick={(e) => e.stopPropagation()}>Stale</a
+										onclick={(e) => e.stopPropagation()}>Needs Review</a
 									>
 								{/if}
 							</td>

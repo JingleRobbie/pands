@@ -1,11 +1,7 @@
 import { db } from '$lib/db.js';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { requireAdmin } from '$lib/auth.js';
-import {
-	branchLine,
-	getBranchEditBlockers,
-	updateBranchLine,
-} from '$lib/services/cutdown.js';
+import { branchLine, getBranchEditBlockers, updateBranchLine } from '$lib/services/cutdown.js';
 
 export async function load({ params, url }) {
 	const lineId = parseInt(url.searchParams.get('lineId'));
@@ -95,6 +91,6 @@ export const actions = {
 			return fail(400, { error: err.message });
 		}
 
-		redirect(303, `/wo/${params.id}?tab=production`);
+		redirect(303, `/wo/${params.id}`);
 	},
 };

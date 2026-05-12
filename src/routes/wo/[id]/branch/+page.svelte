@@ -2,8 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
-	const { wo, line, productionLines, isEditMode, editBlockers, cutDownBlockers } =
-		$derived(data);
+	const { wo, line, productionLines, isEditMode, editBlockers, cutDownBlockers } = $derived(data);
 	const canSubmit = $derived(!isEditMode || editBlockers.length === 0);
 
 	let rows = $state([]);
@@ -54,12 +53,15 @@
 	const overWidth = $derived(usedWidth > sourceWidth);
 </script>
 
-<svelte:head><title>{isEditMode ? 'Edit Branch' : 'Branch Line'} - WO {wo.so_number} - PandS</title></svelte:head>
+<svelte:head
+	><title>{isEditMode ? 'Edit Cut-Down Setup' : 'Set Cut-Down'} - WO {wo.so_number} - PandS</title
+	></svelte:head
+>
 
 <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
 	<a href="/wo/{wo.id}" class="text-gray-400 hover:text-gray-600 text-sm">← WO {wo.so_number}</a>
 	<h1 class="text-lg font-semibold text-gray-900">
-		{isEditMode ? 'Edit Branch' : 'Branch Line'}
+		{isEditMode ? 'Edit Cut-Down Setup' : 'Set Cut-Down'}
 	</h1>
 </header>
 
@@ -70,10 +72,14 @@
 		</div>
 	{/if}
 	{#if isEditMode && editBlockers.length > 0}
-		<div class="px-4 py-3 rounded-md text-sm bg-amber-50 text-amber-800 border border-amber-200">
+		<div
+			class="px-4 py-3 rounded-md text-sm bg-amber-50 text-amber-800 border border-amber-200"
+		>
 			<div class="flex flex-wrap items-center justify-between gap-3">
 				<span>
-					This branch cannot be edited because it has downstream {editBlockers.join(', ')}
+					This cut-down setup cannot be edited because it has downstream {editBlockers.join(
+						', '
+					)}
 					activity.
 				</span>
 				{#if cutDownBlockers.length > 0}
@@ -91,7 +97,9 @@
 	<div class="card">
 		<div class="card-header">
 			<span class="font-semibold text-sm text-gray-700"
-				>{isEditMode ? 'Billing Source Line' : 'Source Line (will become billing line)'}</span
+				>{isEditMode
+					? 'Billing Source Line'
+					: 'Source Line (will become billing line)'}</span
 			>
 		</div>
 		<div class="card-body grid grid-cols-3 gap-4 text-sm">
@@ -137,7 +145,7 @@
 	<!-- Production widths form -->
 	<div class="card">
 		<div class="card-header">
-			<span class="font-semibold text-sm text-gray-700">Production Widths</span>
+			<span class="font-semibold text-sm text-gray-700">Cut-Down Widths</span>
 		</div>
 		<form method="POST" action="?/branch" use:enhance class="card-body space-y-4">
 			<input type="hidden" name="woLineId" value={line.id} />
@@ -174,8 +182,7 @@
 					type="button"
 					class="btn-secondary btn-sm mb-px"
 					onclick={expandShortcut}
-					disabled={!canSubmit}
-					>Expand</button
+					disabled={!canSubmit}>Expand</button
 				>
 			</div>
 
@@ -205,18 +212,20 @@
 							type="number"
 							name="qty_{i}"
 							min="1"
-							class="form-input"
+							class="form-input bg-gray-50 text-gray-500 cursor-not-allowed"
 							bind:value={row.qty}
 							disabled={!canSubmit}
+							readonly
 						/>
 						<input
 							type="number"
 							name="length_ft_{i}"
 							step="0.5"
 							min="1"
-							class="form-input"
+							class="form-input bg-gray-50 text-gray-500 cursor-not-allowed"
 							bind:value={row.length_ft}
 							disabled={!canSubmit}
+							readonly
 						/>
 						<button
 							type="button"
@@ -228,8 +237,11 @@
 				{/each}
 			</div>
 
-			<button type="button" class="btn-secondary btn-sm" onclick={addRow} disabled={!canSubmit}
-				>+ Add Width</button
+			<button
+				type="button"
+				class="btn-secondary btn-sm"
+				onclick={addRow}
+				disabled={!canSubmit}>+ Add Width</button
 			>
 
 			<!-- Waste calculator -->
@@ -248,7 +260,7 @@
 
 			<div class="flex gap-2 pt-2">
 				<button type="submit" class="btn-primary" disabled={overWidth || !canSubmit}
-					>{isEditMode ? 'Save Branch' : 'Branch Line'}</button
+					>{isEditMode ? 'Save Setup' : 'Set Cut-Down'}</button
 				>
 				<a href="/wo/{wo.id}" class="btn-secondary">Cancel</a>
 			</div>
@@ -260,7 +272,7 @@
 			<div>
 				<p class="text-sm font-medium text-gray-900 mb-1">Blocking cut-down activity</p>
 				<p class="text-xs text-gray-500">
-					This branch cannot be edited while these cut-down records exist.
+					This setup cannot be edited while these cut-down records exist.
 				</p>
 			</div>
 
@@ -268,12 +280,18 @@
 				{#each cutDownBlockers as cutDown (cutDown.id)}
 					<div class="border border-gray-200 rounded-md px-3 py-2 text-xs space-y-1">
 						<div class="flex items-center justify-between gap-2">
-							<span class="font-semibold text-gray-800">{cutDown.cut_down_number}</span>
+							<span class="font-semibold text-gray-800"
+								>{cutDown.cut_down_number}</span
+							>
 							<span class="badge-gray text-xs">{cutDown.status}</span>
 						</div>
 						<div class="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-600">
 							<span>{cutDown.sku_label}</span>
-							<span>Run: {cutDown.run_date ? fmtDate(cutDown.run_date) : 'Unscheduled'}</span>
+							<span
+								>Run: {cutDown.run_date
+									? fmtDate(cutDown.run_date)
+									: 'Unscheduled'}</span
+							>
 							<span>Rolls: {cutDown.rolls_scheduled}</span>
 							<span>Sq Ft: {fmtSqft(cutDown.sqft_scheduled)}</span>
 						</div>
@@ -287,7 +305,11 @@
 
 			<div class="flex justify-end gap-2">
 				<a href="/wo/{wo.id}/cutdown" class="btn-secondary btn-sm">Open Cut-Downs</a>
-				<button type="button" class="btn-primary btn-sm" onclick={() => cutDownDialog.close()}>
+				<button
+					type="button"
+					class="btn-primary btn-sm"
+					onclick={() => cutDownDialog.close()}
+				>
 					Close
 				</button>
 			</div>

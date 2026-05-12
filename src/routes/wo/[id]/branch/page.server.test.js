@@ -133,11 +133,10 @@ describe('work order branch page', () => {
 			editBlockers: ['cut-down'],
 			cutDownBlockers,
 		});
-		expect(db.query).toHaveBeenNthCalledWith(
-			5,
-			expect.stringContaining('FROM cut_downs cd'),
-			[34, '42']
-		);
+		expect(db.query).toHaveBeenNthCalledWith(5, expect.stringContaining('FROM cut_downs cd'), [
+			34,
+			'42',
+		]);
 	});
 
 	it('dispatches edit submissions to updateBranchLine', async () => {
@@ -158,7 +157,7 @@ describe('work order branch page', () => {
 					['length_ft_1', '75'],
 				]),
 			})
-		).rejects.toEqual({ type: 'redirect', status: 303, location: '/wo/42?tab=production' });
+		).rejects.toEqual({ type: 'redirect', status: 303, location: '/wo/42' });
 
 		expect(requireAdmin).toHaveBeenCalledWith({ appUser: { id: 9 } });
 		expect(updateBranchLine).toHaveBeenCalledWith(
@@ -174,7 +173,10 @@ describe('work order branch page', () => {
 	});
 
 	it('returns admin failures before dispatching branch changes', async () => {
-		requireAdmin.mockReturnValueOnce({ status: 403, data: { error: 'Admin access required.' } });
+		requireAdmin.mockReturnValueOnce({
+			status: 403,
+			data: { error: 'Admin access required.' },
+		});
 
 		const result = await actions.branch({
 			params: { id: '42' },
@@ -206,7 +208,7 @@ describe('work order branch page', () => {
 					['length_ft_0', '75'],
 				]),
 			})
-		).rejects.toEqual({ type: 'redirect', status: 303, location: '/wo/42?tab=production' });
+		).rejects.toEqual({ type: 'redirect', status: 303, location: '/wo/42' });
 
 		expect(branchLine).toHaveBeenCalledWith(
 			34,

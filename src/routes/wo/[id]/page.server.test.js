@@ -71,8 +71,8 @@ describe('work order detail load', () => {
 				...rawLines[0],
 				line_type: 'UNBRANCHED',
 				progress: {
-					path: { label: 'Standard', class: 'badge-blue' },
-					status: { label: 'Produced 10 / 10', class: 'badge-green' },
+					path: { label: 'Laminate', class: 'badge-blue' },
+					status: { label: 'Produced', class: 'badge-green' },
 				},
 				display_instructions: 'Factory label',
 			},
@@ -335,7 +335,7 @@ describe('work order detail load', () => {
 		});
 
 		expect(result.unbranchedLines[0].progress).toEqual({
-			path: { label: 'Standard', class: 'badge-blue' },
+			path: { label: 'Laminate', class: 'badge-blue' },
 			status: { label: 'Produced 3 / 10', class: 'badge-blue' },
 		});
 	});
@@ -370,8 +370,8 @@ describe('work order detail load', () => {
 		});
 
 		expect(result.unbranchedLines[0].progress).toEqual({
-			path: { label: 'Direct Ship', class: 'badge-gray' },
-			status: { label: 'Shipped 4 / 4', class: 'badge-green' },
+			path: { label: 'Raw', class: 'badge-gray' },
+			status: { label: 'Shipped', class: 'badge-green' },
 		});
 	});
 
@@ -388,6 +388,7 @@ describe('work order detail load', () => {
 						facing: 'Vinyl',
 						rolls_produced: 0,
 						rolls_scheduled: 0,
+						cut_down_count: 1,
 						qty: 10,
 						reconciliation_status: 'CURRENT',
 					},
@@ -396,8 +397,9 @@ describe('work order detail load', () => {
 						parent_line_id: 100,
 						child_count: 0,
 						facing: 'Vinyl',
-						rolls_produced: 2,
+						rolls_produced: 0,
 						rolls_scheduled: 1,
+						production_scheduled_count: 1,
 						qty: 5,
 						reconciliation_status: 'CURRENT',
 					},
@@ -423,8 +425,8 @@ describe('work order detail load', () => {
 		});
 
 		expect(result.billingLines[0].progress).toEqual({
-			path: { label: 'Branch', class: 'badge-gray' },
-			status: { label: 'Scheduled 1', class: 'badge-blue' },
+			path: { label: 'Cut-Down + Laminate', class: 'badge-amber' },
+			status: { label: 'Production Scheduled', class: 'badge-blue' },
 		});
 	});
 
@@ -437,12 +439,23 @@ describe('work order detail load', () => {
 					{
 						id: 100,
 						parent_line_id: null,
-						child_count: 0,
+						child_count: 1,
 						facing: 'Vinyl',
 						rolls_produced: 0,
 						rolls_scheduled: 0,
 						active_cut_down_count: 1,
+						cut_down_scheduled_count: 1,
 						cut_down_rolls_scheduled: 2,
+						qty: 8,
+						reconciliation_status: 'CURRENT',
+					},
+					{
+						id: 101,
+						parent_line_id: 100,
+						child_count: 0,
+						facing: 'Vinyl',
+						rolls_produced: 0,
+						rolls_scheduled: 0,
 						qty: 8,
 						reconciliation_status: 'CURRENT',
 					},
@@ -457,9 +470,9 @@ describe('work order detail load', () => {
 			url: urlWithSearch(),
 		});
 
-		expect(result.unbranchedLines[0].progress).toEqual({
-			path: { label: 'Cut-Down', class: 'badge-amber' },
-			status: { label: 'Scheduled 2', class: 'badge-blue' },
+		expect(result.billingLines[0].progress).toEqual({
+			path: { label: 'Cut-Down + Laminate', class: 'badge-amber' },
+			status: { label: 'Cut-Down Scheduled', class: 'badge-blue' },
 		});
 	});
 
@@ -491,8 +504,8 @@ describe('work order detail load', () => {
 		});
 
 		expect(result.unbranchedLines[0].progress).toEqual({
-			path: { label: 'Standard', class: 'badge-blue' },
-			status: { label: 'Stale', class: 'badge-amber' },
+			path: { label: 'Laminate', class: 'badge-blue' },
+			status: { label: 'Needs Review', class: 'badge-amber' },
 		});
 	});
 });
@@ -574,7 +587,7 @@ describe('work order detail branch actions', () => {
 
 		expect(result).toEqual({
 			status: 400,
-			data: { branchError: 'Branch line is required.' },
+			data: { branchError: 'Cut-down setup line is required.' },
 		});
 		expect(deleteBranchLine).not.toHaveBeenCalled();
 	});

@@ -11,10 +11,10 @@ import {
 } from '$lib/services/line-paths.js';
 
 const PATH_BADGES = {
-	STANDARD: { label: 'Standard', class: 'badge-blue' },
-	DIRECT_SHIP: { label: 'Direct Ship', class: 'badge-gray' },
-	CUT_DOWN: { label: 'Cut-Down', class: 'badge-amber' },
-	BRANCH: { label: 'Branch', class: 'badge-gray' },
+	LAMINATE: { label: 'Laminate', class: 'badge-blue' },
+	CUT_DOWN_LAMINATE: { label: 'Cut-Down + Laminate', class: 'badge-amber' },
+	CUT_DOWN_ONLY: { label: 'Cut-Down Only', class: 'badge-amber' },
+	RAW: { label: 'Raw', class: 'badge-gray' },
 };
 
 function sumBy(lines, field) {
@@ -29,44 +29,73 @@ function shipmentEquivalentRolls(line) {
 }
 
 function buildProgress(line, children = []) {
-	const cutDownRollsScheduled = Number(line.cut_down_rolls_scheduled ?? 0);
 	const hasCutDown = Number(line.cut_down_count ?? 0) > 0;
-	const hasActiveCutDown = Number(line.active_cut_down_count ?? 0) > 0;
 	const lineType = line.line_type;
+	const inferredPath = inferPathType(line);
+	const workflow =
+		lineType === 'BILLING'
+			? children.every((child) => inferPathType(child) === 'CUT_SHIP')
+				? 'CUT_DOWN_ONLY'
+				: 'CUT_DOWN_LAMINATE'
+			: inferredPath === 'DIRECT_SHIP'
+				? 'RAW'
+				: inferredPath === 'CUT_SHIP'
+					? 'CUT_DOWN_ONLY'
+					: inferredPath === 'CUT_LAMINATE'
+						? 'CUT_DOWN_LAMINATE'
+						: 'LAMINATE';
 
-	const path =
-		hasCutDown || hasActiveCutDown
-			? PATH_BADGES.CUT_DOWN
-			: lineType === 'BILLING'
-				? PATH_BADGES.BRANCH
-				: (PATH_BADGES[inferPathType(line)] ?? PATH_BADGES.STANDARD);
+	const path = PATH_BADGES[workflow] ?? PATH_BADGES.LAMINATE;
 
 	const qty = lineType === 'BILLING' ? sumBy(children, 'qty') : Number(line.qty ?? 0);
 	const produced =
 		lineType === 'BILLING'
 			? sumBy(children, 'rolls_produced')
 			: Number(line.rolls_produced ?? 0);
-	const scheduled =
-		(lineType === 'BILLING'
-			? sumBy(children, 'rolls_scheduled')
-			: Number(line.rolls_scheduled ?? 0)) + cutDownRollsScheduled;
+	const productionScheduled =
+		lineType === 'BILLING'
+			? sumBy(children, 'production_scheduled_count')
+			: Number(line.production_scheduled_count ?? 0);
+	const productionQueued =
+		lineType === 'BILLING'
+			? sumBy(children, 'production_queue_count')
+			: Number(line.production_queue_count ?? 0);
+	const cutDownScheduled = Number(line.cut_down_scheduled_count ?? 0);
+	const cutDownQueued = Number(line.cut_down_queue_count ?? 0);
 	const shipped =
 		lineType === 'BILLING'
 			? sumBy(children, 'rolls_shipped') +
 				(Number(line.cut_down_shipments_shipped ?? 0) > 0 ? Number(line.qty ?? 0) : 0)
 			: shipmentEquivalentRolls(line);
 
-	let status = { label: `Produced ${produced} / ${qty}`, class: 'badge-gray' };
+	let status = { label: 'Open', class: 'badge-gray' };
 	if (line.reconciliation_status === 'STALE') {
-		status = { label: 'Stale', class: 'badge-amber' };
+		status = { label: 'Needs Review', class: 'badge-amber' };
 	} else if (shipped > 0) {
-		status = { label: `Shipped ${Math.min(shipped, qty)} / ${qty}`, class: 'badge-green' };
-	} else if (scheduled > 0) {
-		status = { label: `Scheduled ${scheduled}`, class: 'badge-blue' };
+		status = {
+			label: shipped >= qty ? 'Shipped' : `Shipped ${Math.min(shipped, qty)} / ${qty}`,
+			class: 'badge-green',
+		};
 	} else if (produced >= qty && qty > 0) {
-		status = { label: `Produced ${produced} / ${qty}`, class: 'badge-green' };
+		status = { label: 'Produced', class: 'badge-green' };
 	} else if (produced > 0) {
 		status = { label: `Produced ${produced} / ${qty}`, class: 'badge-blue' };
+	} else if (workflow === 'RAW') {
+		status = { label: 'Open', class: 'badge-gray' };
+	} else if (cutDownScheduled > 0) {
+		status = { label: 'Cut-Down Scheduled', class: 'badge-blue' };
+	} else if (cutDownQueued > 0) {
+		status = { label: 'Cut-Down Queue', class: 'badge-gray' };
+	} else if ((workflow === 'CUT_DOWN_ONLY' || workflow === 'CUT_DOWN_LAMINATE') && !hasCutDown) {
+		status = { label: 'Cut-Down Queue', class: 'badge-gray' };
+	} else if (workflow === 'CUT_DOWN_LAMINATE' && productionScheduled > 0) {
+		status = { label: 'Production Scheduled', class: 'badge-blue' };
+	} else if (workflow === 'CUT_DOWN_LAMINATE' && productionQueued > 0) {
+		status = { label: 'Production Queue', class: 'badge-gray' };
+	} else if (workflow === 'LAMINATE' && productionScheduled > 0) {
+		status = { label: 'Production Scheduled', class: 'badge-blue' };
+	} else if (workflow === 'LAMINATE') {
+		status = { label: 'Production Queue', class: 'badge-gray' };
 	}
 
 	return {
@@ -165,6 +194,16 @@ export async function load({ params, locals, url }) {
 		          WHERE pr.wo_line_id = wol.id AND pr.status != 'COMPLETED'
 		        ), 0) AS rolls_scheduled,
 		        COALESCE((
+		          SELECT COUNT(*)
+		          FROM production_runs pr
+		          WHERE pr.wo_line_id = wol.id AND pr.status = 'SCHEDULED'
+		        ), 0) AS production_scheduled_count,
+		        COALESCE((
+		          SELECT COUNT(*)
+		          FROM production_runs pr
+		          WHERE pr.wo_line_id = wol.id AND pr.status = 'UNSCHEDULED'
+		        ), 0) AS production_queue_count,
+		        COALESCE((
 		          SELECT SUM(sl.rolls)
 		          FROM shipment_lines sl
 		          JOIN production_runs pr2 ON pr2.id = sl.production_run_id
@@ -193,6 +232,16 @@ export async function load({ params, locals, url }) {
 		          FROM cut_downs cd
 		          WHERE cd.billing_line_id = wol.id AND cd.status != 'COMPLETED'
 		        ), 0) AS cut_down_rolls_scheduled,
+		        COALESCE((
+		          SELECT COUNT(*)
+		          FROM cut_downs cd
+		          WHERE cd.billing_line_id = wol.id AND cd.status = 'SCHEDULED'
+		        ), 0) AS cut_down_scheduled_count,
+		        COALESCE((
+		          SELECT COUNT(*)
+		          FROM cut_downs cd
+		          WHERE cd.billing_line_id = wol.id AND cd.status = 'UNSCHEDULED'
+		        ), 0) AS cut_down_queue_count,
 		        COALESCE((
 		          SELECT COUNT(*)
 		          FROM shipment_lines sl
@@ -343,7 +392,7 @@ export const actions = {
 
 		const data = await request.formData();
 		const lineId = parseInt(data.get('line_id'));
-		if (!lineId) return fail(400, { branchError: 'Branch line is required.' });
+		if (!lineId) return fail(400, { branchError: 'Cut-down setup line is required.' });
 
 		try {
 			await deleteBranchLine(lineId, parseInt(params.id), locals.appUser.id);
