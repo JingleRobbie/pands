@@ -1,36 +1,61 @@
-Setup on a new machine                                                                                         
-Prerequisites — install these first:                                                                        
-- https://nodejs.org (LTS)
-- https://dev.mysql.com/downloads/mysql/ — or MySQL Workbench which bundles it
+Setup on a new machine
+
+Prerequisites:
+- Node.js 20 LTS or newer
+- npm 10 or newer
+- MySQL 8 or newer
 
 1. Get the code
+
 git clone <your-repo-url> PandS
 cd PandS
-npm install
 
-2. Create the database
-mysql -u root -p < db/schema.sql
-npm run seed
+2. Run the project setup script
 
-3. Create the .env file (in the project root)
+npm run setup:after-pull
+
+This installs npm dependencies, creates .env from .env.example if needed,
+regenerates SvelteKit's local .svelte-kit files, rebuilds generated CSS, and
+verifies that the app can build.
+
+3. Edit .env
+
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=your_mysql_user
 DB_PASSWORD=your_mysql_password
 DB_NAME=pands
 
-▎ If your password contains $, escape it as \$
+If your password contains $, escape it as \$ because Vite expands $word in env
+files.
 
-4. Build and run
+4. Create the database for a first-time local install
+
+mysql -u root -p < db/schema.sql
+npm run seed
+
+For an existing local database, apply any new SQL files from db/migrations/
+instead of recreating the schema.
+
+5. Run the app
+
+For development:
+
+npm run dev
+
+The dev server runs at http://localhost:5173.
+
+For a production-style local run:
+
 npm run build
-npm run build:css
 node build/index.js
-App will be at http://localhost:3000. Set PORT=8080 (or whatever) in .env to change the port.
 
-5. Log in
-The schema seeds one Admin user. Go to http://localhost:3000, pick Admin, and you're in. Add other users via
-MySQL directly (INSERT INTO app_users ...) until a user management UI is built.
+The production server runs at http://localhost:3000 by default. Set PORT before
+starting the server to use a different port.
 
----
-For dev work (hot reload, not a deployment): just npm run dev instead of steps 4–5, app at
-http://localhost:5173.
+Generated local files that should not be committed:
+- node_modules/
+- .svelte-kit/
+- build/
+- static/css/app.css
+- .env
