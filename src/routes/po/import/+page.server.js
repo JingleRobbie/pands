@@ -8,6 +8,9 @@ const VENDOR_MAP = {
 	CERTAINTEED: 'Certainteed',
 };
 
+const SOURCE_SHEET_NAME = 'Sheet1';
+const FLATTENED_SHEET_NAME = 'Formatted';
+
 function normalizeVendor(raw) {
 	const up = String(raw).toUpperCase();
 	for (const [k, v] of Object.entries(VENDOR_MAP)) {
@@ -16,10 +19,87 @@ function normalizeVendor(raw) {
 	return null;
 }
 
-function xlsmDate(str) {
-	const [m, d, y] = String(str).split('/');
-	const year = parseInt(y) + (parseInt(y) < 100 ? 2000 : 0);
-	return `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+function clean(value) {
+	return String(value ?? '').trim();
+}
+
+function xlsmDate(value) {
+	if (!value) return '';
+	if (value instanceof Date) {
+		return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, '0')}-${String(value.getUTCDate()).padStart(2, '0')}`;
+	}
+	const str = clean(value);
+	const [m, d, y] = str.split('/');
+	if (!m || !d || !y) return '';
+	const year = parseInt(y, 10) + (parseInt(y, 10) < 100 ? 2000 : 0);
+	if (!year || !parseInt(m, 10) || !parseInt(d, 10)) return '';
+	return `${year}-${String(parseInt(m, 10)).padStart(2, '0')}-${String(parseInt(d, 10)).padStart(2, '0')}`;
+}
+
+function parseSqft(value) {
+	if (typeof value === 'number') return Math.round(value);
+	const cleaned = clean(value).replace(/[$,\s]/g, '');
+	const parsed = Number.parseFloat(cleaned);
+	return Number.isFinite(parsed) ? Math.round(parsed) : NaN;
+}
+
+function itemCodeFromHeading(value) {
+	const text = clean(value);
+	if (!text || text.startsWith('Total ')) return '';
+	const match = text.match(/^(\d{4})\s*\(/);
+	return match?.[1] ?? '';
+}
+
+function parseSourceSheet(sheet) {
+	const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+	const parsedRows = [];
+	let itemCode = '';
+
+	for (const row of rows) {
+		const headingCode = itemCodeFromHeading(row[3]);
+		if (headingCode) {
+			itemCode = headingCode;
+			continue;
+		}
+		if (clean(row[3]).startsWith('Total ')) {
+			itemCode = '';
+			continue;
+		}
+
+		const poNum = clean(row[6]);
+		if (!poNum || !itemCode) continue;
+
+		parsedRows.push({
+			Num: poNum,
+			Name: row[7],
+			'Deliv Date': row[10],
+			'Item Code': itemCode,
+			Qty: row[11],
+		});
+	}
+
+	return parsedRows;
+}
+
+function parseFlattenedSheet(sheet) {
+	return xlsx.utils.sheet_to_json(sheet, { defval: '', raw: false });
+}
+
+function parsePoWorkbook(buffer) {
+	const workbook = xlsx.read(buffer, { type: 'buffer', cellDates: true });
+	if (workbook.Sheets[SOURCE_SHEET_NAME]) {
+		return {
+			rows: parseSourceSheet(workbook.Sheets[SOURCE_SHEET_NAME]),
+			sourceSheet: SOURCE_SHEET_NAME,
+		};
+	}
+	if (workbook.Sheets[FLATTENED_SHEET_NAME]) {
+		return {
+			rows: parseFlattenedSheet(workbook.Sheets[FLATTENED_SHEET_NAME]),
+			sourceSheet: FLATTENED_SHEET_NAME,
+		};
+	}
+	throw new Error(`Sheet "${SOURCE_SHEET_NAME}" not found in uploaded file.`);
 }
 
 function dbDate(val) {
@@ -41,13 +121,10 @@ export const actions = {
 		if (!file || file.size === 0) return fail(400, { error: 'No file selected.' });
 
 		let rows;
+		let sourceSheet;
 		try {
 			const buffer = Buffer.from(await file.arrayBuffer());
-			const workbook = xlsx.read(buffer, { type: 'buffer' });
-			const sheet = workbook.Sheets['Formatted'];
-			if (!sheet)
-				return fail(400, { error: 'Sheet "Formatted" not found in uploaded file.' });
-			rows = xlsx.utils.sheet_to_json(sheet, { defval: '', raw: false });
+			({ rows, sourceSheet } = parsePoWorkbook(buffer));
 		} catch {
 			return fail(400, {
 				error: 'Could not parse file. Make sure it is a valid .xlsm workbook.',
@@ -62,11 +139,11 @@ export const actions = {
 		const errors = [];
 
 		for (const row of rows) {
-			const poNum = String(row['Num'] ?? '').trim();
-			const vendorRaw = String(row['Name'] ?? '').trim();
-			const delivDate = String(row['Deliv Date'] ?? '').trim();
-			const itemCode = String(row['Item Code'] ?? '').trim();
-			const qtyRaw = String(row['Qty'] ?? '').trim();
+			const poNum = clean(row['Num']);
+			const vendorRaw = clean(row['Name']);
+			const delivDate = clean(row['Deliv Date']);
+			const itemCode = clean(row['Item Code']);
+			const qtyRaw = row['Qty'];
 
 			if (!poNum || !itemCode) continue;
 
@@ -82,9 +159,15 @@ export const actions = {
 				continue;
 			}
 
-			const sqft = parseInt(qtyRaw.replace(/\D/g, ''), 10);
+			const expectedDate = xlsmDate(delivDate);
+			if (!expectedDate) {
+				errors.push(`Invalid delivery date "${delivDate}" on PO ${poNum}.`);
+				continue;
+			}
+
+			const sqft = parseSqft(qtyRaw);
 			if (!sqft || sqft < 1) {
-				errors.push(`Invalid quantity "${qtyRaw}" on PO ${poNum}.`);
+				errors.push(`Invalid quantity "${clean(qtyRaw)}" on PO ${poNum}.`);
 				continue;
 			}
 
@@ -92,16 +175,22 @@ export const actions = {
 				poMap.set(poNum, {
 					po_number: poNum,
 					vendor_name: vendor,
-					expected_date: xlsmDate(delivDate),
+					expected_date: expectedDate,
 					lines: [],
 				});
 			}
-			poMap.get(poNum).lines.push({ sku_id: skuId, sku_code: itemCode, sqft_ordered: sqft });
+			const po = poMap.get(poNum);
+			const existingLine = po.lines.find((line) => line.sku_id === skuId);
+			if (existingLine) {
+				existingLine.sqft_ordered += sqft;
+			} else {
+				po.lines.push({ sku_id: skuId, sku_code: itemCode, sqft_ordered: sqft });
+			}
 		}
 
 		if (errors.length) return fail(400, { error: errors.join(' ') });
 		if (!poMap.size)
-			return fail(400, { error: 'No valid rows parsed from the "Formatted" sheet.' });
+			return fail(400, { error: `No valid rows parsed from the "${sourceSheet}" sheet.` });
 
 		// Load ALL open POs from the database
 		const [existingRows] = await db.query(
@@ -266,4 +355,10 @@ export const actions = {
 			conn.release();
 		}
 	},
+};
+
+export const __poImportTest = {
+	parsePoWorkbook,
+	parseSourceSheet,
+	parseSqft,
 };
