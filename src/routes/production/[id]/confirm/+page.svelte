@@ -133,15 +133,11 @@
 					<button
 						type="button"
 						class="btn-primary"
-						onclick={(e) => requestConfirm(e.currentTarget.form)}
-						>Mark Produced</button
+						onclick={(e) => requestConfirm(e.currentTarget.form)}>Mark Produced</button
 					>
 					<a href={returnTo} class="btn-secondary">Cancel</a>
 				</div>
-				<dialog
-					bind:this={confirmDialog}
-					class="modal-dialog modal-dialog-md"
-				>
+				<dialog bind:this={confirmDialog} class="modal-dialog modal-dialog-md">
 					<p class="text-sm font-medium text-gray-900 mb-1">Confirm production?</p>
 					<p class="text-xs text-gray-500 mb-4">
 						Run {run.run_number} will be marked produced. This deducts inventory and cannot
@@ -220,7 +216,7 @@
 						</td>
 					{/each}
 				</tr>
-				{#each matrix.rows as row (row.rowType + (row.woLineId ?? row.objectId))}
+				{#each matrix.rows as row (row.rowType + (row.groupId ?? row.woLineId ?? row.objectId))}
 					{@const href =
 						row.rowType === 'po'
 							? `/po/${row.objectId}`

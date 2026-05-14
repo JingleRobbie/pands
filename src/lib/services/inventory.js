@@ -134,6 +134,7 @@ async function getUnscheduledLines(skuIds, filterBySku) {
 	const [unscheduledLines] = await db.query(
 		`
 		SELECT wol.id, wol.sku_id, wol.qty, wol.rolls_produced, wol.length_ft, wol.width_in, wol.facing,
+		       COALESCE(parent.sku_id, wol.sku_id) AS billing_sku_id,
 		       wo.so_number, wo.job_name, wo.id AS wo_id, wo.customer_name, wo.ship_date,
 		       COALESCE(
 		         (SELECT SUM(pr.rolls_scheduled)
@@ -141,6 +142,7 @@ async function getUnscheduledLines(skuIds, filterBySku) {
 		          WHERE pr.wo_line_id = wol.id AND pr.status != 'COMPLETED'), 0
 		       ) AS rolls_scheduled
 		FROM work_order_lines wol
+		LEFT JOIN work_order_lines parent ON parent.id = wol.parent_line_id
 		JOIN work_orders wo ON wo.id = wol.wo_id
 		WHERE wo.status NOT IN ('COMPLETE','CANCELLED')
 		  ${skuWhere}
@@ -226,29 +228,49 @@ function sortDatedRows(poRowMap, prodRowMap) {
 
 function buildUnscheduledRows(unscheduledLines, skuIds, running) {
 	const unscheduledRows = [];
+	const rowMap = new Map();
+
 	for (const line of unscheduledLines) {
 		const remainingRolls =
 			Number(line.qty) - Number(line.rolls_produced) - Number(line.rolls_scheduled);
 		if (remainingRolls <= 0) continue;
 
 		const delta = -calcSqft(line, remainingRolls);
-		running[line.sku_id] = (running[line.sku_id] ?? 0) + delta;
+		const billingSkuId = line.billing_sku_id ?? line.sku_id;
+		const key = `${line.wo_id}_${billingSkuId}`;
 
-		unscheduledRows.push({
-			rowType: 'unscheduled',
-			partyName: line.customer_name,
-			description: line.job_name,
-			soNumber: line.so_number,
-			poNumber: '',
-			eventDate: null,
-			shipDate: line.ship_date,
-			facing: line.facing,
-			objectId: line.wo_id,
-			woLineId: line.id,
-			deltas: { [line.sku_id]: delta },
-			cells: buildCells(skuIds, { [line.sku_id]: delta }, running),
-		});
+		if (!rowMap.has(key)) {
+			rowMap.set(key, {
+				rowType: 'unscheduled',
+				partyName: line.customer_name,
+				description: line.job_name,
+				soNumber: line.so_number,
+				poNumber: '',
+				eventDate: null,
+				shipDate: line.ship_date,
+				facings: new Set(),
+				objectId: line.wo_id,
+				groupId: key,
+				billingSkuId,
+				deltas: {},
+			});
+		}
+
+		const row = rowMap.get(key);
+		row.deltas[line.sku_id] = (row.deltas[line.sku_id] ?? 0) + delta;
+		if (line.facing) row.facings.add(line.facing);
 	}
+
+	for (const row of rowMap.values()) {
+		for (const id of skuIds) {
+			if (row.deltas[id] != null) running[id] = (running[id] ?? 0) + row.deltas[id];
+		}
+		row.facing = [...row.facings].join(', ');
+		delete row.facings;
+		row.cells = buildCells(skuIds, row.deltas, running);
+		unscheduledRows.push(row);
+	}
+
 	return unscheduledRows;
 }
 
