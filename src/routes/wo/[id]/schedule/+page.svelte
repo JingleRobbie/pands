@@ -8,16 +8,44 @@
 	const wo = $derived(data.wo);
 	const schedulableLines = $derived(data.schedulableLines);
 	const doneLines = $derived(data.doneLines);
+	const billingGroups = $derived(data.billingGroups ?? []);
 	const returnTo = $derived(getReturnTo(page.url, `/wo/${wo.id}`));
 	const woHref = $derived(withReturnTo(`/wo/${wo.id}`, returnTo));
+
+	const allChildGroups = $derived(billingGroups.flatMap((g) => g.schedulableChildGroups));
+	const totalDoneCount = $derived(
+		doneLines.length + billingGroups.reduce((s, g) => s + g.doneChildCount, 0)
+	);
 
 	let rolls = $state(
 		untrack(() =>
 			Object.fromEntries(data.schedulableLines.map((l) => [l.id, l.rollsUnscheduled]))
 		)
 	);
+	let groupRolls = $state(
+		untrack(() =>
+			Object.fromEntries(
+				(data.billingGroups ?? [])
+					.flatMap((g) => g.schedulableChildGroups)
+					.map((cg) => [cg.groupKey, cg.rollsUnscheduled])
+			)
+		)
+	);
+
+	function distributeGroupRolls(children, total) {
+		const result = {};
+		let remaining = Math.max(0, Math.round(Number(total) || 0));
+		for (const child of children) {
+			const alloc = Math.min(remaining, child.rollsUnscheduled);
+			result[child.id] = alloc;
+			remaining -= alloc;
+		}
+		return result;
+	}
+
 	function zeroAll() {
 		for (const line of schedulableLines) rolls[line.id] = 0;
+		for (const cg of allChildGroups) groupRolls[cg.groupKey] = 0;
 	}
 </script>
 
@@ -131,13 +159,105 @@
 							</td>
 						</tr>
 					{/each}
+					{#each billingGroups as group (group.parent.id)}
+						{#if group.schedulableChildGroups.length > 0}
+							<tr class="border-b border-gray-100 bg-gray-50">
+								<td
+									colspan="8"
+									class="px-4 py-1.5 text-xs text-gray-500 font-medium"
+								>
+									<span class="flex items-center gap-2">
+										<span
+											>Cut-Down: {group.parent.facing}
+											{group.parent.thickness_in}" × {group.parent.width_in}"
+											× {group.parent.length_ft}'</span
+										>
+										{#if Number(group.parent.confirmed_cut_down_count) === 0}
+											<span class="badge-amber">Cut-Down Pending</span>
+										{/if}
+									</span>
+								</td>
+							</tr>
+							{#each group.schedulableChildGroups as childGroup (childGroup.groupKey)}
+								{@const distributed = distributeGroupRolls(
+									childGroup.children,
+									groupRolls[childGroup.groupKey] ?? 0
+								)}
+								{#each childGroup.children as child (child.id)}
+									<tr class="hidden">
+										<td
+											><input
+												type="hidden"
+												name="line_id"
+												value={child.id}
+											/></td
+										>
+										<td
+											><input
+												type="hidden"
+												name="rolls"
+												value={distributed[child.id] ?? 0}
+											/></td
+										>
+									</tr>
+								{/each}
+								<tr class="border-b border-gray-100">
+									<td class="pl-8 pr-4 py-2 text-gray-500"
+										>{childGroup.rollfor}</td
+									>
+									<td class="px-4 py-2 text-gray-500">{childGroup.facing}</td>
+									<td
+										class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
+										>{childGroup.thickness_in}"</td
+									>
+									<td
+										class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
+										>{childGroup.width_in}"</td
+									>
+									<td
+										class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
+										>{childGroup.length_ft}'</td
+									>
+									<td class="px-4 py-2 text-right tabular-nums text-gray-600"
+										>{childGroup.rollsUnscheduled}</td
+									>
+									<td class="px-4 py-2 text-right">
+										<div class="flex items-center justify-end gap-1">
+											<input
+												type="number"
+												min="0"
+												max={childGroup.rollsUnscheduled}
+												bind:value={groupRolls[childGroup.groupKey]}
+												class="form-input w-20 py-1 text-right tabular-nums"
+											/>
+											<button
+												type="button"
+												onclick={() =>
+													(groupRolls[childGroup.groupKey] = 0)}
+												class="text-gray-300 hover:text-gray-500 text-xs leading-none"
+												title="Clear">← Zero</button
+											>
+										</div>
+									</td>
+									<td
+										class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
+									>
+										{fmtSqft(
+											(groupRolls[childGroup.groupKey] || 0) *
+												childGroup.sqftPerRoll
+										)}
+									</td>
+								</tr>
+							{/each}
+						{/if}
+					{/each}
 				</tbody>
 			</table>
 		</div>
 
-		{#if doneLines.length > 0}
+		{#if totalDoneCount > 0}
 			<p class="text-xs text-gray-400 mt-2">
-				{doneLines.length} line{doneLines.length === 1 ? '' : 's'} fully scheduled (hidden).
+				{totalDoneCount} line{totalDoneCount === 1 ? '' : 's'} fully scheduled (hidden).
 			</p>
 		{/if}
 
@@ -147,5 +267,3 @@
 		</div>
 	</form>
 </main>
-
-
