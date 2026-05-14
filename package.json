@@ -3,6 +3,9 @@
 	"version": "1.0.0",
 	"description": "PandS insulation inventory tracking",
 	"scripts": {
+		"prepare": "svelte-kit sync",
+		"sync": "svelte-kit sync",
+		"setup:after-pull": "powershell -ExecutionPolicy Bypass -File scripts/setup-after-pull.ps1",
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
@@ -19,6 +22,10 @@
 	"keywords": [],
 	"author": "",
 	"license": "ISC",
+	"engines": {
+		"node": ">=20 <25",
+		"npm": ">=10"
+	},
 	"type": "module",
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

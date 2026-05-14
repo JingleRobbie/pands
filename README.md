@@ -22,10 +22,13 @@ Internal SvelteKit app for tracking insulation material inventory, purchase orde
 1. Install dependencies:
 
     ```bash
-    npm install
+    npm ci
     ```
 
-2. Create `.env` at the project root:
+    `npm ci` installs the exact dependency tree from `package-lock.json` and runs
+    `svelte-kit sync` through the `prepare` script.
+
+2. Create `.env` at the project root, or copy `.env.example`:
 
     ```env
     DB_HOST=localhost
@@ -52,6 +55,33 @@ Internal SvelteKit app for tracking insulation material inventory, purchase orde
     npm run build:css
     ```
 
+### After Pulling Changes
+
+Run the post-pull setup script from the project root:
+
+```powershell
+npm run setup:after-pull
+```
+
+The script handles the local pieces that are intentionally not committed:
+
+- installs dependencies with `npm ci` from `package-lock.json`
+- creates `.env` from `.env.example` if it is missing
+- regenerates SvelteKit files in `.svelte-kit/`
+- rebuilds generated Tailwind CSS at `static/css/app.css`
+- verifies the production build in `build/`
+
+Useful options:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup-after-pull.ps1 -RunTests
+powershell -ExecutionPolicy Bypass -File scripts/setup-after-pull.ps1 -SkipInstall
+powershell -ExecutionPolicy Bypass -File scripts/setup-after-pull.ps1 -SkipBuild
+```
+
+Do not commit `node_modules/`, `.svelte-kit/`, `build/`, `static/css/app.css`, or
+local `.env` files. They are machine-local generated artifacts.
+
 ## Development
 
 ```bash
@@ -63,20 +93,22 @@ Svelte templates do not automatically rebuild the generated Tailwind file. Run `
 
 ## Scripts
 
-| Script                 | Description                            |
-| ---------------------- | -------------------------------------- |
-| `npm run dev`          | Start Vite dev server                  |
-| `npm run build`        | Build the SvelteKit app for production |
-| `npm run preview`      | Preview the built app                  |
-| `npm run build:css`    | Compile minified Tailwind CSS          |
-| `npm run watch:css`    | Watch and compile Tailwind CSS         |
-| `npm run seed`         | Seed material SKUs                     |
-| `npm run seed:history` | Seed historical/sample inventory data  |
-| `npm run lint`         | Run ESLint                             |
-| `npm run format`       | Format all files with Prettier         |
-| `npm run format:check` | Check formatting without writing       |
-| `npm run test`         | Run Vitest unit tests                  |
-| `npm run test:watch`   | Run Vitest in watch mode               |
+| Script                     | Description                                           |
+| -------------------------- | ----------------------------------------------------- |
+| `npm run setup:after-pull` | Install/sync/build local generated files after a pull |
+| `npm run sync`             | Regenerate SvelteKit local files                      |
+| `npm run dev`              | Start Vite dev server                                 |
+| `npm run build`            | Build the SvelteKit app for production                |
+| `npm run preview`          | Preview the built app                                 |
+| `npm run build:css`        | Compile minified Tailwind CSS                         |
+| `npm run watch:css`        | Watch and compile Tailwind CSS                        |
+| `npm run seed`             | Seed material SKUs                                    |
+| `npm run seed:history`     | Seed historical/sample inventory data                 |
+| `npm run lint`             | Run ESLint                                            |
+| `npm run format`           | Format all files with Prettier                        |
+| `npm run format:check`     | Check formatting without writing                      |
+| `npm run test`             | Run Vitest unit tests                                 |
+| `npm run test:watch`       | Run Vitest in watch mode                              |
 
 ## Production
 

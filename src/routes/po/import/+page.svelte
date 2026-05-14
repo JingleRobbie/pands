@@ -268,8 +268,7 @@
 							/>
 						</div>
 						<p class="text-xs text-gray-400">
-							Expects a sheet named "Formatted" with columns: Num, Name, Deliv Date,
-							Item Code, Qty
+							Expects the QuickBooks open PO workbook with grouped items on "Sheet1".
 						</p>
 						<button type="submit" class="btn-primary btn-sm">Parse & Preview</button>
 					</div>

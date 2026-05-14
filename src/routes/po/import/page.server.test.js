@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import xlsx from 'xlsx';
 
 const { conn, db } = vi.hoisted(() => ({
 	conn: {
@@ -25,7 +26,7 @@ vi.mock('@sveltejs/kit', () => ({
 	fail: vi.fn((status, data) => ({ status, data })),
 }));
 
-const { actions, load } = await import('./+page.server.js');
+const { actions, load, __poImportTest } = await import('./+page.server.js');
 
 function requestWithForm(entries) {
 	return {
@@ -37,6 +38,17 @@ function requestWithForm(entries) {
 			return data;
 		},
 	};
+}
+
+function workbookFile(sheets) {
+	const workbook = xlsx.utils.book_new();
+	for (const [name, rows] of Object.entries(sheets)) {
+		xlsx.utils.book_append_sheet(workbook, xlsx.utils.aoa_to_sheet(rows), name);
+	}
+	const buffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsm' });
+	return new Blob([buffer], {
+		type: 'application/vnd.ms-excel.sheet.macroEnabled.12',
+	});
 }
 
 describe('purchase order import page', () => {
@@ -60,6 +72,104 @@ describe('purchase order import page', () => {
 
 		expect(result).toEqual({ status: 400, data: { error: 'No file selected.' } });
 		expect(db.query).not.toHaveBeenCalled();
+	});
+
+	it('parses the grouped source sheet without a flattened Formatted tab', async () => {
+		db.query
+			.mockResolvedValueOnce([
+				[
+					{ id: 7, sku_code: '3036' },
+					{ id: 8, sku_code: '3048' },
+				],
+			])
+			.mockResolvedValueOnce([[]]);
+
+		const file = workbookFile({
+			Sheet1: [
+				[
+					'',
+					'',
+					'',
+					'',
+					'',
+					'Date',
+					'Num',
+					'Name',
+					'Source Name',
+					'Memo',
+					'Deliv Date',
+					'Qty',
+				],
+				['', '', 'INSULATION - BLANKET (DO NOT USE - ITEM CATEGORY)'],
+				['', '', '', '3036 (Blanket Insulation 3" X 36")'],
+				[
+					'',
+					'',
+					'',
+					'',
+					'',
+					'04/15/2026',
+					'59179',
+					"JOHNS MANVILLE INT'L, INC",
+					"JOHNS MANVILLE INT'L, INC",
+					'Blanket Insulation 3" X 36"',
+					'05/14/2026',
+					'12,000.00 ',
+				],
+				[
+					'',
+					'',
+					'',
+					'Total 3036 (Blanket Insulation 3" X 36")',
+					'',
+					'',
+					'',
+					'',
+					'',
+					'',
+					'',
+					'12,000.00 ',
+				],
+				['', '', '', '3048 (Blanket Insulation 3" X 48")'],
+				[
+					'',
+					'',
+					'',
+					'',
+					'',
+					'04/15/2026',
+					'59179',
+					"JOHNS MANVILLE INT'L, INC",
+					"JOHNS MANVILLE INT'L, INC",
+					'Blanket Insulation 3" X 48"',
+					'05/14/2026',
+					'16,000.00 ',
+				],
+			],
+		});
+
+		const result = await actions.parse({
+			request: requestWithForm([['xlsm', file]]),
+		});
+
+		expect(result.preview).toEqual([
+			{
+				po_number: '59179',
+				vendor_name: 'Johns Manville',
+				expected_date: '2026-05-14',
+				status: 'new',
+				lines: [
+					{ sku_id: 7, sku_code: '3036', sqft_ordered: 12000 },
+					{ sku_id: 8, sku_code: '3048', sqft_ordered: 16000 },
+				],
+			},
+		]);
+		expect(db.query).toHaveBeenNthCalledWith(1, 'SELECT id, sku_code FROM material_skus');
+	});
+
+	it('parses decimal-formatted square footage without shifting by cents', () => {
+		expect(__poImportTest.parseSqft('12,000.00 ')).toBe(12000);
+		expect(__poImportTest.parseSqft('$2,766.00')).toBe(2766);
 	});
 
 	it('rejects non-admin users before importing', async () => {
