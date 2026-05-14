@@ -49,6 +49,9 @@ function parseDeliveryAddress(str) {
 }
 
 const TAB_TYPE_MAP = new Map([
+	['1 - 6" TABS', '1-6'],
+	['2 - 3" TABS', '2-3'],
+	['2 - 9" TABS', '2-9'],
 	['1 X 6" TAB', '1-6'],
 	['2 X 3" TAB', '2-3'],
 	['2 X 9" TAB', '2-9'],
