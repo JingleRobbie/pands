@@ -36,7 +36,7 @@ export async function load({ locals, url }) {
 	}
 
 	const [wos] = await db.query(
-		`SELECT wo.id, wo.so_number, wo.customer_name, wo.job_name, wo.branch, wo.ship_date, wo.status,
+		`SELECT wo.id, wo.so_number, wo.customer_name, wo.job_name, wo.branch, wo.ship_date, wo.ship_asap, wo.status,
 		        activity.completed_at,
 		        COUNT(wol.id) AS line_count,
 		        COALESCE(SUM(wol.sqft), 0) AS total_sqft,

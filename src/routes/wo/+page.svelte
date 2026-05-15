@@ -104,7 +104,9 @@
 								{/if}
 							</td>
 							<td class="text-gray-500">{wo.branch}</td>
-							<td class="text-gray-600">{fmtDate(wo.ship_date)}</td>
+							<td class="text-gray-600">
+								{#if wo.ship_asap}<span class="badge-red">ASAP</span>{:else}{fmtDate(wo.ship_date) || '—'}{/if}
+							</td>
 							{#if data.status !== 'open'}
 								<td class="text-gray-600">{fmtDate(wo.completed_at)}</td>
 							{/if}

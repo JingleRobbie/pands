@@ -378,6 +378,19 @@ export const actions = {
 		return { fieldInstructionsUpdated: true };
 	},
 
+	updateShipDate: async ({ request, params }) => {
+		const data = await request.formData();
+		const shipAsap = data.get('ship_asap') === '1';
+		const raw = data.get('ship_date')?.trim() ?? '';
+		const shipDate = shipAsap ? null : (raw || null);
+		await db.query('UPDATE work_orders SET ship_date = ?, ship_asap = ? WHERE id = ?', [
+			shipDate,
+			shipAsap ? 1 : 0,
+			params.id,
+		]);
+		redirect(303, `/wo/${params.id}`);
+	},
+
 	deleteContact: async ({ request }) => {
 		const data = await request.formData();
 		const id = parseInt(data.get('id'));

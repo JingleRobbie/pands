@@ -12,8 +12,13 @@ function parseExcelDate(str) {
 	const parts = String(str).split('/');
 	if (parts.length !== 3) return null;
 	const [m, d, y] = parts;
+	if (isNaN(parseInt(m)) || isNaN(parseInt(d)) || isNaN(parseInt(y))) return null;
 	const year = parseInt(y) + (parseInt(y) < 100 ? 2000 : 0);
 	return `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+function isAsap(str) {
+	return String(str ?? '').trim().toUpperCase().includes('ASAP');
 }
 
 function dbDate(val) {
@@ -164,6 +169,7 @@ export const actions = {
 			job_name: header.job_name,
 			branch: header.branch,
 			ship_date: parseExcelDate(header.deliver_on),
+			ship_asap: isAsap(header.deliver_on),
 			ship_addr1: addr1,
 			ship_city: city,
 			ship_state: state,
@@ -176,7 +182,7 @@ export const actions = {
 
 		// Check for existing WO
 		const [[existingRow]] = await db.query(
-			`SELECT wo.id, wo.customer_name, wo.job_name, wo.branch, wo.ship_date,
+			`SELECT wo.id, wo.customer_name, wo.job_name, wo.branch, wo.ship_date, wo.ship_asap,
 			        COUNT(wol.id) AS line_count, COALESCE(SUM(wol.sqft), 0) AS total_sqft
 			 FROM work_orders wo
 			 LEFT JOIN work_order_lines wol ON wol.wo_id = wo.id
@@ -194,6 +200,7 @@ export const actions = {
 				wo.job_name !== existingRow.job_name ||
 				wo.branch !== existingRow.branch ||
 				wo.ship_date !== dbDate(existingRow.ship_date) ||
+				wo.ship_asap !== Boolean(existingRow.ship_asap) ||
 				woLines.length !== existingRow.line_count ||
 				csvTotal !== existingRow.total_sqft;
 			wo.status = hasChanges ? 'changed' : 'unchanged';
@@ -236,13 +243,14 @@ export const actions = {
 						[wo.customer_name]
 					);
 					const [result] = await conn.query(
-						'INSERT INTO work_orders (so_number, customer_name, job_name, branch, ship_date, customer_id, ship_addr1, ship_city, ship_state, ship_zip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+						'INSERT INTO work_orders (so_number, customer_name, job_name, branch, ship_date, ship_asap, customer_id, ship_addr1, ship_city, ship_state, ship_zip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 						[
 							wo.so_number,
 							wo.customer_name,
 							wo.job_name,
 							wo.branch,
 							wo.ship_date,
+							wo.ship_asap ? 1 : 0,
 							matchedCustomer?.id ?? null,
 							wo.ship_addr1,
 							wo.ship_city,
@@ -293,12 +301,13 @@ export const actions = {
 						[wo.customer_name]
 					);
 					await conn.query(
-						'UPDATE work_orders SET customer_name=?, job_name=?, branch=?, ship_date=?, customer_id=COALESCE(customer_id, ?), ship_addr1=?, ship_city=?, ship_state=?, ship_zip=? WHERE id=?',
+						'UPDATE work_orders SET customer_name=?, job_name=?, branch=?, ship_date=?, ship_asap=?, customer_id=COALESCE(customer_id, ?), ship_addr1=?, ship_city=?, ship_state=?, ship_zip=? WHERE id=?',
 						[
 							wo.customer_name,
 							wo.job_name,
 							wo.branch,
 							wo.ship_date,
+							wo.ship_asap ? 1 : 0,
 							matchedCustomer?.id ?? null,
 							wo.ship_addr1,
 							wo.ship_city,

@@ -53,7 +53,8 @@
 								<span class="badge {s.badge}">{s.label}</span>
 							</div>
 							<span class="text-sm text-gray-500">
-								{wo.customer_name} · {wo.branch} · {fmtDate(wo.ship_date)}
+								{wo.customer_name} · {wo.branch} ·
+							{#if wo.ship_asap}<span class="badge-red">ASAP</span>{:else}{fmtDate(wo.ship_date) || '—'}{/if}
 							</span>
 						</div>
 						<div class="card-body p-0">

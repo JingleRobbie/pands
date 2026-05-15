@@ -16,6 +16,7 @@
 	const justCreatedShipmentId = $derived(data.justCreatedShipmentId);
 	const justCreatedCustomer = $derived(data.justCreatedCustomer);
 	const returnTo = $derived(getReturnTo(page.url, '/wo'));
+	let editShipAsap = $state(Boolean(wo.ship_asap));
 	let addingContact = $state(false);
 	let dismissed = $state(false);
 	let pendingBranchDelete = $state(null);
@@ -181,7 +182,31 @@
 			</div>
 			<div>
 				<p class="form-label">Ship Date</p>
-				<p class="text-gray-900">{fmtDate(wo.ship_date)}</p>
+				<form method="POST" action="?/updateShipDate" use:enhance class="mt-1 space-y-1.5">
+					<div class="flex items-center gap-2">
+						<input
+							name="ship_date"
+							type="date"
+							class="form-input text-sm py-1"
+							value={editShipAsap ? '' : (wo.ship_date ? (typeof wo.ship_date === 'string' ? wo.ship_date : wo.ship_date.toISOString()).slice(0, 10) : '')}
+							disabled={editShipAsap}
+						/>
+						<button type="submit" class="btn-secondary btn-sm">Save</button>
+					</div>
+					<label class="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
+						<input
+							type="checkbox"
+							name="ship_asap"
+							value="1"
+							checked={editShipAsap}
+							onchange={(e) => (editShipAsap = e.currentTarget.checked)}
+						/>
+						Ship ASAP
+					</label>
+					{#if form?.shipDateError}
+						<p class="text-red-600 text-xs">{form.shipDateError}</p>
+					{/if}
+				</form>
 			</div>
 			<div>
 				<p class="form-label">Total Sq Ft</p>
