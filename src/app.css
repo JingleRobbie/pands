@@ -102,11 +102,11 @@
 	}
 	.dense-list-table th {
 		@apply px-2 py-1 font-semibold text-gray-600 bg-gray-50 border-b border-gray-200 whitespace-nowrap dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600;
-		font-size: 10px;
+		font-size: 12px;
 	}
 	.dense-list-table td {
 		@apply px-2 py-1 border-b border-gray-100 whitespace-nowrap align-top dark:border-gray-700 dark:text-gray-200;
-		font-size: 11px;
+		font-size: 13px;
 	}
 	.dense-list-table td .badge {
 		@apply px-1 py-0;
@@ -221,7 +221,7 @@
 .dark .border-gray-200 { border-color: rgb(55 65 81)  !important; } /* gray-700 */
 
 /* Dark mode: brighten gray text utilities site-wide */
-.dark .text-gray-900 { color: rgb(241 245 249) !important; }
+.dark .text-gray-900 { color: rgb(255 255 255) !important; }
 .dark .text-gray-800 { color: rgb(226 232 240) !important; }
 .dark .text-gray-700 { color: rgb(203 213 225) !important; }
 .dark .text-gray-600 { color: rgb(148 163 184) !important; }

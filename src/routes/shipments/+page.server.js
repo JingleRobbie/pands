@@ -5,7 +5,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function defaultFromDate() {
 	const d = new Date();
-	d.setDate(d.getDate() - 90);
+	d.setDate(d.getDate() - 28);
 	return localDate(d);
 }
 

@@ -378,6 +378,13 @@ export const actions = {
 		return { fieldInstructionsUpdated: true };
 	},
 
+	updateCustomerPo: async ({ request, params }) => {
+		const data = await request.formData();
+		const customerPo = data.get('customer_po')?.trim() || null;
+		await db.query('UPDATE work_orders SET customer_po = ? WHERE id = ?', [customerPo, params.id]);
+		redirect(303, `/wo/${params.id}`);
+	},
+
 	updateShipDate: async ({ request, params }) => {
 		const data = await request.formData();
 		const shipAsap = data.get('ship_asap') === '1';

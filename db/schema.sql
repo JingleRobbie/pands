@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS purchase_order_lines (
 CREATE TABLE IF NOT EXISTS work_orders (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   so_number     VARCHAR(50) UNIQUE NOT NULL,
+  customer_po   VARCHAR(100) NULL,
   customer_name VARCHAR(200) NOT NULL DEFAULT '',
   job_name      VARCHAR(200) NOT NULL,
   branch        VARCHAR(50) NOT NULL DEFAULT '',

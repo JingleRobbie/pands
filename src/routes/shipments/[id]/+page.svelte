@@ -20,16 +20,6 @@
 
 <svelte:head>
 	<title>Shipment {shipment.shipment_number} — PandS</title>
-	<style>
-		@media print {
-			.no-print {
-				display: none !important;
-			}
-			body {
-				font-size: 12px;
-			}
-		}
-	</style>
 </svelte:head>
 
 <div class="no-print page-header px-6 py-3 flex items-center justify-between">
@@ -59,7 +49,7 @@
 				onclick={() => revertDialog.showModal()}>Revert to Draft</button
 			>
 		{/if}
-		<button onclick={() => window.print()} class="btn-secondary btn-sm">Print</button>
+		<a href="/shipments/{shipment.id}/pdf" target="_blank" rel="noopener" class="btn-secondary btn-sm">PDF</a>
 	</div>
 </div>
 
@@ -125,7 +115,8 @@
 	</form>
 </dialog>
 
-<div class="p-8 max-w-4xl mx-auto">
+<div class="slip-canvas">
+<div class="slip-paper">
 	<div class="flex justify-between items-start mb-8">
 		<div>
 			<h1 class="text-2xl font-bold text-gray-900">Packing Slip</h1>
@@ -200,4 +191,60 @@
 		</tfoot>
 	</table>
 </div>
+</div>
 
+<style>
+	.slip-canvas {
+		flex: 1;
+		display: flex;
+		justify-content: center;
+		align-items: flex-start;
+		background: #94a3b8;
+		padding: 2rem 1rem;
+		min-height: 100%;
+	}
+	.slip-paper {
+		width: 8.5in;
+		background: white !important;
+		color: #000 !important;
+		padding: 0.75in;
+		box-shadow:
+			0 4px 24px rgba(0, 0, 0, 0.18),
+			0 1px 4px rgba(0, 0, 0, 0.1);
+	}
+	/* Force all text black, all backgrounds white — no toner waste */
+	:global(.slip-paper) * {
+		color: #000 !important;
+		background-color: white !important;
+	}
+	:global(.slip-paper) table {
+		border-color: #999 !important;
+	}
+	:global(.slip-paper) th {
+		font-size: 15px !important;
+		font-weight: 700 !important;
+		border-bottom: 2px solid #000 !important;
+		border-color: #999 !important;
+	}
+	:global(.slip-paper) td {
+		border-color: #ddd !important;
+	}
+	:global(.slip-paper) tfoot td {
+		border-top: 1.5px solid #000 !important;
+	}
+	:global(.dark) .slip-canvas {
+		background: #1e293b;
+	}
+	@media print {
+		.slip-canvas {
+			background: transparent;
+			padding: 0;
+			display: block;
+		}
+		.slip-paper {
+			width: 100%;
+			padding: 0;
+			box-shadow: none;
+		}
+	}
+</style>

@@ -63,6 +63,7 @@
 	<div class="flex items-center gap-2">
 		{#if hasBranched}
 			<a href="/wo/{wo.id}/cutdown" class="btn-secondary btn-sm">Cut-Downs</a>
+			<a href="/wo/{wo.id}/labels" class="btn-secondary btn-sm">Labels</a>
 		{/if}
 		<a href="/wo/{wo.id}/diff" class="btn-secondary btn-sm">Diff</a>
 		{#if wo.status !== 'COMPLETE' && wo.status !== 'CANCELLED'}
@@ -139,12 +140,21 @@
 	</div>
 {/if}
 
-<main class="p-6 max-w-4xl space-y-4">
+<main class="p-6 max-w-6xl space-y-4">
 	<div class="card">
 		<div class="card-header">
 			<span class="font-semibold text-sm text-gray-700">Details</span>
 		</div>
 		<div class="card-body grid grid-cols-3 gap-4 text-sm">
+			<div>
+				<p class="form-label">Customer PO</p>
+				<form method="POST" action="?/updateCustomerPo" use:enhance class="mt-1">
+					<div class="flex items-center gap-2">
+						<input name="customer_po" type="text" class="form-input text-sm py-1" value={wo.customer_po ?? ''} placeholder="—" />
+						<button type="submit" class="btn-secondary btn-sm">Save</button>
+					</div>
+				</form>
+			</div>
 			<div>
 				<p class="form-label">Customer</p>
 				{#if wo.customer_id}
@@ -241,6 +251,7 @@
 					<th class="px-4 py-2 text-right text-gray-500 font-medium">Th</th>
 					<th class="px-4 py-2 text-right text-gray-500 font-medium min-w-28">Width</th>
 					<th class="px-4 py-2 text-right text-gray-500 font-medium">Length</th>
+					<th class="px-4 py-2 text-left text-gray-500 font-medium">Roll For</th>
 					<th class="px-4 py-2 text-left text-gray-500 font-medium">Instructions</th>
 					<th class="px-4 py-2 text-right text-gray-500 font-medium">Sq Ft</th>
 					<th class="px-4 py-2 text-right text-gray-500 font-medium">Path / Status</th>
@@ -297,6 +308,7 @@
 						<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
 							>{line.length_ft}'</td
 						>
+						<td class="px-4 py-2 text-gray-500">{line.rollfor || '—'}</td>
 						<td class="px-4 py-2 text-gray-500">
 							{#if line.display_instructions}
 								<button
@@ -359,7 +371,7 @@
 					</tr>
 				{/each}
 				<tr class="border-t border-gray-200 bg-gray-50">
-					<td colspan="6" class="px-4 py-2 text-sm text-gray-500 font-medium">Total</td>
+					<td colspan="7" class="px-4 py-2 text-sm text-gray-500 font-medium">Total</td>
 					<td class="px-4 py-2 text-right font-mono font-medium text-gray-700"
 						>{fmtSqft(totalSqft)}</td
 					>

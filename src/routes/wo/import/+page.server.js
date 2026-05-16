@@ -165,6 +165,7 @@ export const actions = {
 
 		const wo = {
 			so_number,
+			customer_po: header.customer_po || null,
 			customer_name: header.customer,
 			job_name: header.job_name,
 			branch: header.branch,
@@ -243,9 +244,10 @@ export const actions = {
 						[wo.customer_name]
 					);
 					const [result] = await conn.query(
-						'INSERT INTO work_orders (so_number, customer_name, job_name, branch, ship_date, ship_asap, customer_id, ship_addr1, ship_city, ship_state, ship_zip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+						'INSERT INTO work_orders (so_number, customer_po, customer_name, job_name, branch, ship_date, ship_asap, customer_id, ship_addr1, ship_city, ship_state, ship_zip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 						[
 							wo.so_number,
+							wo.customer_po,
 							wo.customer_name,
 							wo.job_name,
 							wo.branch,
@@ -301,8 +303,9 @@ export const actions = {
 						[wo.customer_name]
 					);
 					await conn.query(
-						'UPDATE work_orders SET customer_name=?, job_name=?, branch=?, ship_date=?, ship_asap=?, customer_id=COALESCE(customer_id, ?), ship_addr1=?, ship_city=?, ship_state=?, ship_zip=? WHERE id=?',
+						'UPDATE work_orders SET customer_po=?, customer_name=?, job_name=?, branch=?, ship_date=?, ship_asap=?, customer_id=COALESCE(customer_id, ?), ship_addr1=?, ship_city=?, ship_state=?, ship_zip=? WHERE id=?',
 						[
+							wo.customer_po,
 							wo.customer_name,
 							wo.job_name,
 							wo.branch,

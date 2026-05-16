@@ -35,6 +35,15 @@ function splitAccessory(raw) {
 	return { part_number: s.slice(0, idx), description: s.slice(idx + 1).trim() };
 }
 
+function namedRangeCell(wb, sheet, name) {
+	const names = wb.Workbook?.Names ?? [];
+	const entry = names.find((n) => n.Name === name);
+	if (!entry) return '';
+	const match = String(entry.Ref).match(/\$([A-Z]+)\$(\d+)$/);
+	if (!match) return '';
+	return cell(sheet, match[1] + match[2]);
+}
+
 export function parseWorkOrderExcel(buffer) {
 	const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true });
 	const sheet = wb.Sheets['Work Order'];
@@ -47,9 +56,12 @@ export function parseWorkOrderExcel(buffer) {
 		.filter((v) => !isBlank(v))
 		.join(', ');
 
+	const customerPo =
+		clean(namedRangeCell(wb, sheet, 'Work_Order_PO')) || clean(cell(sheet, 'J2'));
+
 	const header = {
 		so_number: clean(cell(sheet, 'P11')),
-		po_number: clean(cell(sheet, 'J2')),
+		customer_po: customerPo,
 		customer: clean(cell(sheet, 'C1')),
 		branch: clean(cell(sheet, 'I1')),
 		contact: clean(cell(sheet, 'C2')),

@@ -90,8 +90,8 @@
 
 	function tabClass(val) {
 		return view === val
-			? 'rounded-full px-3 py-1 text-sm font-medium bg-gray-800 text-white'
-			: 'rounded-full px-3 py-1 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900';
+			? 'rounded-full px-3 py-1 text-sm font-medium bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900'
+			: 'rounded-full px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100';
 	}
 
 	const dates = $derived(Object.keys(events).sort());
@@ -127,7 +127,7 @@
 	{@const hasDraft = events[dateStr].some((s) => s.status !== 'SHIPPED')}
 	{@const isOverdue = isPast && hasDraft}
 	<div class="card">
-		<div class="card-header !py-2 {isOverdue ? 'bg-amber-50 border-b border-amber-200' : ''}">
+		<div class="card-header !py-2 {isOverdue ? 'bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-800' : ''}">
 			<span
 				class="font-semibold text-sm {isOverdue
 					? 'text-amber-700'
@@ -143,22 +143,25 @@
 				{events[dateStr].length} shipment{events[dateStr].length === 1 ? '' : 's'}
 			</span>
 		</div>
-		<table class="min-w-full divide-y divide-gray-100 text-sm">
+		<table class="dense-list-table">
+			<thead>
+				<tr>
+					<th class="text-left w-28">Shipment #</th>
+					<th class="text-left">Customer</th>
+					<th class="text-left">Job</th>
+					<th class="text-left w-32">WO #</th>
+					<th class="text-right w-24">Status</th>
+				</tr>
+			</thead>
 			<tbody>
 				{#each events[dateStr] as s (s.id)}
-					<tr
-						class="hover:bg-gray-50 cursor-pointer"
-						onclick={() => goto(`/shipments/${s.id}`)}
-					>
-						<td class="px-4 py-1.5 font-mono text-gray-700 w-28">{s.shipment_number}</td
-						>
-						<td class="px-4 py-1.5 text-gray-600 w-80">{s.customer_name}</td>
-						<td class="px-4 py-1.5 text-gray-500">{s.job_name}</td>
-						<td class="px-4 py-1.5 text-gray-400 w-32">WO #{s.so_number}</td>
-						<td class="px-4 py-1.5 text-right w-24">
-							<span class="badge-{s.status === 'SHIPPED' ? 'green' : 'amber'}"
-								>{s.status}</span
-							>
+					<tr class="cursor-pointer" onclick={() => goto(`/shipments/${s.id}`)}>
+						<td class="font-mono">{s.shipment_number}</td>
+						<td>{s.customer_name}</td>
+						<td>{s.job_name}</td>
+						<td>WO #{s.so_number}</td>
+						<td class="text-right">
+							<span class="badge-{s.status === 'SHIPPED' ? 'green' : 'amber'}">{s.status}</span>
 						</td>
 					</tr>
 				{/each}

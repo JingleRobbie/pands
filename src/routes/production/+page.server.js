@@ -6,7 +6,7 @@ const STATUS_ORDER = { UNSCHEDULED: 0, SCHEDULED: 1, COMPLETED: 2 };
 
 function defaultFromDate() {
 	const d = new Date();
-	d.setDate(d.getDate() - 90);
+	d.setDate(d.getDate() - 28);
 	return localDate(d);
 }
 

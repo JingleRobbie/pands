@@ -50,6 +50,7 @@
 						<div class="card-header flex items-center justify-between">
 							<div class="flex items-center gap-3">
 								<span class="font-semibold text-sm text-gray-900">SO #{wo.so_number}</span>
+								{#if wo.customer_po}<span class="text-sm text-gray-500">PO #{wo.customer_po}</span>{/if}
 								<span class="badge {s.badge}">{s.label}</span>
 							</div>
 							<span class="text-sm text-gray-500">
