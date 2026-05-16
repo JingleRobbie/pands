@@ -15,8 +15,6 @@ static/css/app.css
 # Local agent tooling
 .agents/
 
-#examples and sessions
-docs/sessions/
 
 # OS
 .DS_Store
