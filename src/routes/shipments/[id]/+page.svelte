@@ -32,7 +32,7 @@
 	</style>
 </svelte:head>
 
-<div class="no-print bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+<div class="no-print page-header px-6 py-3 flex items-center justify-between">
 	<div class="flex items-center gap-4">
 		{#if data.fromWoId}
 			<a href="/wo/{data.fromWoId}" class="text-gray-400 hover:text-gray-600 text-sm"

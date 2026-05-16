@@ -45,7 +45,7 @@
 
 <svelte:head><title>Edit Run {run.run_number} — PandS</title></svelte:head>
 
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+<header class="page-header px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Edit Run {run.run_number}</h1>
 	<a href={confirmHref} class="btn-secondary btn-sm">Cancel</a>
 </header>

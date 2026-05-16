@@ -5,6 +5,7 @@
 	import { untrack } from 'svelte';
 	let { data, children } = $props();
 	let collapsed = $state(untrack(() => data.appUser?.sidebar_collapsed ?? false));
+	let darkMode = $derived(data.appUser?.dark_mode ?? false);
 	let searchOpen = $state(false);
 
 	const navItems = [
@@ -34,7 +35,7 @@
 	<link rel="stylesheet" href="/css/app.css" />
 </svelte:head>
 
-<div class="print-root bg-gray-50 h-screen overflow-hidden flex">
+<div class="print-root h-screen overflow-hidden flex {darkMode ? 'dark' : ''}">
 	<!-- Sidebar -->
 	{#if data.appUser}
 		<aside
@@ -319,7 +320,7 @@
 	{/if}
 
 	<!-- Main content -->
-	<div class="flex-1 flex flex-col h-screen overflow-y-auto">
+	<div class="flex-1 flex flex-col h-screen overflow-y-auto bg-gray-50 dark:bg-gray-900">
 		{@render children()}
 	</div>
 </div>

@@ -9,10 +9,12 @@ export const actions = {
 	default: async ({ request, locals }) => {
 		const data = await request.formData();
 		const sidebarCollapsed = data.has('sidebar_collapsed') ? 1 : 0;
-		await db.query('UPDATE app_users SET sidebar_collapsed = ? WHERE id = ?', [
+		const darkMode = data.has('dark_mode') ? 1 : 0;
+		await db.query('UPDATE app_users SET sidebar_collapsed = ?, dark_mode = ? WHERE id = ?', [
 			sidebarCollapsed,
+			darkMode,
 			locals.appUser.id,
 		]);
-		redirect(303, '/matrix');
+		redirect(303, '/settings');
 	},
 };

@@ -45,7 +45,7 @@
 
 <svelte:head><title>Import POs — PandS</title></svelte:head>
 
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
+<header class="page-header px-6 py-4 flex items-center gap-4">
 	<a href="/po" class="text-gray-400 hover:text-gray-600 text-sm">← Purchase Orders</a>
 	<h1 class="text-lg font-semibold text-gray-900">Import POs</h1>
 </header>

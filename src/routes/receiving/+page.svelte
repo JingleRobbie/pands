@@ -22,7 +22,7 @@
 
 <svelte:head><title>Receiving — PandS</title></svelte:head>
 
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+<header class="page-header px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Receiving</h1>
 </header>
 <main class="p-6 space-y-4">

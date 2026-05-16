@@ -48,7 +48,7 @@
 
 <svelte:head><title>WO {wo.so_number} — PandS</title></svelte:head>
 
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+<header class="page-header px-6 py-4 flex items-center justify-between">
 	<div class="flex items-center gap-4">
 		<a href={returnTo} class="text-gray-400 hover:text-gray-600 text-sm">← Work Orders</a>
 		<h1 class="text-lg font-semibold text-gray-900">

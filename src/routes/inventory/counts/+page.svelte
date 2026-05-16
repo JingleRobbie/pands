@@ -7,7 +7,7 @@
 
 <svelte:head><title>Inventory Counts — PandS</title></svelte:head>
 
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+<header class="page-header px-6 py-4 flex items-center justify-between">
 	<div class="flex items-center gap-4">
 		<a href="/matrix" class="text-gray-400 hover:text-gray-600 text-sm">← Overview</a>
 		<h1 class="text-lg font-semibold text-gray-900">Inventory Counts</h1>

@@ -2,37 +2,15 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
-	import { untrack } from 'svelte';
 	let { data, form } = $props();
 	const po = $derived(data.po);
-	const skus = $derived(data.skus);
-	const user = $derived(data.user);
 	const returnTo = $derived(getReturnTo(page.url, '/po'));
 	const detailHref = $derived(withReturnTo(`/po/${po.id}`, returnTo));
-
-	// Editable open lines — start from server data
-	let openLines = $state(
-		untrack(() => data.lines.filter((l) => l.status === 'OPEN').map((l) => ({ ...l })))
-	);
-	let receivedLines = $derived(data.lines.filter((l) => l.status !== 'OPEN'));
-
-	// New lines to add
-	let newLines = $state([]);
-	let cancelDialog = $state(null);
-	function addLine() {
-		newLines = [...newLines, { sku_id: '', sqft: '' }];
-	}
-	function removeNewLine(i) {
-		newLines = newLines.filter((_, idx) => idx !== i);
-	}
-	function removeOpenLine(id) {
-		openLines = openLines.filter((l) => l.id !== id);
-	}
 </script>
 
 <svelte:head><title>Edit PO {po.po_number} — PandS</title></svelte:head>
 
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+<header class="page-header px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Edit PO {po.po_number}</h1>
 	<div class="flex gap-2">
 		<a href="/receiving/{po.id}" class="btn-secondary btn-sm">Record Receipt</a>
@@ -42,9 +20,7 @@
 <main class="p-6">
 	<div class="max-w-2xl">
 		{#if form?.error}
-			<div
-				class="mb-4 px-4 py-3 rounded-md text-sm bg-red-50 text-red-800 border border-red-200"
-			>
+			<div class="mb-4 px-4 py-3 rounded-md text-sm bg-red-50 text-red-800 border border-red-200">
 				{form.error}
 			</div>
 		{/if}
@@ -57,29 +33,12 @@
 				</div>
 				<div class="card-body grid grid-cols-3 gap-4">
 					<div>
-						<label class="form-label" for="po_number">PO Number</label>
-						<input
-							id="po_number"
-							type="text"
-							name="po_number"
-							class="form-input"
-							required
-							value={po.po_number}
-						/>
+						<p class="form-label">PO Number</p>
+						<p class="form-input bg-gray-50 text-gray-700">{po.po_number}</p>
 					</div>
 					<div>
-						<label class="form-label" for="vendor_name">Vendor</label>
-						<select id="vendor_name" name="vendor_name" class="form-select" required>
-							<option value="">— select —</option>
-							<option
-								value="Johns Manville"
-								selected={po.vendor_name === 'Johns Manville'}
-								>Johns Manville</option
-							>
-							<option value="Certainteed" selected={po.vendor_name === 'Certainteed'}
-								>Certainteed</option
-							>
-						</select>
+						<p class="form-label">Vendor</p>
+						<p class="form-input bg-gray-50 text-gray-700">{po.vendor_name}</p>
 					</div>
 					<div>
 						<label class="form-label" for="expected_date">Expected Date</label>
@@ -100,121 +59,27 @@
 			<div class="card mb-4">
 				<div class="card-header">
 					<span class="font-semibold text-sm text-gray-700">Line Items</span>
-					<button type="button" onclick={addLine} class="btn-secondary btn-sm"
-						>+ Add Line</button
-					>
 				</div>
 				<div class="card-body space-y-3">
-					{#each openLines as line (line.id)}
-						<div class="flex items-end gap-3">
-							<input type="hidden" name="line_id" value={line.id} />
+					{#each data.lines as line (line.id)}
+						<div class="flex items-end gap-3 {line.status !== 'OPEN' ? 'opacity-60' : ''}">
 							<div class="flex-1">
-								<label class="form-label text-xs" for="line-sku-{line.id}"
-									>SKU</label
-								>
-								<p class="form-input text-sm bg-gray-50 text-gray-700">
-									{line.display_label}
+								<p class="form-label text-xs">SKU</p>
+								<p class="form-input text-sm bg-gray-50 text-gray-700">{line.display_label}</p>
+							</div>
+							<div class="w-36">
+								<p class="form-label text-xs">Sq Ft</p>
+								<p class="form-input text-sm text-right font-mono bg-gray-50 text-gray-700">
+									{Math.round(line.sqft_ordered).toLocaleString()}
 								</p>
 							</div>
-							<div class="w-36">
-								<label class="form-label text-xs" for="line-sqft-{line.id}"
-									>Sq Ft</label
-								>
-								<input
-									id="line-sqft-{line.id}"
-									type="number"
-									name="line_sqft"
-									step="1"
-									min="1"
-									class="form-input text-sm text-right font-mono"
-									bind:value={line.sqft_ordered}
-									required
-								/>
-							</div>
-							<button
-								type="button"
-								onclick={() => removeOpenLine(line.id)}
-								class="text-gray-400 hover:text-red-500 text-xl pb-2"
-								>&times;</button
-							>
-						</div>
-					{/each}
-
-					{#if receivedLines.length}
-						{#each receivedLines as line (line.id)}
-							<div class="flex items-end gap-3 opacity-60">
-								<div class="flex-1">
-									<label class="form-label text-xs" for="received-sku-{line.id}"
-										>SKU</label
-									>
-									<p
-										id="received-sku-{line.id}"
-										class="form-input text-sm bg-gray-50 text-gray-500"
-									>
-										{line.display_label}
-									</p>
-								</div>
-								<div class="w-36">
-									<label class="form-label text-xs" for="received-sqft-{line.id}"
-										>Sq Ft</label
-									>
-									<p
-										id="received-sqft-{line.id}"
-										class="form-input text-sm text-right font-mono bg-gray-50 text-gray-500"
-									>
-										{Math.round(line.sqft_ordered).toLocaleString()}
-									</p>
-								</div>
+							{#if line.status !== 'OPEN'}
 								<span class="badge-green pb-2">Received</span>
-							</div>
-						{/each}
-					{/if}
-
-					{#each newLines as line, i (i)}
-						<div
-							class="flex items-end gap-3 border-t border-dashed border-gray-200 pt-3"
-						>
-							<div class="flex-1">
-								<label class="form-label text-xs" for="new-sku-{i}">SKU</label>
-								<select
-									id="new-sku-{i}"
-									name="sku_id"
-									class="form-select text-sm"
-									bind:value={line.sku_id}
-									required
-								>
-									<option value="">— select —</option>
-									{#each skus as sku (sku.id)}<option value={sku.id}
-											>{sku.display_label}</option
-										>{/each}
-								</select>
-							</div>
-							<div class="w-36">
-								<label class="form-label text-xs" for="new-sqft-{i}">Sq Ft</label>
-								<input
-									id="new-sqft-{i}"
-									type="number"
-									name="sqft_ordered"
-									step="1"
-									min="1"
-									class="form-input text-sm text-right font-mono"
-									bind:value={line.sqft}
-									required
-									placeholder="0"
-								/>
-							</div>
-							<button
-								type="button"
-								onclick={() => removeNewLine(i)}
-								class="text-gray-400 hover:text-red-500 text-xl pb-2"
-								>&times;</button
-							>
+							{:else}
+								<span class="w-6"></span>
+							{/if}
 						</div>
 					{/each}
-
-					{#if openLines.length === 0 && newLines.length === 0}
-						<p class="text-sm text-amber-700">Add at least one open line.</p>
-					{/if}
 				</div>
 			</div>
 		</form>
@@ -224,27 +89,12 @@
 				<button type="submit" form="edit-form" class="btn-primary">Save Changes</button>
 				<a href={detailHref} class="btn-secondary">Cancel</a>
 			</div>
-			{#if user?.role === 'admin'}
-				<button
-					type="button"
+			{#if data.user?.role === 'admin'}
+				<a
+					href="/po/{po.id}?/cancel"
 					class="rounded-md px-3 py-1.5 text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 border border-red-200 transition-colors"
-					onclick={() => cancelDialog.showModal()}>Cancel PO</button
-				>
+				>Cancel PO</a>
 			{/if}
 		</div>
 	</div>
 </main>
-
-<dialog bind:this={cancelDialog} class="modal-dialog modal-dialog-sm">
-	<p class="text-sm font-medium text-gray-900 mb-1">Cancel PO {po.po_number}?</p>
-	<p class="text-xs text-gray-500 mb-4">This will cancel all open lines and cannot be undone.</p>
-	<form method="POST" action="/po/{po.id}?/cancel" use:enhance>
-		<input type="hidden" name="return_to" value={returnTo} />
-		<div class="flex gap-2 justify-end">
-			<button type="button" class="btn-secondary btn-sm" onclick={() => cancelDialog.close()}
-				>Cancel</button
-			>
-			<button type="submit" class="btn-danger btn-sm">Cancel PO</button>
-		</div>
-	</form>
-</dialog>

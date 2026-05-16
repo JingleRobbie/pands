@@ -24,7 +24,7 @@
 
 <svelte:head><title>Purchase Orders — PandS</title></svelte:head>
 
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+<header class="page-header px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Purchase Orders</h1>
 	<div class="flex gap-2">
 		{#if data.user?.role === 'admin'}

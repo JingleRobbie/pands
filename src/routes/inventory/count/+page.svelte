@@ -10,6 +10,19 @@
 	let balances = $state(untrack(() => ({ ...data.balances })));
 	let loadingBalances = $state(false);
 
+	const userModified = new Set();
+
+	let counts = $state(untrack(() => {
+		const init = Object.fromEntries(data.skus.map((s) => [s.id, data.balances[s.id] ?? 0]));
+		if (form?.back && form.counts) {
+			for (const [id, val] of Object.entries(form.counts)) {
+				init[id] = val;
+				userModified.add(Number(id));
+			}
+		}
+		return init;
+	}));
+
 	$effect(() => {
 		if (form?.back && form.countDate) dateInput = form.countDate;
 	});
@@ -21,14 +34,24 @@
 			.then((r) => r.json())
 			.then((d) => {
 				balances = d.balances;
+				for (const sku of data.skus) {
+					if (!userModified.has(sku.id)) {
+						counts[sku.id] = d.balances[sku.id] ?? 0;
+					}
+				}
 				loadingBalances = false;
 			});
 	});
+
+	function copyBalance(skuId) {
+		counts[skuId] = balances[skuId] ?? 0;
+		userModified.delete(skuId);
+	}
 </script>
 
 <svelte:head><title>Record Count — PandS</title></svelte:head>
 
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
+<header class="page-header px-6 py-4 flex items-center gap-4">
 	<a href="/matrix" class="text-gray-400 hover:text-gray-600 text-sm">← Overview</a>
 	<h1 class="text-lg font-semibold text-gray-900">Record Inventory Count</h1>
 </header>
@@ -138,12 +161,9 @@
 					<thead>
 						<tr class="border-b border-gray-100 bg-gray-50">
 							<th class="px-4 py-3 text-left font-medium text-gray-500">SKU</th>
-							<th class="px-4 py-3 text-right font-medium text-gray-500"
-								>Balance as of {fmtDate(dateInput)}</th
-							>
-							<th class="px-4 py-3 text-right font-medium text-gray-500"
-								>Counted Sq Ft</th
-							>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Balance as of {fmtDate(dateInput)}</th>
+							<th class="px-2 py-3"></th>
+							<th class="px-4 py-3 text-right font-medium text-gray-500">Counted Sq Ft</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-gray-100">
@@ -152,20 +172,19 @@
 								<td class="px-4 py-3 font-medium text-gray-900"
 									>{sku.display_label}</td
 								>
-								<td
-									class="px-4 py-3 text-right tabular-nums font-mono transition-opacity {loadingBalances
-										? 'opacity-40'
-										: ''}"
-								>
+								<td class="px-4 py-3 text-right tabular-nums font-mono transition-opacity {loadingBalances ? 'opacity-40' : ''}">
 									{#if (balances[sku.id] ?? 0) < 0}
-										<span class="sqft-negative"
-											>({fmtSqft(Math.abs(balances[sku.id]))})</span
-										>
+										<span class="sqft-negative">({fmtSqft(Math.abs(balances[sku.id]))})</span>
 									{:else}
-										<span class="text-gray-500"
-											>{fmtSqft(balances[sku.id] ?? 0)}</span
-										>
+										<span class="text-gray-500">{fmtSqft(balances[sku.id] ?? 0)}</span>
 									{/if}
+								</td>
+								<td class="px-2 py-3 text-center">
+									<button
+										type="button"
+										onclick={() => copyBalance(sku.id)}
+										class="text-xs text-gray-400 hover:text-brand whitespace-nowrap"
+									>copy →</button>
 								</td>
 								<td class="px-4 py-3 text-right">
 									<input
@@ -173,8 +192,8 @@
 										name="count_{sku.id}"
 										min="0"
 										class="form-input w-32 py-1 text-right tabular-nums"
-										placeholder="—"
-										value={form?.counts?.[sku.id] ?? ''}
+										value={counts[sku.id] ?? ''}
+										oninput={(e) => { counts[sku.id] = e.currentTarget.value; userModified.add(sku.id); }}
 									/>
 								</td>
 							</tr>

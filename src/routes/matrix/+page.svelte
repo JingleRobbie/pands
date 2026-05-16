@@ -78,7 +78,7 @@
 <svelte:head><title>Overview — PandS</title></svelte:head>
 
 <!-- Page header -->
-<header class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+<header class="page-header px-6 py-3 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Inventory Overview</h1>
 	<div class="flex items-center gap-2">
 		<select bind:value={historyRange} class="form-select py-1 px-2 h-8">

@@ -9,7 +9,7 @@
 
 <svelte:head><title>Count {fmtDate(count.count_date)} — PandS</title></svelte:head>
 
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+<header class="page-header px-6 py-4 flex items-center justify-between">
 	<div class="flex items-center gap-4">
 		<a href="/inventory/counts" class="text-gray-400 hover:text-gray-600 text-sm">← Counts</a>
 		<h1 class="text-lg font-semibold text-gray-900">Count — {fmtDate(count.count_date)}</h1>

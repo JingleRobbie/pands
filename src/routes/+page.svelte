@@ -118,9 +118,7 @@
 	.landing-shell {
 		min-height: 100%;
 		padding: 1.5rem;
-		background:
-			linear-gradient(135deg, rgba(248, 250, 252, 0.96), rgba(241, 245, 249, 0.92)),
-			#f8fafc;
+		background: #f9fafb;
 	}
 
 	.landing-header {
@@ -174,13 +172,13 @@
 	}
 
 	.activity-section {
-		--section-bg: #eff6ff;
-		--section-border: #bfdbfe;
-		--card-bg: #f8fbff;
-		--card-border: #dbeafe;
-		--card-hover: #dbeafe;
-		--card-active: #bfdbfe;
-		--accent: #2563eb;
+		--section-bg: #1e3a5f;
+		--section-border: #162d4a;
+		--card-bg: #f4f7fb;
+		--card-border: #c8d9ee;
+		--card-hover: #e4edf8;
+		--card-active: #c8d9ee;
+		--accent: #60a5fa;
 		padding: 1rem;
 		border: 1px solid var(--section-border);
 		border-radius: 0.5rem;
@@ -188,53 +186,53 @@
 	}
 
 	.activity-section.green {
-		--section-bg: #edf7f1;
-		--section-border: #bbdfc8;
-		--card-bg: #f7fcf8;
-		--card-border: #cfead8;
-		--card-hover: #d5efdc;
-		--card-active: #bbdfc8;
-		--accent: #15803d;
+		--section-bg: #4d5b2b;
+		--section-border: #3a4520;
+		--card-bg: #f5f7f0;
+		--card-border: #c9d4aa;
+		--card-hover: #e4ebd0;
+		--card-active: #c9d4aa;
+		--accent: #a3c45a;
 	}
 
 	.activity-section.rose {
-		--section-bg: #fff1f2;
-		--section-border: #fecdd3;
-		--card-bg: #fff8f8;
-		--card-border: #ffe4e6;
-		--card-hover: #ffe0e4;
-		--card-active: #fecdd3;
-		--accent: #be123c;
+		--section-bg: #760528;
+		--section-border: #5a0420;
+		--card-bg: #fdf5f7;
+		--card-border: #e8bcc8;
+		--card-hover: #f5d8e2;
+		--card-active: #e8bcc8;
+		--accent: #f472b6;
 	}
 
 	.activity-section.amber {
-		--section-bg: #fff7ed;
-		--section-border: #fed7aa;
-		--card-bg: #fffbf5;
-		--card-border: #ffedd5;
-		--card-hover: #fedfc1;
-		--card-active: #fed7aa;
-		--accent: #b45309;
+		--section-bg: #5c3a1e;
+		--section-border: #452c16;
+		--card-bg: #fdf8f3;
+		--card-border: #e8cfb0;
+		--card-hover: #f5e4cc;
+		--card-active: #e8cfb0;
+		--accent: #f59e0b;
 	}
 
 	.activity-section.violet {
-		--section-bg: #f5f3ff;
-		--section-border: #ddd6fe;
-		--card-bg: #fbfaff;
-		--card-border: #ede9fe;
-		--card-hover: #e9e4ff;
-		--card-active: #ddd6fe;
-		--accent: #6d28d9;
+		--section-bg: #3b1f5e;
+		--section-border: #2d1748;
+		--card-bg: #f8f5fd;
+		--card-border: #d4c0ee;
+		--card-hover: #ead8f8;
+		--card-active: #d4c0ee;
+		--accent: #c084fc;
 	}
 
 	.activity-section.slate {
-		--section-bg: #f1f5f9;
-		--section-border: #cbd5e1;
-		--card-bg: #f8fafc;
-		--card-border: #e2e8f0;
-		--card-hover: #dfe7f0;
-		--card-active: #cbd5e1;
-		--accent: #475569;
+		--section-bg: #a09590;
+		--section-border: #8a7e78;
+		--card-bg: #f8f6f5;
+		--card-border: #d9d4c4;
+		--card-hover: #ede8df;
+		--card-active: #d9d4c4;
+		--accent: #44403c;
 	}
 
 	.section-heading {
@@ -245,7 +243,7 @@
 
 	.section-heading h2 {
 		margin: 0;
-		color: #0f172a;
+		color: #ffffff;
 		font-size: 1rem;
 		font-weight: 750;
 		line-height: 1.2;
@@ -253,7 +251,7 @@
 
 	.section-heading p {
 		margin: 0;
-		color: #475569;
+		color: rgba(255, 255, 255, 0.7);
 		font-size: 0.82rem;
 		line-height: 1.35;
 	}
@@ -319,6 +317,23 @@
 			grid-template-columns: 1fr;
 		}
 	}
+
+	/* Dark mode */
+	:global(.dark) .landing-shell { background: #111827; }
+	:global(.dark) .eyebrow, :global(.dark) .landing-copy, :global(.dark) .landing-actions { color: #9ca3af; }
+	:global(.dark) h1 { color: #f1f5f9; }
+	:global(.dark) .section-heading h2 { color: #f1f5f9; }
+	:global(.dark) .section-heading p { color: #9ca3af; }
+	:global(.dark) .activity-section { --section-bg:#1e2a3a;--section-border:#2d4a6a;--card-bg:#1a2535;--card-border:#2a3d56;--card-hover:#243352;--card-active:#2d4060;--accent:#60a5fa; }
+	:global(.dark) .activity-section.green { --section-bg:#1a2d24;--section-border:#2d4a38;--card-bg:#172620;--card-border:#264033;--card-hover:#1f3529;--card-active:#2a4035;--accent:#4ade80; }
+	:global(.dark) .activity-section.rose { --section-bg:#2d1a1e;--section-border:#4a2a30;--card-bg:#261518;--card-border:#3d2228;--card-hover:#331e24;--card-active:#402530;--accent:#fb7185; }
+	:global(.dark) .activity-section.amber { --section-bg:#2d2215;--section-border:#4a3820;--card-bg:#261d12;--card-border:#3d3020;--card-hover:#33271a;--card-active:#403020;--accent:#fbbf24; }
+	:global(.dark) .activity-section.violet { --section-bg:#221a2d;--section-border:#3a2a50;--card-bg:#1d1526;--card-border:#31244a;--card-hover:#2a1e3d;--card-active:#33254d;--accent:#a78bfa; }
+	:global(.dark) .activity-section.slate { --section-bg:#1e2535;--section-border:#2d3748;--card-bg:#1a2030;--card-border:#28354a;--card-hover:#232d40;--card-active:#2d3a50;--accent:#94a3b8; }
+	:global(.dark) .activity-card { color:#f1f5f9; box-shadow:0 1px 2px rgba(0,0,0,0.4); }
+	:global(.dark) .activity-card:hover, :global(.dark) .activity-card:focus-visible { box-shadow:0 8px 20px rgba(0,0,0,0.5); }
+	:global(.dark) .activity-title { color:#f1f5f9; }
+	:global(.dark) .activity-detail { color:#9ca3af; }
 
 	@media (max-width: 640px) {
 		.landing-shell {

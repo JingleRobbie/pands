@@ -5,7 +5,7 @@
 
 <svelte:head><title>Settings — PandS</title></svelte:head>
 
-<header class="bg-white border-b border-gray-200 px-6 py-4">
+<header class="page-header px-6 py-4">
 	<h1 class="text-lg font-semibold text-gray-900">User Settings</h1>
 </header>
 <main class="p-6">
@@ -13,17 +13,28 @@
 		<form method="POST" use:enhance>
 			<div class="card mb-4">
 				<div class="card-header">
-					<span class="font-semibold text-sm text-gray-700">Sidebar</span>
+					<span class="font-semibold text-sm text-gray-700 dark:text-gray-300">Appearance</span>
 				</div>
-				<div class="card-body">
+				<div class="card-body space-y-3">
 					<label for="sidebar_collapsed" class="flex items-center gap-3 cursor-pointer">
 						<input
 							type="checkbox"
+							id="sidebar_collapsed"
 							name="sidebar_collapsed"
 							class="w-4 h-4 rounded border-gray-300 text-blue-600"
 							checked={!!data.appUser.sidebar_collapsed}
 						/>
-						<span class="text-sm text-gray-700">Start with sidebar collapsed</span>
+						<span class="text-sm text-gray-700 dark:text-gray-300">Start with sidebar collapsed</span>
+					</label>
+					<label for="dark_mode" class="flex items-center gap-3 cursor-pointer">
+						<input
+							type="checkbox"
+							id="dark_mode"
+							name="dark_mode"
+							class="w-4 h-4 rounded border-gray-300 text-blue-600"
+							checked={!!data.appUser.dark_mode}
+						/>
+						<span class="text-sm text-gray-700 dark:text-gray-300">Dark mode</span>
 					</label>
 				</div>
 			</div>

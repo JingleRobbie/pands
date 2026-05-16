@@ -25,7 +25,7 @@
 
 <svelte:head><title>WIP Ledger — PandS</title></svelte:head>
 
-<header class="bg-white border-b border-gray-200 px-6 py-4">
+<header class="page-header px-6 py-4">
 	<h1 class="text-lg font-semibold text-gray-900">WIP Ledger — Available Scrap</h1>
 </header>
 

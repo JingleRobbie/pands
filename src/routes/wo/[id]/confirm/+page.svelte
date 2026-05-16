@@ -118,7 +118,7 @@
 
 <svelte:head><title>Produce WO {wo.so_number} — PandS</title></svelte:head>
 
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+<header class="page-header px-6 py-4 flex items-center justify-between">
 	<div>
 		<h1 class="text-lg font-semibold text-gray-900">Record Production — {wo.so_number}</h1>
 		<p class="text-sm text-gray-500 mt-0.5">{wo.customer_name} · {wo.job_name}</p>
