@@ -11,6 +11,7 @@
 		"preview": "vite preview",
 		"build:css": "tailwindcss -i src/app.css -o static/css/app.css --minify",
 		"watch:css": "tailwindcss -i src/app.css -o static/css/app.css --watch",
+		"migrate": "powershell -ExecutionPolicy Bypass -File scripts/apply-migration.ps1 -Migration",
 		"seed": "node scripts/seed-skus.js",
 		"seed:history": "node scripts/seed-history.js",
 		"lint": "eslint .",

@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS app_users (
   display_name      VARCHAR(100) NOT NULL,
   is_active         BOOLEAN DEFAULT TRUE,
   sidebar_collapsed BOOLEAN NOT NULL DEFAULT FALSE,
+  dark_mode         TINYINT(1) NOT NULL DEFAULT 0,
   role              ENUM('admin','operator') NOT NULL DEFAULT 'operator',
   password_hash     VARCHAR(255) NULL
 );
@@ -315,6 +316,11 @@ CREATE TABLE IF NOT EXISTS inventory_transactions (
   INDEX idx_inventory_transactions_sku_effective (sku_id, effective_date),
   INDEX idx_inventory_transactions_sku_created (sku_id, created_at),
   INDEX idx_inventory_transactions_reference (reference_type, reference_id)
+);
+
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  migration  VARCHAR(255) NOT NULL PRIMARY KEY,
+  applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 INSERT IGNORE INTO app_users (id, display_name, role) VALUES (1, 'Admin', 'admin');
