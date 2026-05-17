@@ -80,7 +80,7 @@
 				<input
 					id="production_date"
 					type="date"
-					class="form-input"
+					class="form-input w-40"
 					bind:value={selectedDate}
 				/>
 			</div>

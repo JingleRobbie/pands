@@ -184,7 +184,7 @@
 								id="date-{line.id}"
 								name="runDate"
 								type="date"
-								class="form-input"
+								class="form-input w-40"
 							/>
 						</div>
 						<div class="flex items-end">

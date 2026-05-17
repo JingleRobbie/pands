@@ -36,6 +36,7 @@ export const actions = {
 
 		const lineIds = data.getAll('line_id').map(Number);
 		const sqftsReceived = data.getAll('sqft_received').map((v) => Math.round(Number(v)));
+		const receiptDate = data.get('receipt_date')?.trim() || null;
 
 		for (let i = 0; i < lineIds.length; i++) {
 			if (!sqftsReceived[i] || sqftsReceived[i] < 1)
@@ -45,7 +46,7 @@ export const actions = {
 		const receipts = lineIds.map((lineId, i) => ({ lineId, sqftReceived: sqftsReceived[i] }));
 
 		try {
-			await receivePoLines(Number(params.id), receipts, locals.appUser.id);
+			await receivePoLines(Number(params.id), receipts, locals.appUser.id, receiptDate);
 		} catch (err) {
 			return fail(500, { error: err.message });
 		}

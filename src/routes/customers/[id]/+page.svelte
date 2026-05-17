@@ -19,7 +19,7 @@
 				<input
 					id="name"
 					name="name"
-					class="form-input"
+					class="form-input max-w-sm"
 					required
 					value={data.customer.name}
 				/>
@@ -29,7 +29,7 @@
 				<input
 					id="phone"
 					name="phone"
-					class="form-input"
+					class="form-input w-36"
 					value={data.customer.phone ?? ''}
 				/>
 			</div>

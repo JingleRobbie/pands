@@ -4,7 +4,7 @@
 
 @layer components {
 	.btn {
-		@apply inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors duration-150 cursor-pointer;
+		@apply inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors duration-150 cursor-pointer whitespace-nowrap;
 	}
 	.btn-primary {
 		@apply btn bg-brand text-white hover:bg-brand-hover;
@@ -32,7 +32,7 @@
 		@apply badge bg-red-100 text-red-800;
 	}
 	.badge-blue {
-		@apply badge bg-brand-light text-brand dark:bg-blue-900/60 dark:text-blue-300;
+		@apply badge bg-brand-light text-brand dark:bg-blue-300 dark:text-blue-900;
 	}
 	.badge-gray {
 		@apply badge bg-gray-100 text-gray-700;
@@ -50,6 +50,13 @@
 
 	.page-header {
 		@apply bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700;
+		flex-wrap: nowrap;
+	}
+	.page-header > *:last-child {
+		flex-shrink: 0;
+	}
+	.page-header > *:first-child {
+		min-width: 0;
 	}
 
 	.card {
@@ -186,10 +193,10 @@
 		@apply border-l border-l-gray-300;
 	}
 	.sqft-negative {
-		@apply text-red-600 font-semibold;
+		@apply text-red-500 font-semibold;
 	}
 	.sqft-positive {
-		@apply text-green-700;
+		@apply text-green-600;
 	}
 }
 

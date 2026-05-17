@@ -129,7 +129,7 @@
 							type="number"
 							min="1"
 							max={cutDown.rolls_scheduled}
-							class="form-input"
+							class="form-input w-20"
 							required
 						/>
 					</div>
@@ -142,7 +142,7 @@
 							name="sqftActual"
 							type="number"
 							min="0"
-							class="form-input"
+							class="form-input w-32"
 						/>
 					</div>
 					<div>
@@ -152,7 +152,7 @@
 							name="wasteActual"
 							type="number"
 							min="0"
-							class="form-input"
+							class="form-input w-32"
 						/>
 					</div>
 				</div>

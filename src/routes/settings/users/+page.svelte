@@ -38,7 +38,7 @@
 				<form method="POST" action="?/create" use:enhance class="space-y-3">
 					<div>
 						<label for="new-name" class="form-label">Name</label>
-						<input id="new-name" name="display_name" class="form-input" required />
+						<input id="new-name" name="display_name" class="form-input max-w-xs" required />
 					</div>
 					<div>
 						<label for="new-role" class="form-label">Role</label>
@@ -53,7 +53,7 @@
 							id="new-password"
 							name="password"
 							type="password"
-							class="form-input"
+							class="form-input max-w-xs"
 							required
 							autocomplete="new-password"
 						/>
@@ -124,7 +124,7 @@
 											<input
 												id="edit-name-{user.id}"
 												name="display_name"
-												class="form-input"
+												class="form-input max-w-xs"
 												value={user.display_name}
 												required
 											/>
@@ -186,7 +186,7 @@
 												id="pw-{user.id}"
 												name="password"
 												type="password"
-												class="form-input"
+												class="form-input max-w-xs"
 												autocomplete="new-password"
 											/>
 										</div>

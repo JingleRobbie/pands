@@ -84,7 +84,7 @@
 					id="ship_date"
 					name="ship_date"
 					type="date"
-					class="form-input w-48"
+					class="form-input w-40"
 					required
 				/>
 			</div>

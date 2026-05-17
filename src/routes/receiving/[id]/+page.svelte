@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, localDate } from '$lib/utils.js';
 	let { data, form } = $props();
 	const po = $derived(data.po);
 	const openLines = $derived(data.openLines);
@@ -74,6 +74,23 @@
 
 		<form method="POST" onsubmit={handleReceiveSubmit} use:enhance={receiveEnhance}>
 			<input type="hidden" name="return_to" value={returnTo} />
+			<div class="card mb-4">
+				<div class="card-header">
+					<span class="text-sm font-semibold text-gray-700">Receipt Date</span>
+				</div>
+				<div class="card-body">
+					<div class="max-w-xs">
+						<label for="receipt_date" class="form-label">Date received</label>
+						<input
+							id="receipt_date"
+							name="receipt_date"
+							type="date"
+							class="form-input w-40"
+							value={localDate()}
+						/>
+					</div>
+				</div>
+			</div>
 			<div class="card mb-4">
 				<div class="card-header">
 					<span class="text-sm font-semibold text-gray-700">Lines</span>

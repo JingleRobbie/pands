@@ -16,11 +16,11 @@
 		<div class="card card-body space-y-4">
 			<div>
 				<label for="name" class="form-label">Company Name *</label>
-				<input id="name" name="name" class="form-input" required value={form?.name ?? ''} />
+				<input id="name" name="name" class="form-input max-w-sm" required value={form?.name ?? ''} />
 			</div>
 			<div>
 				<label for="phone" class="form-label">Office Phone</label>
-				<input id="phone" name="phone" class="form-input" value={form?.phone ?? ''} />
+				<input id="phone" name="phone" class="form-input w-36" value={form?.phone ?? ''} />
 			</div>
 		</div>
 

@@ -28,7 +28,7 @@ async function updatePoStatusFromLines(conn, poId) {
  * @param {{ lineId: number, sqftReceived: number }[]} receipts
  * @param {number} userId
  */
-export async function receivePoLines(poId, receipts, userId) {
+export async function receivePoLines(poId, receipts, userId, receiptDate = null) {
 	const conn = await db.getConnection();
 	try {
 		await conn.beginTransaction();
@@ -44,8 +44,8 @@ export async function receivePoLines(poId, receipts, userId) {
 			await conn.query(
 				`INSERT INTO inventory_transactions
 				   (sku_id, transaction_type, sqft_quantity, effective_date, reference_type, reference_id, created_by)
-				 VALUES (?, 'RECEIPT', ?, CURDATE(), 'PO_LINE', ?, ?)`,
-				[line.sku_id, sqftReceived, lineId, userId]
+				 VALUES (?, 'RECEIPT', ?, COALESCE(?, CURDATE()), 'PO_LINE', ?, ?)`,
+				[line.sku_id, sqftReceived, receiptDate || null, lineId, userId]
 			);
 
 			await conn.query(

@@ -30,7 +30,6 @@
 		{#if data.user?.role === 'admin'}
 			<a href="/po/import" class="btn-secondary btn-sm">Import</a>
 		{/if}
-		<a href="/po/new" class="btn-primary btn-sm">+ New PO</a>
 	</div>
 </header>
 <main class="p-6 space-y-4">

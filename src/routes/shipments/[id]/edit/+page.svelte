@@ -120,7 +120,7 @@
 					id="ship_date"
 					name="ship_date"
 					type="date"
-					class="form-input w-48"
+					class="form-input w-40"
 					value={shipment.ship_date
 						? new Date(shipment.ship_date).toISOString().slice(0, 10)
 						: ''}

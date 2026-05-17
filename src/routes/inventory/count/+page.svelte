@@ -136,7 +136,7 @@
 						type="date"
 						max={today}
 						bind:value={dateInput}
-						class="form-input"
+						class="form-input w-40"
 					/>
 				</div>
 				<div>

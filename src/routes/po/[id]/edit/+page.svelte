@@ -46,7 +46,7 @@
 							id="expected_date"
 							type="date"
 							name="expected_date"
-							class="form-input"
+							class="form-input w-40"
 							required
 							value={po.expected_date instanceof Date
 								? po.expected_date.toISOString().slice(0, 10)

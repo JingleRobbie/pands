@@ -100,7 +100,7 @@
 							id="run_date"
 							type="date"
 							name="run_date"
-							class="form-input"
+							class="form-input w-40"
 							bind:value={runDate}
 						/>
 					</div>
@@ -113,7 +113,7 @@
 							step="1"
 							min="1"
 							max={maxRolls}
-							class="form-input tabular-nums"
+							class="form-input w-20 tabular-nums"
 							bind:value={rollsScheduled}
 							required
 						/>

@@ -120,7 +120,7 @@
 							step="1"
 							min="1"
 							max={run.rolls_scheduled}
-							class="form-input tabular-nums"
+							class="form-input w-20 tabular-nums"
 							value={run.rolls_scheduled}
 							required
 						/>

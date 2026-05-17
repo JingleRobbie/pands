@@ -67,7 +67,7 @@
 				<input
 					id="ship_to_name"
 					name="ship_to_name"
-					class="form-input"
+					class="form-input max-w-sm"
 					bind:value={ship_to_name}
 				/>
 			</div>
@@ -76,7 +76,7 @@
 				<input
 					id="ship_addr1"
 					name="ship_addr1"
-					class="form-input"
+					class="form-input max-w-md"
 					bind:value={ship_addr1}
 				/>
 			</div>
@@ -85,7 +85,7 @@
 				<input
 					id="ship_addr2"
 					name="ship_addr2"
-					class="form-input"
+					class="form-input max-w-md"
 					bind:value={ship_addr2}
 				/>
 			</div>
@@ -95,7 +95,7 @@
 					<input
 						id="ship_city"
 						name="ship_city"
-						class="form-input"
+						class="form-input max-w-xs"
 						bind:value={ship_city}
 					/>
 				</div>
@@ -104,13 +104,13 @@
 					<input
 						id="ship_state"
 						name="ship_state"
-						class="form-input"
+						class="form-input w-14"
 						bind:value={ship_state}
 					/>
 				</div>
 				<div>
 					<label for="ship_zip" class="form-label">Zip</label>
-					<input id="ship_zip" name="ship_zip" class="form-input" bind:value={ship_zip} />
+					<input id="ship_zip" name="ship_zip" class="form-input w-24" bind:value={ship_zip} />
 				</div>
 			</div>
 		</div>
@@ -127,7 +127,7 @@
 						<input
 							id="nickname"
 							name="nickname"
-							class="form-input"
+							class="form-input max-w-xs"
 							placeholder="e.g. Main Warehouse"
 							required={saveToBook}
 						/>

@@ -66,7 +66,7 @@
 								? 'Completed From'
 								: 'Run From'}
 					</label>
-					<input id="from" name="from" type="date" class="form-input" value={data.from} />
+					<input id="from" name="from" type="date" class="form-input w-40" value={data.from} />
 				</div>
 				<button type="submit" class="btn-secondary">Apply</button>
 			</form>

@@ -96,7 +96,7 @@
 						id="run_date"
 						name="run_date"
 						type="date"
-						class="form-input py-1 text-sm"
+						class="form-input w-40 py-1 text-sm"
 						required
 					/>
 				</div>

@@ -95,7 +95,6 @@
 			title={appUser?.role !== 'admin' ? 'Admin only' : 'Record inventory count'}
 			>Record Count</a
 		>
-		<a href="/po/new" class="btn-secondary btn-sm">+ PO</a>
 	</div>
 </header>
 
@@ -331,9 +330,7 @@
 				{:else}
 					<tr>
 						<td colspan="100" class="py-10 text-center text-gray-400">
-							No upcoming orders.
-							<a href="/po/new" class="underline">Add a PO</a> or
-							<a href="/wo/import" class="underline">import a Work Order</a>.
+							No upcoming orders. <a href="/wo/import" class="underline">Import a Work Order</a> to get started.
 						</td>
 					</tr>
 				{/each}

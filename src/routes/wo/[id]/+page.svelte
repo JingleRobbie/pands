@@ -16,7 +16,6 @@
 	const justCreatedShipmentId = $derived(data.justCreatedShipmentId);
 	const justCreatedCustomer = $derived(data.justCreatedCustomer);
 	const returnTo = $derived(getReturnTo(page.url, '/wo'));
-	let editShipAsap = $state(Boolean(wo.ship_asap));
 	let addingContact = $state(false);
 	let dismissed = $state(false);
 	let pendingBranchDelete = $state(null);
@@ -144,17 +143,10 @@
 	<div class="card">
 		<div class="card-header">
 			<span class="font-semibold text-sm text-gray-700">Details</span>
+			<span class="text-sm text-gray-600 font-medium">{wo.branch}</span>
+			{#if wo.ship_asap}<span class="badge-red font-semibold tracking-wide">Requested ASAP</span>{:else}<span></span>{/if}
 		</div>
 		<div class="card-body grid grid-cols-3 gap-4 text-sm">
-			<div>
-				<p class="form-label">Customer PO</p>
-				<form method="POST" action="?/updateCustomerPo" use:enhance class="mt-1">
-					<div class="flex items-center gap-2">
-						<input name="customer_po" type="text" class="form-input text-sm py-1" value={wo.customer_po ?? ''} placeholder="—" />
-						<button type="submit" class="btn-secondary btn-sm">Save</button>
-					</div>
-				</form>
-			</div>
 			<div>
 				<p class="form-label">Customer</p>
 				{#if wo.customer_id}
@@ -187,35 +179,29 @@
 				<p class="text-gray-900">{wo.job_name}</p>
 			</div>
 			<div>
-				<p class="form-label">Branch</p>
-				<p class="text-gray-900">{wo.branch}</p>
-			</div>
-			<div>
 				<p class="form-label">Ship Date</p>
 				<form method="POST" action="?/updateShipDate" use:enhance class="mt-1 space-y-1.5">
 					<div class="flex items-center gap-2">
 						<input
 							name="ship_date"
 							type="date"
-							class="form-input text-sm py-1"
-							value={editShipAsap ? '' : (wo.ship_date ? (typeof wo.ship_date === 'string' ? wo.ship_date : wo.ship_date.toISOString()).slice(0, 10) : '')}
-							disabled={editShipAsap}
+							class="form-input w-40 text-sm py-1"
+							value={wo.ship_date ? (typeof wo.ship_date === 'string' ? wo.ship_date : wo.ship_date.toISOString()).slice(0, 10) : ''}
 						/>
 						<button type="submit" class="btn-secondary btn-sm">Save</button>
 					</div>
-					<label class="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
-						<input
-							type="checkbox"
-							name="ship_asap"
-							value="1"
-							checked={editShipAsap}
-							onchange={(e) => (editShipAsap = e.currentTarget.checked)}
-						/>
-						Ship ASAP
-					</label>
 					{#if form?.shipDateError}
 						<p class="text-red-600 text-xs">{form.shipDateError}</p>
 					{/if}
+				</form>
+			</div>
+			<div>
+				<p class="form-label">Customer PO</p>
+				<form method="POST" action="?/updateCustomerPo" use:enhance class="mt-1">
+					<div class="flex items-center gap-2">
+						<input name="customer_po" type="text" class="form-input text-sm py-1" value={wo.customer_po ?? ''} placeholder="—" />
+						<button type="submit" class="btn-secondary btn-sm">Save</button>
+					</div>
 				</form>
 			</div>
 			<div>

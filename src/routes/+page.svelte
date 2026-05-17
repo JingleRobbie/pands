@@ -22,7 +22,6 @@
 			tone: 'green',
 			links: [
 				{ href: '/po', label: 'Purchase Orders', detail: 'Review open and received POs' },
-				{ href: '/po/new', label: 'Create PO', detail: 'Enter a new material purchase' },
 				{ href: '/po/import', label: 'Import POs', detail: 'Load purchase order data in bulk' },
 				{ href: '/receiving', label: 'Receiving', detail: 'Receive material into inventory' },
 			],
