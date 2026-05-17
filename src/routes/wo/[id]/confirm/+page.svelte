@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
+	import { backLabel, getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	import { untrack } from 'svelte';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
@@ -123,7 +123,7 @@
 		<h1 class="text-lg font-semibold text-gray-900">Record Production — {wo.so_number}</h1>
 		<p class="text-sm text-gray-500 mt-0.5">{wo.customer_name} · {wo.job_name}</p>
 	</div>
-	<a href={returnTo} class="btn-secondary btn-sm">Back</a>
+	<a href={returnTo} class="btn-secondary btn-sm">{backLabel(returnTo, 'Production')}</a>
 </header>
 
 <main class="p-6">

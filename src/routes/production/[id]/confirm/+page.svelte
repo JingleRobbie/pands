@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
+	import { backLabel, getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate } from '$lib/utils.js';
 	let { data, form } = $props();
 	const run = $derived(data.run);
@@ -49,7 +49,7 @@
 				class="btn-secondary btn-sm">Edit</a
 			>
 		{/if}
-		<a href={returnTo} class="btn-secondary btn-sm">Back</a>
+		<a href={returnTo} class="btn-secondary btn-sm">{backLabel(returnTo, 'Production')}</a>
 	</div>
 </header>
 <main class="p-6">

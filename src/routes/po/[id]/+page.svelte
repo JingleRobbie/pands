@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import MatrixDrawer from '$lib/components/MatrixDrawer.svelte';
-	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
+	import { backLabel, getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
 	const po = $derived(data.po);
@@ -65,7 +65,7 @@
 		<button onclick={() => (outlookOpen = !outlookOpen)} class="btn-secondary btn-sm"
 			>Inventory Outlook</button
 		>
-		<a href={returnTo} class="btn-secondary btn-sm">Back</a>
+		<a href={returnTo} class="btn-secondary btn-sm">{backLabel(returnTo, 'Purchase Orders')}</a>
 	</div>
 </header>
 <main class="p-6">

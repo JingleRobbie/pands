@@ -6,10 +6,12 @@
 	let { data, children } = $props();
 	let collapsed = $state(untrack(() => data.appUser?.sidebar_collapsed ?? false));
 	let darkMode = $derived(data.appUser?.dark_mode ?? false);
+	const overdueCount = $derived(data.overdueCount ?? 0);
 	let searchOpen = $state(false);
 
 	const navItems = [
 		{ href: '/', label: 'Home', icon: 'home' },
+		{ href: '/dashboard', label: 'Dashboard', icon: 'alert' },
 		{ href: '/matrix', label: 'Overview', icon: 'grid' },
 		{ href: '/po', label: 'Purchase Orders', icon: 'box' },
 		{ href: '/receiving', label: 'Receiving', icon: 'truck' },
@@ -122,6 +124,24 @@
 									d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"
 								/></svg
 							>
+						{:else if nav.icon === 'alert'}
+							<span class="relative flex-shrink-0">
+								<svg
+									class="w-4 h-4"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									viewBox="0 0 24 24"
+									><path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+									/></svg
+								>
+								{#if collapsed && overdueCount > 0}
+									<span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+								{/if}
+							</span>
 						{:else if nav.icon === 'grid'}
 							<svg
 								class="w-4 h-4 flex-shrink-0"
@@ -246,7 +266,12 @@
 								/></svg
 							>
 						{/if}
-						{#if !collapsed}{nav.label}{/if}
+						{#if !collapsed}
+							<span class="flex-1">{nav.label}</span>
+							{#if nav.href === '/dashboard' && overdueCount > 0}
+								<span class="ml-auto text-xs font-semibold bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none">{overdueCount}</span>
+							{/if}
+						{/if}
 					</a>
 				{/each}
 			</nav>

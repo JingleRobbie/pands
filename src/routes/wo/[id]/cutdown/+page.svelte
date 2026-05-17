@@ -1,8 +1,11 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { backLabel, getReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
 	const { wo, billingLines, productionLines, cutDowns, rawRollLookups } = $derived(data);
+	const returnTo = $derived(getReturnTo(page.url, `/wo/${wo.id}`));
 
 	let showScheduleFor = $state(null);
 	let vendorFor = $state({});
@@ -88,7 +91,7 @@
 <svelte:head><title>Cut-Downs - WO {wo.so_number} - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center gap-4">
-	<a href="/wo/{wo.id}" class="text-gray-400 hover:text-gray-600 text-sm">← WO {wo.so_number}</a>
+	<a href={returnTo} class="text-gray-400 hover:text-gray-600 text-sm">{backLabel(returnTo, 'WO ' + wo.so_number)}</a>
 	<h1 class="text-lg font-semibold text-gray-900">Cut-Downs</h1>
 </header>
 

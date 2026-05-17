@@ -1,7 +1,7 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
-	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
+	import { backLabel, getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data } = $props();
 	const shipment = $derived(data.shipment);
@@ -29,7 +29,7 @@
 				>← WO #{shipment.so_number}</a
 			>
 		{:else}
-			<a href={returnTo} class="text-gray-400 hover:text-gray-600 text-sm">← Shipments</a>
+			<a href={returnTo} class="text-gray-400 hover:text-gray-600 text-sm">{backLabel(returnTo, 'Shipments')}</a>
 		{/if}
 		<span class="font-semibold text-gray-800">{shipment.shipment_number}</span>
 		<span class="badge-{shipment.status === 'SHIPPED' ? 'green' : 'amber'}"

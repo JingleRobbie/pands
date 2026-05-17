@@ -1,7 +1,7 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
-	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
+	import { backLabel, getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft, localDate } from '$lib/utils.js';
 	let { data, form } = $props();
 	const po = $derived(data.po);
@@ -42,7 +42,7 @@
 	</div>
 	<div class="flex gap-2">
 		<a href={withReturnTo(`/po/${po.id}`, returnTo)} class="btn-secondary btn-sm">Show PO</a>
-		<a href={returnTo} class="btn-secondary btn-sm">Back to Receiving</a>
+		<a href={returnTo} class="btn-secondary btn-sm">{backLabel(returnTo, 'Receiving')}</a>
 	</div>
 </header>
 <main class="p-6">

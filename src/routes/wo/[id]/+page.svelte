@@ -1,7 +1,7 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
-	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
+	import { backLabel, getReturnTo, withReturnTo } from '$lib/navigation.js';
 	import { fmtDate, fmtSqft } from '$lib/utils.js';
 	let { data, form } = $props();
 	const wo = $derived(data.wo);
@@ -49,7 +49,7 @@
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<div class="flex items-center gap-4">
-		<a href={returnTo} class="text-gray-400 hover:text-gray-600 text-sm">← Work Orders</a>
+		<a href={returnTo} class="text-gray-400 hover:text-gray-600 text-sm">{backLabel(returnTo, 'Work Orders')}</a>
 		<h1 class="text-lg font-semibold text-gray-900">
 			WO #{wo.so_number}{#if wo.customer_id}
 				— {wo.customer_display_name}{:else if wo.customer_name}
