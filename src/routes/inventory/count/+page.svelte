@@ -1,6 +1,6 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { fmtSqft, fmtDate, localDate } from '$lib/utils.js';
+	import { fmtSqft, fmtDate, localDate, skuLabel } from '$lib/utils.js';
 	import { untrack } from 'svelte';
 	let { data, form } = $props();
 	const skus = $derived(data.skus);
@@ -170,7 +170,7 @@
 						{#each skus as sku (sku.id)}
 							<tr>
 								<td class="px-4 py-3 font-medium text-gray-900"
-									>{sku.display_label}</td
+									>{skuLabel(sku.display_label, sku.pebs)}</td
 								>
 								<td class="px-4 py-3 text-right tabular-nums font-mono transition-opacity {loadingBalances ? 'opacity-40' : ''}">
 									{#if (balances[sku.id] ?? 0) < 0}

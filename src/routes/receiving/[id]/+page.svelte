@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { backLabel, getReturnTo, withReturnTo } from '$lib/navigation.js';
-	import { fmtDate, fmtSqft, localDate } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, localDate, skuLabel } from '$lib/utils.js';
 	let { data, form } = $props();
 	const po = $derived(data.po);
 	const openLines = $derived(data.openLines);
@@ -108,7 +108,7 @@
 							<tr class="border-b border-gray-50">
 								<td class="px-4 py-2 font-medium">
 									<input type="hidden" name="line_id" value={line.id} />
-									{line.display_label}
+									{skuLabel(line.display_label, line.pebs)}
 								</td>
 								<td class="px-4 py-2 text-right font-mono text-gray-500">
 									{fmtSqft(line.sqft_ordered)}
@@ -129,7 +129,7 @@
 						{#each doneLines as line (line.id)}
 							<tr class="border-b border-gray-50 opacity-50">
 								<td class="px-4 py-2 font-medium text-gray-500"
-									>{line.display_label}</td
+									>{skuLabel(line.display_label, line.pebs)}</td
 								>
 								<td class="px-4 py-2 text-right font-mono text-gray-400">
 									{fmtSqft(line.sqft_ordered)}

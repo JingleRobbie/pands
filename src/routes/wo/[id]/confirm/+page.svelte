@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { backLabel, getReturnTo, withReturnTo } from '$lib/navigation.js';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 	import { untrack } from 'svelte';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	let { data, form } = $props();
@@ -478,7 +478,7 @@
 						<th class="min-w-[70px]">Ship</th>
 						<th class="min-w-[70px]">Facing</th>
 						{#each matrix.skus as sku (sku.id)}
-							{@const trimmed = sku.display_label.trim()}
+							{@const trimmed = skuLabel(sku.display_label, sku.pebs).trim()}
 							<th class="sku-col-start min-w-[50px] align-bottom">
 								<div class="h-16 relative overflow-visible">
 									<span

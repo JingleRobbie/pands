@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
+	import { skuLabel } from '$lib/utils.js';
 	let { data, form } = $props();
 	const po = $derived(data.po);
 	const returnTo = $derived(getReturnTo(page.url, '/po'));
@@ -65,7 +66,7 @@
 						<div class="flex items-end gap-3 {line.status !== 'OPEN' ? 'opacity-60' : ''}">
 							<div class="flex-1">
 								<p class="form-label text-xs">SKU</p>
-								<p class="form-input text-sm bg-gray-50 text-gray-700">{line.display_label}</p>
+								<p class="form-input text-sm bg-gray-50 text-gray-700">{skuLabel(line.display_label, line.pebs)}</p>
 							</div>
 							<div class="w-36">
 								<p class="form-label text-xs">Sq Ft</p>

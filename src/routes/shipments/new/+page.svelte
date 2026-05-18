@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 	let { data, form } = $props();
 	const wo = $derived(data.wo);
 	const runs = $derived(data.runs);
@@ -239,7 +239,7 @@
 										onclick={(e) => e.stopPropagation()}
 									/>
 								</td>
-								<td class="px-4 py-3 text-gray-600">{cd.display_label}</td>
+								<td class="px-4 py-3 text-gray-600">{skuLabel(cd.display_label, cd.pebs)}</td>
 								<td class="px-4 py-3 text-right tabular-nums text-gray-600"
 									>{cd.width_in}"</td
 								>
@@ -300,7 +300,7 @@
 										onclick={(e) => e.stopPropagation()}
 									/>
 								</td>
-								<td class="px-4 py-3 text-gray-600">{dl.display_label}</td>
+								<td class="px-4 py-3 text-gray-600">{skuLabel(dl.display_label, dl.pebs)}</td>
 								<td class="px-4 py-3 text-right tabular-nums text-gray-600"
 									>{dl.width_in}"</td
 								>

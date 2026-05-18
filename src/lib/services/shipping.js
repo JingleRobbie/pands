@@ -365,7 +365,7 @@ export async function getShipment(id) {
 	if (!shipment) return null;
 
 	const [lines] = await db.query(
-		`SELECT sl.*, ms.display_label, pr.run_number, pr.run_date,
+		`SELECT sl.*, ms.display_label, ms.pebs, pr.run_number, pr.run_date,
 		        COALESCE(wol_run.rollfor, wol_direct.rollfor) AS rollfor,
 		        COALESCE(wol_run.facing,  wol_direct.facing)  AS facing,
 		        COALESCE(wol_run.thickness_in, wol_direct.thickness_in) AS thickness_in,

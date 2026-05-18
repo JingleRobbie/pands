@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { backLabel, getReturnTo, withReturnTo } from '$lib/navigation.js';
-	import { fmtDate } from '$lib/utils.js';
+	import { fmtDate, skuLabel } from '$lib/utils.js';
 	let { data, form } = $props();
 	const run = $derived(data.run);
 	const matrix = $derived(data.matrix);
@@ -87,7 +87,7 @@
 				</div>
 				<div class="flex justify-between">
 					<span class="text-gray-500">SKU</span>
-					<span>{run.display_label}</span>
+					<span>{skuLabel(run.display_label, run.pebs)}</span>
 				</div>
 				<div class="flex justify-between">
 					<span class="text-gray-500">Facing</span>
@@ -174,7 +174,7 @@
 					<th class="min-w-[70px]">Ship</th>
 					<th class="min-w-[70px]">Facing</th>
 					{#each matrix.skus as sku (sku.id)}
-						{@const trimmed = sku.display_label.trim()}
+						{@const trimmed = skuLabel(sku.display_label, sku.pebs).trim()}
 						<th class="sku-col-start min-w-[50px] align-bottom">
 							<div class="h-16 relative overflow-visible">
 								<span

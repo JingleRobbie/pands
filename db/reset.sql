@@ -18,7 +18,7 @@ TRUNCATE TABLE purchase_order_lines;
 TRUNCATE TABLE purchase_orders;
 TRUNCATE TABLE shipment_lines;
 TRUNCATE TABLE shipments;
-truncate table wip_ledger;
+TRUNCATE TABLE wip_ledger;
 TRUNCATE TABLE wo_accessories;
 TRUNCATE TABLE work_order_lines;
 TRUNCATE TABLE work_orders;

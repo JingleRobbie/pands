@@ -1,6 +1,6 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 	let { data, form } = $props();
 	const count = $derived(data.count);
 	const lines = $derived(data.lines);
@@ -61,7 +61,7 @@
 			<tbody class="divide-y divide-gray-100 bg-white">
 				{#each lines as line, i (i)}
 					<tr>
-						<td class="px-4 py-3 font-medium text-gray-900">{line.display_label}</td>
+						<td class="px-4 py-3 font-medium text-gray-900">{skuLabel(line.display_label, line.pebs)}</td>
 						<td class="px-4 py-3 text-right tabular-nums font-mono text-gray-700">
 							{line.counted_sqft != null ? fmtSqft(line.counted_sqft) : '—'}
 						</td>

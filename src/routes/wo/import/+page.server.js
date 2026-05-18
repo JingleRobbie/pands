@@ -110,7 +110,7 @@ export const actions = {
 		const { header, accessories, lines } = parsed;
 
 		const [skus] = await db.query(
-			'SELECT id, thickness_in, width_in, display_label FROM material_skus WHERE is_active = TRUE'
+			'SELECT id, thickness_in, width_in, display_label, pebs FROM material_skus WHERE is_active = TRUE'
 		);
 		const skuByDims = Object.fromEntries(
 			skus.map((s) => [`${s.thickness_in}_${s.width_in}`, s])
@@ -148,6 +148,7 @@ export const actions = {
 				thickness_in: sku.thickness_in,
 				width_in: sku.width_in,
 				display_label: sku.display_label,
+				pebs: sku.pebs,
 				qty,
 				length_ft: lengthFt,
 				sqft,

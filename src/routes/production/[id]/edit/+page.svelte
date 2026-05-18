@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
-	import { fmtDate } from '$lib/utils.js';
+	import { fmtDate, skuLabel } from '$lib/utils.js';
 	import { untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	let { data, form } = $props();
@@ -78,7 +78,7 @@
 				</div>
 				<div class="flex justify-between">
 					<span class="text-gray-500">SKU</span>
-					<span>{run.display_label}</span>
+					<span>{skuLabel(run.display_label, run.pebs)}</span>
 				</div>
 			</div>
 		</div>
@@ -161,7 +161,7 @@
 											onchange={() => togglePeer(peer.id)}
 										/>
 									</td>
-									<td class="px-4 py-2">{peer.display_label}</td>
+									<td class="px-4 py-2">{skuLabel(peer.display_label, peer.pebs)}</td>
 									<td class="px-4 py-2 text-gray-500">
 										{peer.run_date ? fmtDate(peer.run_date) : '—'}
 									</td>

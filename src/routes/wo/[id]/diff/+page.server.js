@@ -14,7 +14,7 @@ export async function load({ params }) {
 	if (!wo) error(404, 'Work order not found');
 
 	const [lines] = await db.query(
-		`SELECT wol.*, ms.display_label, ms.thickness_in,
+		`SELECT wol.*, ms.display_label, ms.pebs, ms.thickness_in,
 		        (SELECT COUNT(*) FROM work_order_lines c WHERE c.parent_line_id = wol.id) AS child_count
 		 FROM work_order_lines wol
 		 JOIN material_skus ms ON ms.id = wol.sku_id
@@ -58,7 +58,7 @@ export async function load({ params }) {
 	});
 
 	const [skus] = await db.query(
-		'SELECT id, display_label, thickness_in, width_in FROM material_skus ORDER BY sort_order'
+		'SELECT id, display_label, pebs, thickness_in, width_in FROM material_skus ORDER BY sort_order'
 	);
 
 	return { wo, diffRows, skus };

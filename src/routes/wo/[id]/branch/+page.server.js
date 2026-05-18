@@ -11,7 +11,7 @@ export async function load({ params, url }) {
 	if (!wo) error(404, 'Work order not found');
 
 	const [[line]] = await db.query(
-		`SELECT wol.*, ms.display_label
+		`SELECT wol.*, ms.display_label, ms.pebs
 		 FROM work_order_lines wol
 		 JOIN material_skus ms ON ms.id = wol.sku_id
 		 WHERE wol.id = ? AND wol.wo_id = ?`,
@@ -39,7 +39,7 @@ export async function load({ params, url }) {
 		isEditMode && editBlockers.includes('cut-down')
 			? await db.query(
 					`SELECT cd.id, cd.cut_down_number, cd.status, cd.run_date, cd.rolls_scheduled,
-					        cd.sqft_scheduled, ms.display_label AS sku_label
+					        cd.sqft_scheduled, ms.display_label AS sku_label, ms.pebs
 					 FROM cut_downs cd
 					 JOIN material_skus ms ON ms.id = cd.sku_id
 					 WHERE cd.billing_line_id = ? AND cd.wo_id = ?

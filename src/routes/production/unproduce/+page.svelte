@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 
 	let { data, form } = $props();
 	const eligibleRuns = $derived(data.eligibleRuns);
@@ -126,7 +126,7 @@
 							<td class="px-4 py-3 text-gray-600">{run.so_number}</td>
 							<td class="px-4 py-3 font-medium text-gray-900">{run.job_name}</td>
 							<td class="px-4 py-3">
-								<span class="font-medium">{run.display_label}</span>
+								<span class="font-medium">{skuLabel(run.display_label, run.pebs)}</span>
 								<span class="text-gray-500 ml-2">{run.facing}</span>
 								{#if run.rollfor}
 									<span class="text-gray-400 ml-2">{run.rollfor}</span>

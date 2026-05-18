@@ -11,7 +11,7 @@ export async function load({ params }) {
 	if (wo.status === 'COMPLETE') error(400, 'This work order is already complete');
 
 	const [lines] = await db.query(
-		`SELECT wol.*, ms.display_label,
+		`SELECT wol.*, ms.display_label, ms.pebs,
 		        COALESCE((
 		          SELECT SUM(pr.rolls_scheduled)
 		          FROM production_runs pr

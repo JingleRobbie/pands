@@ -11,7 +11,7 @@ export async function load({ params }) {
 	// Available runs: COMPLETED, same WO, not on any shipment
 	const [availableRuns] = await db.query(
 		`SELECT pr.id, pr.run_date, pr.rolls_actual, pr.sqft_actual,
-		        ms.display_label, wol.facing, wol.rollfor, wol.length_ft, wol.thickness_in, wol.width_in
+		        ms.display_label, ms.pebs, wol.facing, wol.rollfor, wol.length_ft, wol.thickness_in, wol.width_in
 		 FROM production_runs pr
 		 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
 		 JOIN material_skus ms ON ms.id = pr.sku_id

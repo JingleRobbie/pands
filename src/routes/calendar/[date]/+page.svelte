@@ -1,6 +1,6 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { fmtDate } from '$lib/utils.js';
+	import { fmtDate, skuLabel } from '$lib/utils.js';
 	let { data, form } = $props();
 
 	const STATUS_BADGE = {
@@ -64,7 +64,7 @@
 							<td class="py-2 pr-4">{run.customer_name}</td>
 							<td class="py-2 pr-4 text-gray-600">{run.job_name}</td>
 							<td class="py-2 pr-4">{run.so_number}</td>
-							<td class="py-2 pr-4 text-gray-600">{run.sku_label}</td>
+							<td class="py-2 pr-4 text-gray-600">{skuLabel(run.sku_label, run.pebs)}</td>
 							<td class="py-2 pr-4 text-gray-500">{run.facing}</td>
 							<td class="py-2 pr-4 text-right tabular-nums">
 								{#if run.status === 'COMPLETED'}
@@ -126,7 +126,7 @@
 							<td class="py-2 pr-4">{wol.so_number}</td>
 							<td class="py-2 pr-4">{wol.customer_name}</td>
 							<td class="py-2 pr-4 text-gray-600">{wol.job_name}</td>
-							<td class="py-2 pr-4 text-gray-600">{wol.sku_label}</td>
+							<td class="py-2 pr-4 text-gray-600">{skuLabel(wol.sku_label, wol.pebs)}</td>
 							<td class="py-2 pr-4 text-gray-500">{wol.facing}</td>
 							<td class="py-2 pr-4 text-right tabular-nums">{remaining}</td>
 							<td class="py-2">
@@ -166,7 +166,7 @@
 			{pendingDelete.so_number} — {pendingDelete.customer_name}
 		</p>
 		<p class="text-xs text-gray-500 mb-4">
-			{pendingDelete.sku_label} · {pendingDelete.rolls_scheduled} roll{pendingDelete.rolls_scheduled ===
+			{skuLabel(pendingDelete.sku_label, pendingDelete.pebs)} · {pendingDelete.rolls_scheduled} roll{pendingDelete.rolls_scheduled ===
 			1
 				? ''
 				: 's'} will be unscheduled.

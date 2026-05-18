@@ -1,7 +1,7 @@
 <script>
 	import { fly, fade } from 'svelte/transition';
 	import { goto } from '$app/navigation';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 
 	let { matrix, open = $bindable(false) } = $props();
 </script>
@@ -34,7 +34,7 @@
 						<th class="min-w-[70px]">Ship</th>
 						<th class="min-w-[70px]">Facing</th>
 						{#each matrix.skus as sku (sku.id)}
-							{@const trimmed = sku.display_label.trim()}
+							{@const trimmed = skuLabel(sku.display_label, sku.pebs).trim()}
 							<th class="sku-col-start min-w-[50px] align-bottom">
 								<div class="h-16 relative overflow-visible">
 									<span

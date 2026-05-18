@@ -19,7 +19,7 @@ export async function load({ url }) {
 	// COMPLETED production runs not already on any shipment
 	const [runs] = await db.query(
 		`SELECT pr.id, pr.run_date, pr.rolls_actual, pr.sqft_actual,
-		        ms.display_label, wol.facing, wol.rollfor, wol.length_ft, wol.thickness_in, wol.width_in
+		        ms.display_label, ms.pebs, wol.facing, wol.rollfor, wol.length_ft, wol.thickness_in, wol.width_in
 		 FROM production_runs pr
 		 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
 		 JOIN material_skus ms ON ms.id = pr.sku_id
@@ -32,7 +32,7 @@ export async function load({ url }) {
 
 	// COMPLETED cut-downs not already on a shipment (CUT_SHIP path)
 	const [cutDowns] = await db.query(
-		`SELECT cd.id, cd.sqft_actual, cd.run_date, ms.display_label, wol.width_in
+		`SELECT cd.id, cd.sqft_actual, cd.run_date, ms.display_label, ms.pebs, wol.width_in
 		 FROM cut_downs cd
 		 JOIN material_skus ms ON ms.id = cd.sku_id
 		 JOIN work_order_lines wol ON wol.id = cd.billing_line_id
@@ -43,7 +43,7 @@ export async function load({ url }) {
 
 	// Unbranched WO lines not already on a shipment (DIRECT_SHIP path)
 	const [directLines] = await db.query(
-		`SELECT wol.id, wol.sqft, wol.width_in, wol.length_ft, ms.display_label
+		`SELECT wol.id, wol.sqft, wol.width_in, wol.length_ft, ms.display_label, ms.pebs
 		 FROM work_order_lines wol
 		 JOIN material_skus ms ON ms.id = wol.sku_id
 		 WHERE wol.wo_id = ? AND wol.parent_line_id IS NULL

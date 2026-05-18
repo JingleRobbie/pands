@@ -16,7 +16,7 @@ export async function load({ locals, params }) {
 
 	const [lines] = await db.query(
 		`SELECT it.transaction_type, it.sqft_quantity, it.counted_sqft,
-		        ms.display_label
+		        ms.display_label, ms.pebs
 		 FROM inventory_transactions it
 		 JOIN material_skus ms ON ms.id = it.sku_id
 		 WHERE it.reference_type = 'INVENTORY_COUNT' AND it.reference_id = ?

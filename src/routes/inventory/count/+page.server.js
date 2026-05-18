@@ -6,7 +6,7 @@ import { localDate } from '$lib/utils.js';
 export async function load({ locals }) {
 	if (locals.appUser?.role !== 'admin') error(403, 'Admin only');
 	const [skus] = await db.query(
-		'SELECT id, display_label FROM material_skus WHERE is_active = TRUE ORDER BY sort_order, thickness_in, width_in'
+		'SELECT id, display_label, pebs FROM material_skus WHERE is_active = TRUE ORDER BY sort_order, thickness_in, width_in'
 	);
 	const today = localDate();
 	const balances = await getCountBalancesAsOf(today);
@@ -21,7 +21,7 @@ export const actions = {
 		const countDate = data.get('count_date')?.trim() || localDate();
 
 		const [skus] = await db.query(
-			'SELECT id, display_label FROM material_skus WHERE is_active = TRUE ORDER BY sort_order, thickness_in, width_in'
+			'SELECT id, display_label, pebs FROM material_skus WHERE is_active = TRUE ORDER BY sort_order, thickness_in, width_in'
 		);
 		const balances = await getCountBalancesAsOf(countDate);
 

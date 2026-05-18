@@ -1,6 +1,6 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 	let { data, form } = $props();
 	const { wo, cutDown, wipPreview } = $derived(data);
 
@@ -36,7 +36,7 @@
 		<div class="card-body grid grid-cols-3 gap-4 text-sm">
 			<div>
 				<p class="form-label">SKU</p>
-				<p class="text-gray-900">{cutDown.sku_label}</p>
+				<p class="text-gray-900">{skuLabel(cutDown.sku_label, cutDown.pebs)}</p>
 			</div>
 			<div>
 				<p class="form-label">Rolls Scheduled</p>

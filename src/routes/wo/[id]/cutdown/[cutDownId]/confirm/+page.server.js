@@ -8,7 +8,7 @@ export async function load({ params }) {
 	if (!wo) error(404, 'Work order not found');
 
 	const [[cutDown]] = await db.query(
-		`SELECT cd.*, ms.display_label AS sku_label
+		`SELECT cd.*, ms.display_label AS sku_label, ms.pebs
 		 FROM cut_downs cd
 		 JOIN material_skus ms ON ms.id = cd.sku_id
 		 WHERE cd.id = ? AND cd.wo_id = ?`,

@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
-	import { localDate } from '$lib/utils.js';
+	import { localDate, skuLabel } from '$lib/utils.js';
 	import { SvelteDate, SvelteSet, SvelteURLSearchParams } from 'svelte/reactivity';
 	let { data } = $props();
 	const matrix = $derived(data.matrix);
@@ -130,7 +130,7 @@
 					<th rowspan="2" class="min-w-[50px]">Facing</th>
 					{#each visibleSkus as sku (sku.id)}
 						<th colspan="2" class="sku-col-start text-center"
-							>{sku.display_label.trim()}</th
+							>{skuLabel(sku.display_label, sku.pebs).trim()}</th
 						>
 					{/each}
 				</tr>

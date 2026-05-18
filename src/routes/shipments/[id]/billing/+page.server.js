@@ -9,7 +9,7 @@ export async function load({ params }) {
 	const skuMap = new Map();
 	for (const line of shipment.lines) {
 		if (!skuMap.has(line.sku_id)) {
-			skuMap.set(line.sku_id, { display_label: line.display_label, sqft: 0 });
+			skuMap.set(line.sku_id, { display_label: line.display_label, pebs: line.pebs, sqft: 0 });
 		}
 		skuMap.get(line.sku_id).sqft += line.sqft;
 	}

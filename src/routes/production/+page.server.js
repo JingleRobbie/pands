@@ -41,6 +41,7 @@ function groupRunsByWo(runRows, today) {
 		if (!wo.skuMap.has(key)) {
 			wo.skuMap.set(key, {
 				display_label: run.display_label,
+				pebs: run.pebs,
 				facing: run.facing,
 				total_rolls: 0,
 				total_sqft: 0,
@@ -130,7 +131,7 @@ export async function load({ url, locals }) {
 
 	const [runRows] = await db.query(
 		`SELECT pr.id, pr.run_number, pr.group_id, pr.run_date, pr.rolls_scheduled, pr.sqft_scheduled, pr.status,
-		        ms.display_label, wol.facing,
+		        ms.display_label, ms.pebs, wol.facing,
 		        wo.id AS wo_id, wo.so_number, wo.job_name, wo.customer_name
 		 FROM production_runs pr
 		 JOIN material_skus ms ON ms.id = pr.sku_id

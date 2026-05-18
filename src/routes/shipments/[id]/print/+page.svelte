@@ -1,5 +1,5 @@
 <script>
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 	let { data } = $props();
 	const shipment = $derived(data.shipment);
 	const totalRolls = $derived(shipment.lines.reduce((s, l) => s + l.rolls, 0));
@@ -50,7 +50,7 @@
 				<tr style="border-bottom:1px solid #ddd">
 					<td style="padding:6px 12px;text-align:right;font-family:monospace">{line.rolls}</td>
 					<td style="padding:6px 12px">{line.rollfor ?? '—'}</td>
-					<td style="padding:6px 12px">{line.display_label}</td>
+					<td style="padding:6px 12px">{skuLabel(line.display_label, line.pebs)}</td>
 					<td style="padding:6px 12px;text-align:right;font-family:monospace">{line.length_ft} ft</td>
 					<td style="padding:6px 12px;text-align:right;font-family:monospace">{fmtSqft(line.sqft)}</td>
 				</tr>

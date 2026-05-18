@@ -1,6 +1,6 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 	let { data, form } = $props();
 	const { wo, line, productionLines, isEditMode, editBlockers, cutDownBlockers } = $derived(data);
 	const canSubmit = $derived(!isEditMode || editBlockers.length === 0);
@@ -105,7 +105,7 @@
 		<div class="card-body grid grid-cols-3 gap-4 text-sm">
 			<div>
 				<p class="form-label">SKU</p>
-				<p class="text-gray-900">{line.display_label}</p>
+				<p class="text-gray-900">{skuLabel(line.display_label, line.pebs)}</p>
 			</div>
 			<div>
 				<p class="form-label">Thickness</p>
@@ -286,7 +286,7 @@
 							<span class="badge-gray text-xs">{cutDown.status}</span>
 						</div>
 						<div class="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-600">
-							<span>{cutDown.sku_label}</span>
+							<span>{skuLabel(cutDown.sku_label, cutDown.pebs)}</span>
 							<span
 								>Run: {cutDown.run_date
 									? fmtDate(cutDown.run_date)

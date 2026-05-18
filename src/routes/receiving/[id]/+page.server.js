@@ -9,7 +9,7 @@ export async function load({ params }) {
 	if (po.status !== 'OPEN') error(400, 'This PO is not open for receiving');
 
 	const [lines] = await db.query(
-		`SELECT pol.*, ms.display_label
+		`SELECT pol.*, ms.display_label, ms.pebs
 		 FROM purchase_order_lines pol
 		 JOIN material_skus ms ON ms.id = pol.sku_id
 		 WHERE pol.po_id = ?

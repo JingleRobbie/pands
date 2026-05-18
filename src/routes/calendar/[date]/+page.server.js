@@ -8,7 +8,7 @@ export async function load({ params, locals }) {
 
 	const [runs] = await db.query(
 		`SELECT pr.id, pr.run_number, pr.status, pr.rolls_scheduled, pr.rolls_actual,
-		        ms.display_label AS sku_label, wol.facing,
+		        ms.display_label AS sku_label, ms.pebs, wol.facing,
 		        wo.so_number, wo.customer_name, wo.job_name
 		 FROM production_runs pr
 		 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
@@ -21,7 +21,7 @@ export async function load({ params, locals }) {
 
 	const [available] = await db.query(
 		`SELECT wol.id, wol.qty, wol.rolls_produced,
-		        ms.display_label AS sku_label, wol.facing,
+		        ms.display_label AS sku_label, ms.pebs, wol.facing,
 		        wo.so_number, wo.customer_name, wo.job_name,
 		        COALESCE(SUM(CASE WHEN pr.status != 'COMPLETED' THEN pr.rolls_scheduled ELSE 0 END), 0) AS rolls_in_runs
 		 FROM work_order_lines wol

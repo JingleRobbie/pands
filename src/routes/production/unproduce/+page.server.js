@@ -41,7 +41,7 @@ async function getEligibleRuns({ selectedDate = null } = {}) {
 
 	const [runs] = await db.query(
 		`SELECT pr.id, pr.run_date, pr.rolls_actual, pr.sqft_actual,
-		        ms.display_label, wol.facing, wol.rollfor,
+		        ms.display_label, ms.pebs, wol.facing, wol.rollfor,
 		        wo.id AS wo_id, wo.so_number, wo.job_name, wo.customer_name,
 		        COALESCE(SUM(sl.rolls), 0) AS allocated_rolls,
 		        COALESCE(SUM(sl.sqft), 0) AS allocated_sqft,

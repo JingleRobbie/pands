@@ -4,7 +4,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 
 export async function load({ params }) {
 	const [[run]] = await db.query(
-		`SELECT pr.*, ms.display_label, wol.facing, wol.qty, wol.rolls_produced, wol.width_in, wol.length_ft,
+		`SELECT pr.*, ms.display_label, ms.pebs, wol.facing, wol.qty, wol.rolls_produced, wol.width_in, wol.length_ft,
 		        wo.so_number, wo.job_name
 		 FROM production_runs pr
 		 JOIN material_skus ms ON ms.id = pr.sku_id
@@ -27,7 +27,7 @@ export async function load({ params }) {
 	let peers = [];
 	if (run.group_id) {
 		const [peerRows] = await db.query(
-			`SELECT pr.*, ms.display_label, wol.qty, wol.rolls_produced
+			`SELECT pr.*, ms.display_label, ms.pebs, wol.qty, wol.rolls_produced
 			 FROM production_runs pr
 			 JOIN material_skus ms ON ms.id = pr.sku_id
 			 JOIN work_order_lines wol ON wol.id = pr.wo_line_id

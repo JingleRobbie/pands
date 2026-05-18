@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import MatrixDrawer from '$lib/components/MatrixDrawer.svelte';
 	import { backLabel, getReturnTo, withReturnTo } from '$lib/navigation.js';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 	let { data, form } = $props();
 	const po = $derived(data.po);
 	const lines = $derived(data.lines);
@@ -131,7 +131,7 @@
 				<tbody>
 					{#each lines as line (line.id)}
 						<tr class="border-b border-gray-50">
-							<td class="px-4 py-2 font-medium">{line.display_label}</td>
+							<td class="px-4 py-2 font-medium">{skuLabel(line.display_label, line.pebs)}</td>
 							<td class="px-4 py-2 text-right font-mono"
 								>{fmtSqft(line.sqft_ordered)}</td
 							>
@@ -188,7 +188,7 @@
 	</p>
 	{#if pendingUnreceive}
 		<p class="text-xs text-gray-500 mb-4">
-			{pendingUnreceive.display_label} will be reopened and
+			{skuLabel(pendingUnreceive.display_label, pendingUnreceive.pebs)} will be reopened and
 			{fmtSqft(pendingUnreceive.sqft_received)} sq ft will be removed from inventory.
 		</p>
 	{:else}

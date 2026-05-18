@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS material_skus (
   r_value       VARCHAR(10) NULL,
   display_label VARCHAR(30) NOT NULL,
   sort_order    INT DEFAULT 0,
-  is_active     BOOLEAN DEFAULT TRUE
+  is_active     BOOLEAN DEFAULT TRUE,
+  pebs          TINYINT(1) NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS raw_roll_lookup (
@@ -34,7 +35,8 @@ CREATE TABLE IF NOT EXISTS raw_roll_lookup (
   thickness_in   DECIMAL(2,1) NOT NULL,
   width_in       INT NOT NULL,
   roll_length_ft INT NOT NULL,
-  UNIQUE KEY uq_raw_roll (vendor, r_value, thickness_in, width_in)
+  pebs           TINYINT(1) NOT NULL DEFAULT 0,
+  UNIQUE KEY uq_raw_roll (vendor, thickness_in, width_in, pebs)
 );
 
 CREATE TABLE IF NOT EXISTS customers (

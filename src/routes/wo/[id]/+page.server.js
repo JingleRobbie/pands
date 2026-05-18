@@ -183,7 +183,7 @@ export async function load({ params, locals, url }) {
 	if (!wo) error(404, 'Work order not found');
 
 	const [rawLines] = await db.query(
-		`SELECT wol.*, ms.display_label,
+		`SELECT wol.*, ms.display_label, ms.pebs,
 		        wol.parent_line_id,
 		        wol.path_type,
 		        wol.reconciliation_status,

@@ -1,7 +1,7 @@
 <script>
 	import { page } from '$app/state';
 	import { getReturnTo, withReturnTo } from '$lib/navigation.js';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 	let { data } = $props();
 	const shipment = $derived(data.shipment);
 	const skuLines = $derived(data.skuLines);
@@ -54,7 +54,7 @@
 		<tbody>
 			{#each skuLines as line, i (i)}
 				<tr>
-					<td class="px-4 py-2">{line.display_label}</td>
+					<td class="px-4 py-2">{skuLabel(line.display_label, line.pebs)}</td>
 					<td class="px-4 py-2 text-right tabular-nums font-mono">{fmtSqft(line.sqft)}</td>
 				</tr>
 			{/each}

@@ -246,6 +246,32 @@
 									d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
 								/></svg
 							>
+						{:else if nav.icon === 'tag'}
+							<svg
+								class="w-4 h-4 flex-shrink-0"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"
+								/><line x1="7" y1="7" x2="7.01" y2="7" /></svg
+							>
+						{:else if nav.icon === 'roll'}
+							<svg
+								class="w-4 h-4 flex-shrink-0"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								viewBox="0 0 24 24"
+								><rect x="2" y="7" width="20" height="14" rx="2" /><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"
+								/></svg
+							>
 						{:else}
 							<svg
 								class="w-4 h-4 flex-shrink-0"
@@ -276,34 +302,43 @@
 				{/each}
 			</nav>
 
-			{#if data.appUser?.role === 'admin'}
-				<div class="border-t border-white/10 pt-2 px-2 pb-1">
+			<div class="border-t border-white/10 pt-2 px-2 pb-1">
+				{#if !collapsed}
+					<p class="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-white/30">Utility</p>
+				{/if}
+				{#if data.appUser?.role === 'admin'}
 					<a
 						href="/inventory/counts"
 						title={collapsed ? 'Inventory Counts' : ''}
 						class="flex items-center py-2 rounded-md text-sm font-medium transition-colors
-					       {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}
-					       {$page.url.pathname.startsWith('/inventory')
+						       {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}
+						       {$page.url.pathname.startsWith('/inventory')
 							? 'bg-brand text-white'
 							: 'text-white/70 hover:bg-white/10 hover:text-white'}"
 					>
-						<svg
-							class="w-4 h-4 flex-shrink-0"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6m-6 4h3"
-							/>
-						</svg>
-						{#if !collapsed}Inventory Counts{/if}
+						<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6m-6 4h3"/></svg>
+						{#if !collapsed}<span class="flex-1">Inventory Counts</span>{/if}
 					</a>
-				</div>
-			{/if}
+				{/if}
+				{#each [{ href: '/skus', label: 'SKUs', icon: 'tag' }, { href: '/raw-rolls', label: 'Raw Rolls', icon: 'roll' }] as nav (nav.href)}
+					<a
+						href={nav.href}
+						title={collapsed ? nav.label : ''}
+						class="flex items-center py-2 rounded-md text-sm font-medium transition-colors
+						       {collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'}
+						       {$page.url.pathname.startsWith(nav.href)
+							? 'bg-brand text-white'
+							: 'text-white/70 hover:bg-white/10 hover:text-white'}"
+					>
+						{#if nav.icon === 'tag'}
+							<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+						{:else}
+							<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+						{/if}
+						{#if !collapsed}<span class="flex-1">{nav.label}</span>{/if}
+					</a>
+				{/each}
+			</div>
 
 			<div class="border-t border-white/10 pt-2 px-2 pb-1">
 				<a

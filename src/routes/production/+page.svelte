@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { pathWithSearch, withReturnTo } from '$lib/navigation.js';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 	let { data } = $props();
 	const returnTo = $derived(pathWithSearch(page.url));
 
@@ -109,7 +109,7 @@
 											<tr>
 												<td
 													class="pr-4 py-0.5 font-medium text-gray-800 w-24"
-													>{line.display_label}</td
+													>{skuLabel(line.display_label, line.pebs)}</td
 												>
 												<td class="pr-4 py-0.5 text-gray-500 w-20"
 													>{line.facing}</td

@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { backLabel, getReturnTo, withReturnTo } from '$lib/navigation.js';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 	let { data } = $props();
 	const shipment = $derived(data.shipment);
 	const returnTo = $derived(getReturnTo(page.url, '/shipments'));
@@ -170,7 +170,7 @@
 				<tr class="border-b border-gray-100">
 					<td class="px-4 py-2 text-right tabular-nums text-gray-600">{line.rolls}</td>
 					<td class="px-4 py-2 text-gray-600">{line.rollfor ?? '—'}</td>
-					<td class="px-4 py-2 text-gray-700">{line.display_label}</td>
+					<td class="px-4 py-2 text-gray-700">{skuLabel(line.display_label, line.pebs)}</td>
 					<td class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
 						>{line.length_ft} ft</td
 					>

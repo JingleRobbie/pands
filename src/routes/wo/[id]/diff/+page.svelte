@@ -1,6 +1,6 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { fmtSqft } from '$lib/utils.js';
+	import { fmtSqft, skuLabel } from '$lib/utils.js';
 	let { data, form } = $props();
 	// const { wo, diffRows, skus } = $derived(data);
 
@@ -196,7 +196,7 @@
 									<option value="">- unchanged -</option>
 									{#each data.skus as sku (sku.id)}
 										<option value={sku.id} selected={sku.id === bl.sku_id}
-											>{sku.display_label}</option
+											>{skuLabel(sku.display_label, sku.pebs)}</option
 										>
 									{/each}
 								</select>
@@ -267,7 +267,7 @@
 										>
 											<option value="">- SKU -</option>
 											{#each data.skus as sku (sku.id)}
-												<option value={sku.id}>{sku.display_label}</option>
+												<option value={sku.id}>{skuLabel(sku.display_label, sku.pebs)}</option>
 											{/each}
 										</select>
 										<input

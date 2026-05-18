@@ -6,7 +6,7 @@ import { redirect, error, fail } from '@sveltejs/kit';
 
 export async function load({ params }) {
 	const [[run]] = await db.query(
-		`SELECT pr.*, ms.display_label, wol.facing, wo.so_number, wo.job_name
+		`SELECT pr.*, ms.display_label, ms.pebs, wol.facing, wo.so_number, wo.job_name
 		 FROM production_runs pr
 		 JOIN material_skus ms ON ms.id = pr.sku_id
 		 JOIN work_order_lines wol ON wol.id = pr.wo_line_id

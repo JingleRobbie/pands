@@ -8,7 +8,7 @@ export async function load({ params, locals }) {
 	if (po.status !== 'OPEN') error(400, 'Only open POs can be edited');
 
 	const [lines] = await db.query(
-		`SELECT pol.*, ms.display_label
+		`SELECT pol.*, ms.display_label, ms.pebs
 		 FROM purchase_order_lines pol
 		 JOIN material_skus ms ON ms.id = pol.sku_id
 		 WHERE pol.po_id = ?

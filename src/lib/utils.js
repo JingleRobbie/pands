@@ -19,3 +19,8 @@ export function fmtSqft(n) {
 	if (n == null) return '—';
 	return Number(n).toLocaleString();
 }
+
+/** Return label with ' PEBS' suffix when pebs is truthy */
+export function skuLabel(label, pebs) {
+	return pebs ? label + ' PEBS' : label;
+}

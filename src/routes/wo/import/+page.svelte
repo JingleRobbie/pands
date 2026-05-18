@@ -1,6 +1,6 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { fmtDate, fmtSqft } from '$lib/utils.js';
+	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 	let { data, form } = $props();
 	const user = $derived(data.user);
 
@@ -160,7 +160,7 @@
 									{#each wo.lines as line, i (i)}
 										<tr class="border-t border-gray-100">
 											<td class="px-4 py-1.5 text-gray-700 font-medium"
-												>{line.display_label}</td
+												>{skuLabel(line.display_label, line.pebs)}</td
 											>
 											<td class="px-4 py-1.5 text-gray-500">{line.facing}</td>
 											<td
