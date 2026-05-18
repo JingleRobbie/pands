@@ -6,7 +6,7 @@
 		"prepare": "svelte-kit sync",
 		"sync": "svelte-kit sync",
 		"setup:after-pull": "powershell -ExecutionPolicy Bypass -File scripts/setup-after-pull.ps1",
-		"dev": "vite dev",
+		"dev": "vite dev --host",
 		"build": "vite build",
 		"preview": "vite preview",
 		"build:css": "tailwindcss -i src/app.css -o static/css/app.css --minify",
