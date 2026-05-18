@@ -1,10 +1,10 @@
 -- ============================================================
--- PandS Sample Data — Purchase Orders + Opening Inventory
+-- PandS Sample Data - Purchase Orders + Opening Inventory
 -- Run: mysql -u root -p pands < scripts/seed-sample-data.sql
 -- ============================================================
 
 -- ============================================================
--- 1. STARTING INVENTORY (Apr 7 — pre-history baseline)
+-- 1. STARTING INVENTORY (Apr 7 - pre-history baseline)
 -- ============================================================
 
 INSERT INTO inventory_transactions
@@ -24,7 +24,7 @@ VALUES
 -- 2. PURCHASE ORDERS (upcoming, OPEN)
 -- ============================================================
 
--- PO-2026-041: JM, Apr 14 — replenishes lean 3" and adds 4"x48 buffer
+-- PO-2026-041: JM, Apr 14 - replenishes lean 3" and adds 4"x48 buffer
 INSERT INTO purchase_orders (po_number, vendor_name, expected_date, status, created_by, created_at)
 VALUES ('PO-2026-041', 'JM', '2026-04-14', 'OPEN', 1, '2026-04-08 09:00:00');
 
@@ -33,7 +33,7 @@ INSERT INTO purchase_order_lines (po_id, sku_id, sqft_ordered, status) VALUES
   ((SELECT id FROM purchase_orders WHERE po_number='PO-2026-041'), (SELECT id FROM material_skus WHERE sku_code='3048'), 6000, 'OPEN'),
   ((SELECT id FROM purchase_orders WHERE po_number='PO-2026-041'), (SELECT id FROM material_skus WHERE sku_code='4048'), 4500, 'OPEN');
 
--- PO-2026-042: Certainteed, Apr 17 — targets 4"x72 and 6"x60 (both lean)
+-- PO-2026-042: Certainteed, Apr 17 - targets 4"x72 and 6"x60 (both lean)
 INSERT INTO purchase_orders (po_number, vendor_name, expected_date, status, created_by, created_at)
 VALUES ('PO-2026-042', 'Certainteed', '2026-04-17', 'OPEN', 1, '2026-04-09 10:00:00');
 
@@ -41,7 +41,7 @@ INSERT INTO purchase_order_lines (po_id, sku_id, sqft_ordered, status) VALUES
   ((SELECT id FROM purchase_orders WHERE po_number='PO-2026-042'), (SELECT id FROM material_skus WHERE sku_code='4072'), 3500, 'OPEN'),
   ((SELECT id FROM purchase_orders WHERE po_number='PO-2026-042'), (SELECT id FROM material_skus WHERE sku_code='6060'), 2400, 'OPEN');
 
--- PO-2026-043: JM, Apr 22 — replenishes 6" family ahead of week-2 demand
+-- PO-2026-043: JM, Apr 22 - replenishes 6" family ahead of week-2 demand
 INSERT INTO purchase_orders (po_number, vendor_name, expected_date, status, created_by, created_at)
 VALUES ('PO-2026-043', 'JM', '2026-04-22', 'OPEN', 1, '2026-04-10 08:30:00');
 

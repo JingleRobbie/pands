@@ -30,9 +30,9 @@
 					{#each data.customers as c (c.id)}
 						<tr class="cursor-pointer" onclick={() => goto(`/customers/${c.id}`)}>
 							<td class="font-medium text-gray-900">{c.name}</td>
-							<td class="text-gray-600">{c.contact_name ?? '—'}</td>
-							<td class="text-gray-600">{c.billing_city ?? '—'}</td>
-							<td class="text-gray-600">{c.phone ?? '—'}</td>
+							<td class="text-gray-600">{c.contact_name ?? '-'}</td>
+							<td class="text-gray-600">{c.billing_city ?? '-'}</td>
+							<td class="text-gray-600">{c.phone ?? '-'}</td>
 						</tr>
 					{/each}
 				</tbody>

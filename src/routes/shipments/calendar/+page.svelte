@@ -120,7 +120,7 @@
 	});
 </script>
 
-<svelte:head><title>Shipping Calendar — PandS</title></svelte:head>
+<svelte:head><title>Shipping Calendar - PandS</title></svelte:head>
 
 {#snippet dateCard(dateStr)}
 	{@const isPast = dateStr < todayStr}

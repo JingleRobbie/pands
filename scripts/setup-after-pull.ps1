@@ -53,6 +53,7 @@ if (-not $SkipInstall) {
 	}
 
 	Invoke-Step 'Installing npm dependencies' {
+		$env:PUPPETEER_SKIP_DOWNLOAD = 'true'
 		if (Test-Path 'package-lock.json') {
 			npm ci
 		} else {
@@ -83,64 +84,80 @@ if ($RunTests) {
 	}
 }
 
-Invoke-Step 'Checking database migrations' {
-	$migrations = Get-ChildItem 'db/migrations/*.sql' | Sort-Object Name
-	if ($migrations.Count -eq 0) {
-		Write-Host "No migration files found."
-	} else {
-		# Load .env to get DB credentials
-		$envVars = @{}
-		if (Test-Path '.env') {
-			Get-Content '.env' | Where-Object { $_ -match '^\s*[^#]' } | ForEach-Object {
-				if ($_ -match '^([^=]+)=(.*)$') { $envVars[$Matches[1].Trim()] = $Matches[2].Trim() }
-			}
-		}
-		$dbHost = if ($envVars['DB_HOST']) { $envVars['DB_HOST'] } else { 'localhost' }
-		$dbPort = if ($envVars['DB_PORT']) { $envVars['DB_PORT'] } else { '3306' }
-		$dbUser = if ($envVars['DB_USER']) { $envVars['DB_USER'] } else { 'root' }
-		$dbName = if ($envVars['DB_NAME']) { $envVars['DB_NAME'] } else { 'pands' }
+Invoke-Step 'Applying database migrations' {
+	if (-not (Get-Command mysql -ErrorAction SilentlyContinue)) {
+		Write-Warning 'mysql CLI not found - skipping migrations.'
+		return
+	}
 
-		# Try to detect applied migrations via schema_migrations table
-		$mysqlAvailable = $null -ne (Get-Command mysql -ErrorAction SilentlyContinue)
-		$applied = @()
-		$canConnect = $false
-
-		if ($mysqlAvailable) {
-			try {
-				$result = mysql -h $dbHost -P $dbPort -u $dbUser $dbName -e "SELECT migration FROM schema_migrations;" --skip-column-names 2>&1
-				if ($LASTEXITCODE -eq 0) {
-					$canConnect = $true
-					$applied = $result | Where-Object { $_ -match '\S' }
-				}
-			} catch { }
-		}
-
-		if ($canConnect) {
-			$pending = $migrations | Where-Object { $applied -notcontains $_.Name }
-			if ($pending.Count -eq 0) {
-				Write-Host "All $($migrations.Count) migrations applied."
-			} else {
-				Write-Host ""
-				Write-Host "PENDING MIGRATIONS ($($pending.Count)):" -ForegroundColor Yellow
-				foreach ($f in $pending) {
-					Write-Host "  npm run migrate $($f.Name)" -ForegroundColor Cyan
-				}
-				Write-Host ""
-				Write-Host "Run each command above in order. You will be prompted for your DB password." -ForegroundColor Yellow
-			}
-		} else {
-			Write-Host ""
-			if (-not $mysqlAvailable) {
-				Write-Host "mysql CLI not found — cannot check migration status." -ForegroundColor Yellow
-			} else {
-				Write-Host "Could not connect to MySQL — cannot check migration status." -ForegroundColor Yellow
-			}
-			Write-Host "Apply any new migrations manually using:" -ForegroundColor Yellow
-			foreach ($f in $migrations) {
-				Write-Host "  npm run migrate $($f.Name)" -ForegroundColor Cyan
-			}
+	# Parse .env; unescape \$ sequences Vite requires in passwords
+	$envVars = @{}
+	if (Test-Path '.env') {
+		Get-Content '.env' | Where-Object { $_ -match '^\s*[^#]' } | ForEach-Object {
+			if ($_ -match '^([^=]+)=(.*)$') { $envVars[$Matches[1].Trim()] = $Matches[2].Trim() }
 		}
 	}
+	$dbHost = if ($envVars['DB_HOST']) { $envVars['DB_HOST'] } else { 'localhost' }
+	$dbPort = if ($envVars['DB_PORT']) { $envVars['DB_PORT'] } else { '3306' }
+	$dbUser = if ($envVars['DB_USER']) { $envVars['DB_USER'] } else { 'root' }
+	$dbPass = if ($envVars['DB_PASSWORD']) { $envVars['DB_PASSWORD'] } else { '' }
+	$dbPass = $dbPass -replace '\\(.)', '$1'
+	$dbName = if ($envVars['DB_NAME']) { $envVars['DB_NAME'] } else { 'pands' }
+
+	$connArgs = @("-h$dbHost", "-P$dbPort", "-u$dbUser", "--password=$dbPass", $dbName)
+
+	# Test connectivity
+	Write-Output 'SELECT 1;' | mysql @connArgs --silent
+	if ($LASTEXITCODE -ne 0) {
+		Write-Warning 'Cannot connect to database - skipping migrations.'
+		return
+	}
+
+	# Bootstrap tracking table if missing
+	$tableExists = Write-Output "SHOW TABLES LIKE 'schema_migrations';" | mysql @connArgs --skip-column-names --silent
+	if (-not $tableExists) {
+		$bootstrap = Get-ChildItem 'db/migrations' -Filter '*.sql' | Sort-Object Name |
+			Where-Object { $_.Name -match 'schema_migrations' } | Select-Object -First 1
+		if ($bootstrap) {
+			Write-Host "  Bootstrapping via $($bootstrap.Name)..."
+			Get-Content $bootstrap.FullName | mysql @connArgs
+			if ($LASTEXITCODE -ne 0) { throw "Bootstrap migration failed." }
+		} else {
+			# No bootstrap file - create table and mark all on-disk files as already applied
+			$names = (Get-ChildItem 'db/migrations' -Filter '*.sql' | Sort-Object Name |
+				ForEach-Object { "('$($_.Name)')" }) -join ', '
+			$sql = "CREATE TABLE schema_migrations (migration VARCHAR(255) NOT NULL PRIMARY KEY, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); INSERT IGNORE INTO schema_migrations (migration) VALUES $names;"
+			Write-Output $sql | mysql @connArgs
+		}
+	}
+
+	# Normalize column name if table was created with old 'filename' schema
+	$hasFilenameCol = Write-Output "SHOW COLUMNS FROM schema_migrations LIKE 'filename';" | mysql @connArgs --skip-column-names --silent
+	if ($hasFilenameCol) {
+		Write-Host "  Renaming schema_migrations.filename to migration..."
+		Write-Output "ALTER TABLE schema_migrations CHANGE filename migration VARCHAR(255) NOT NULL;" | mysql @connArgs
+		if ($LASTEXITCODE -ne 0) { throw "Failed to normalize schema_migrations column." }
+	}
+
+	# Fetch applied migrations
+	$applied = @(Write-Output 'SELECT migration FROM schema_migrations;' | mysql @connArgs --skip-column-names --silent | ForEach-Object { $_.Trim() })
+	if ($LASTEXITCODE -ne 0) { throw "Could not read schema_migrations table." }
+
+	# Run pending migrations in filename order
+	$count = 0
+	foreach ($f in (Get-ChildItem 'db/migrations' -Filter '*.sql' | Sort-Object Name)) {
+		if ($applied -contains $f.Name) {
+			Write-Host "  [skip]  $($f.Name)"
+			continue
+		}
+		Write-Host "  [apply] $($f.Name)"
+		Get-Content $f.FullName | mysql @connArgs
+		if ($LASTEXITCODE -ne 0) { throw "Migration $($f.Name) failed." }
+		Write-Output "INSERT IGNORE INTO schema_migrations (migration) VALUES ('$($f.Name)');" | mysql @connArgs
+		$count++
+	}
+	if ($count -eq 0) { Write-Host '  All migrations up to date.' }
+	else { Write-Host "  $count migration(s) applied." }
 }
 
 Write-Host ""

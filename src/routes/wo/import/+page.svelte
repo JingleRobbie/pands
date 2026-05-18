@@ -15,7 +15,7 @@
 	);
 </script>
 
-<svelte:head><title>Import Work Orders — PandS</title></svelte:head>
+<svelte:head><title>Import Work Orders - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center gap-4">
 	<a href="/wo" class="text-gray-400 hover:text-gray-600 text-sm">← Work Orders</a>
@@ -55,7 +55,7 @@
 							</div>
 							<span class="text-sm text-gray-500">
 								{wo.customer_name} · {wo.branch} ·
-							{#if wo.ship_asap}<span class="badge-red">ASAP</span>{:else}{fmtDate(wo.ship_date) || '—'}{/if}
+							{#if wo.ship_asap}<span class="badge-red">ASAP</span>{:else}{fmtDate(wo.ship_date) || '-'}{/if}
 							</span>
 						</div>
 						<div class="card-body p-0">
@@ -186,7 +186,7 @@
 											<td class="px-4 py-1.5 text-gray-500">{line.rollfor}</td
 											>
 											<td class="px-4 py-1.5 text-gray-500"
-												>{line.tab_type || '—'}</td
+												>{line.tab_type || '-'}</td
 											>
 											<td class="px-4 py-1.5 text-gray-400 italic"
 												>{line.instructions}</td

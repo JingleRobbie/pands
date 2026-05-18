@@ -5,7 +5,7 @@
 	const wo = $derived(data.wo);
 	const savedAddresses = $derived(data.savedAddresses);
 
-	// Current field values — initialized from WO's saved address
+	// Current field values - initialized from WO's saved address
 	let ship_to_name = $state(untrack(() => data.wo.ship_to_name ?? ''));
 	let ship_addr1 = $state(untrack(() => data.wo.ship_addr1 ?? ''));
 	let ship_addr2 = $state(untrack(() => data.wo.ship_addr2 ?? ''));
@@ -21,7 +21,7 @@
 	// savedAddresses is an array of objects with: id, nickname, ship_to_name,
 	// addr1, addr2, city, state, zip
 	// selectedAddressId is a string (the id from the <select>).
-	// Hint: use $effect(() => { ... }) — it re-runs whenever selectedAddressId changes.
+	// Hint: use $effect(() => { ... }) - it re-runs whenever selectedAddressId changes.
 	// If selectedAddressId is empty string, do nothing.
 	$effect(() => {
 		if (!selectedAddressId) return;
@@ -53,7 +53,7 @@
 			<div class="card card-body">
 				<label for="addr-picker" class="form-label">Pick a saved address</label>
 				<select id="addr-picker" class="form-select" bind:value={selectedAddressId}>
-					<option value="">— choose saved address —</option>
+					<option value="">- choose saved address -</option>
 					{#each savedAddresses as a (a.id)}
 						<option value={String(a.id)}>{a.nickname}</option>
 					{/each}

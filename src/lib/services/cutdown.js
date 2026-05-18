@@ -2,7 +2,7 @@ import { db } from '$lib/db.js';
 import { localDate } from '$lib/utils.js';
 
 // NOTE: Duplicate of calcSqft() in runs.js.
-// Copy is intentional — do not import across service files.
+// Copy is intentional - do not import across service files.
 function calcSqft(line, rolls) {
 	return Math.round(Number(rolls) * (Number(line.width_in) / 12) * Number(line.length_ft));
 }
@@ -154,7 +154,7 @@ export async function getBranchEditBlockers(billingLineId) {
 /**
  * Branch an unbranched work_order_line into a billing line + one or more
  * production lines. The original row becomes the billing line (no column changes
- * needed — line type is derived from parent_line_id). New production rows are
+ * needed - line type is derived from parent_line_id). New production rows are
  * inserted as children.
  *
  * @param {number} woLineId - the unbranched line to branch
@@ -175,7 +175,7 @@ export async function branchLine(woLineId, woId, productionWidths, _userId) {
 		if (!line) throw new Error('WO line not found.');
 		if (line.parent_line_id !== null)
 			throw new Error(
-				'Cannot branch a production line — only unbranched lines can be branched.'
+				'Cannot branch a production line - only unbranched lines can be branched.'
 			);
 
 		const [[{ childCount }]] = await conn.query(
@@ -256,7 +256,7 @@ export async function updateBranchLine(billingLineId, woId, productionWidths, _u
 }
 
 /**
- * Exported pure read — used by runs.js inside its own transaction.
+ * Exported pure read - used by runs.js inside its own transaction.
  * Finds the confirmed cut-down linked to a production line via its billing parent.
  */
 /**
@@ -374,7 +374,7 @@ function validateCutDownConfirmable(cutDown, rollsActual) {
 	if (cutDown.status === 'COMPLETED') throw new Error('Cut-down is already completed.');
 	if (rollsActual > cutDown.rolls_scheduled)
 		throw new Error(
-			`Cannot record ${rollsActual} rolls — only ${cutDown.rolls_scheduled} were scheduled.`
+			`Cannot record ${rollsActual} rolls - only ${cutDown.rolls_scheduled} were scheduled.`
 		);
 }
 
@@ -588,12 +588,12 @@ export async function confirmCutDown(
 				cutDown.sku_id,
 				sqftActual,
 				cutDownId,
-				`Cut-down ${cutDown.cut_down_number} — ${billingLine.so_number} ${billingLine.job_name}`,
+				`Cut-down ${cutDown.cut_down_number} - ${billingLine.so_number} ${billingLine.job_name}`,
 				userId ?? null,
 			]
 		);
 
-		// Write WIP CUT_IN entries — prorate billing line sqft (usable output), not raw source sqft
+		// Write WIP CUT_IN entries - prorate billing line sqft (usable output), not raw source sqft
 		const [productionLines] = await conn.query(
 			'SELECT * FROM work_order_lines WHERE parent_line_id = ?',
 			[cutDown.billing_line_id]
@@ -620,7 +620,7 @@ export async function confirmCutDown(
 				woLineId: prodLine.id,
 				widthIn: prodLine.width_in,
 				sqftQuantity: proratedSqft,
-				memo: `Cut-down ${cutDown.cut_down_number} — ${prodLine.width_in}" cut`,
+				memo: `Cut-down ${cutDown.cut_down_number} - ${prodLine.width_in}" cut`,
 				userId,
 			});
 		}
@@ -635,7 +635,7 @@ export async function confirmCutDown(
 				woLineId: null,
 				widthIn: billingLine.width_in,
 				sqftQuantity: scrapSqft,
-				memo: `Cut-down ${cutDown.cut_down_number} — scrap saved`,
+				memo: `Cut-down ${cutDown.cut_down_number} - scrap saved`,
 				userId,
 			});
 		}
@@ -647,7 +647,7 @@ export async function confirmCutDown(
 				woLineId: null,
 				widthIn: billingLine.width_in,
 				sqftQuantity: -scrapSqft,
-				memo: `Cut-down ${cutDown.cut_down_number} — scrap discarded`,
+				memo: `Cut-down ${cutDown.cut_down_number} - scrap discarded`,
 				userId,
 			});
 		}
@@ -690,7 +690,7 @@ export async function unconfirmCutDown(cutDownId, userId) {
 		if (!cutDown) throw new Error('Cut-down not found.');
 		if (cutDown.status !== 'COMPLETED') throw new Error('Cut-down is not completed.');
 
-		// Collect downstream warnings (soft gate — do not block)
+		// Collect downstream warnings (soft gate - do not block)
 		const [completedRuns] = await conn.query(
 			`SELECT pr.run_number FROM production_runs pr
 			 JOIN work_order_lines wol ON wol.id = pr.wo_line_id
@@ -723,7 +723,7 @@ export async function unconfirmCutDown(cutDownId, userId) {
 			);
 		}
 
-		// Clear WIP CUT_IN and SCRAP entries (not CUT_OUT — those belong to runs)
+		// Clear WIP CUT_IN and SCRAP entries (not CUT_OUT - those belong to runs)
 		await conn.query(
 			"DELETE FROM wip_ledger WHERE cut_down_id = ? AND transaction_type IN ('CUT_IN', 'SCRAP')",
 			[cutDownId]
@@ -796,7 +796,7 @@ export async function assignScrap(sourceCutDownId, destinationWoLineId, sqftToAs
 		if (!destLine || destLine.parent_line_id === null)
 			throw new Error('Destination must be a production line.');
 
-		// Width tolerance check — use actual WIP width from ledger
+		// Width tolerance check - use actual WIP width from ledger
 		const [[{ wipWidth }]] = await conn.query(
 			'SELECT width_in AS wipWidth FROM wip_ledger WHERE cut_down_id = ? AND transaction_type = ? LIMIT 1',
 			[sourceCutDownId, 'CUT_IN']
@@ -814,7 +814,7 @@ export async function assignScrap(sourceCutDownId, destinationWoLineId, sqftToAs
 		const balance = await getCutDownWipBalance(conn, sourceCutDownId);
 		if (balance < sqftToAssign)
 			throw new Error(
-				`Insufficient WIP balance — ${balance} sqft available, ${sqftToAssign} requested.`
+				`Insufficient WIP balance - ${balance} sqft available, ${sqftToAssign} requested.`
 			);
 
 		await insertWipLedgerEntry(conn, {
@@ -853,7 +853,7 @@ export async function reconcileBillingLine(
 		);
 		if (!line) throw new Error('Billing line not found.');
 		if (line.reconciliation_status !== 'STALE')
-			throw new Error('Line is not stale — nothing to reconcile.');
+			throw new Error('Line is not stale - nothing to reconcile.');
 
 		const updates = {};
 		if (newSkuId != null) updates.sku_id = newSkuId;

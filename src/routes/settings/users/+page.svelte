@@ -13,7 +13,7 @@
 	});
 </script>
 
-<svelte:head><title>Manage Users — PandS</title></svelte:head>
+<svelte:head><title>Manage Users - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<div>

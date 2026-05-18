@@ -19,7 +19,7 @@
 </script>
 
 <svelte:head>
-	<title>Shipment {shipment.shipment_number} — PandS</title>
+	<title>Shipment {shipment.shipment_number} - PandS</title>
 </svelte:head>
 
 <div class="no-print page-header px-6 py-3 flex items-center justify-between">
@@ -138,7 +138,7 @@
 		</div>
 		<div>
 			<p class="font-medium text-gray-500 uppercase tracking-wide text-xs mb-1">Branch</p>
-			<p class="text-gray-700">{shipment.branch || '—'}</p>
+			<p class="text-gray-700">{shipment.branch || '-'}</p>
 		</div>
 	</div>
 
@@ -169,7 +169,7 @@
 			{#each shipment.lines as line (line.id)}
 				<tr class="border-b border-gray-100">
 					<td class="px-4 py-2 text-right tabular-nums text-gray-600">{line.rolls}</td>
-					<td class="px-4 py-2 text-gray-600">{line.rollfor ?? '—'}</td>
+					<td class="px-4 py-2 text-gray-600">{line.rollfor ?? '-'}</td>
 					<td class="px-4 py-2 text-gray-700">{skuLabel(line.display_label, line.pebs)}</td>
 					<td class="px-4 py-2 text-right tabular-nums font-mono text-gray-600"
 						>{line.length_ft} ft</td
@@ -212,7 +212,7 @@
 			0 4px 24px rgba(0, 0, 0, 0.18),
 			0 1px 4px rgba(0, 0, 0, 0.1);
 	}
-	/* Force all text black, all backgrounds white — no toner waste */
+	/* Force all text black, all backgrounds white - no toner waste */
 	:global(.slip-paper) * {
 		color: #000 !important;
 		background-color: white !important;

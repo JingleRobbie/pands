@@ -79,7 +79,7 @@
 		if (open) inputEl?.focus();
 	});
 
-	// Close on navigation — untrack(open) so this effect only re-runs on URL changes
+	// Close on navigation - untrack(open) so this effect only re-runs on URL changes
 	$effect(() => {
 		$page.url.pathname;
 		untrack(() => {
@@ -130,7 +130,7 @@
 		onclick={close}
 		onkeydown={closeFromBackdropKey}
 	>
-		<!-- Panel — stopPropagation prevents backdrop close when clicking inside -->
+		<!-- Panel - stopPropagation prevents backdrop close when clicking inside -->
 		<div
 			class="w-3/5 bg-white rounded-xl shadow-2xl overflow-hidden h-fit"
 			role="presentation"

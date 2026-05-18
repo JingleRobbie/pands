@@ -7,12 +7,12 @@
 	let deleteDialog = $state(null);
 </script>
 
-<svelte:head><title>Count {fmtDate(count.count_date)} — PandS</title></svelte:head>
+<svelte:head><title>Count {fmtDate(count.count_date)} - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<div class="flex items-center gap-4">
 		<a href="/inventory/counts" class="text-gray-400 hover:text-gray-600 text-sm">← Counts</a>
-		<h1 class="text-lg font-semibold text-gray-900">Count — {fmtDate(count.count_date)}</h1>
+		<h1 class="text-lg font-semibold text-gray-900">Count - {fmtDate(count.count_date)}</h1>
 	</div>
 	<button onclick={() => deleteDialog.showModal()} class="btn-danger btn-sm">Delete</button>
 </header>
@@ -63,7 +63,7 @@
 					<tr>
 						<td class="px-4 py-3 font-medium text-gray-900">{skuLabel(line.display_label, line.pebs)}</td>
 						<td class="px-4 py-3 text-right tabular-nums font-mono text-gray-700">
-							{line.counted_sqft != null ? fmtSqft(line.counted_sqft) : '—'}
+							{line.counted_sqft != null ? fmtSqft(line.counted_sqft) : '-'}
 						</td>
 						<td class="px-4 py-3 text-right tabular-nums font-mono font-medium">
 							{#if line.transaction_type === 'ADJUSTMENT_IN'}

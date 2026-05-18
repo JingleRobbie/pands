@@ -4,11 +4,11 @@
 	const { roll } = data;
 </script>
 
-<svelte:head><title>{roll.vendor} {roll.thickness_in}"×{roll.width_in}" — PandS</title></svelte:head>
+<svelte:head><title>{roll.vendor} {roll.thickness_in}"×{roll.width_in}" - PandS</title></svelte:head>
 
 <div class="p-6 max-w-md">
 	<div class="flex items-center justify-between mb-6">
-		<h1 class="text-xl font-semibold text-gray-900">{roll.vendor} — {roll.thickness_in}"×{roll.width_in}"</h1>
+		<h1 class="text-xl font-semibold text-gray-900">{roll.vendor} - {roll.thickness_in}"×{roll.width_in}"</h1>
 		<a href="/raw-rolls" class="btn-secondary btn-sm">← Raw Rolls</a>
 	</div>
 

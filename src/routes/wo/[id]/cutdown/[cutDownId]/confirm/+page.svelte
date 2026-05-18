@@ -7,7 +7,7 @@
 	let showUnconfirmWarning = $state(false);
 </script>
 
-<svelte:head><title>Confirm Cut-Down — WO {wo.so_number} — PandS</title></svelte:head>
+<svelte:head><title>Confirm Cut-Down - WO {wo.so_number} - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center gap-4">
 	<a href="/wo/{wo.id}/cutdown" class="text-gray-400 hover:text-gray-600 text-sm">← Cut-Downs</a>
@@ -48,7 +48,7 @@
 			</div>
 			<div>
 				<p class="form-label">Run Date</p>
-				<p class="text-gray-900">{cutDown.run_date ? fmtDate(cutDown.run_date) : '—'}</p>
+				<p class="text-gray-900">{cutDown.run_date ? fmtDate(cutDown.run_date) : '-'}</p>
 			</div>
 			{#if cutDown.status === 'COMPLETED'}
 				<div>
@@ -69,7 +69,7 @@
 					</div>{/if}
 				<div>
 					<p class="form-label">Scrap</p>
-					<p class="text-gray-900">{cutDown.scrap_disposition ?? '—'}</p>
+					<p class="text-gray-900">{cutDown.scrap_disposition ?? '-'}</p>
 				</div>
 				{#if cutDown.operator_notes}<div class="col-span-3">
 						<p class="form-label">Notes</p>
@@ -185,7 +185,7 @@
 				<div
 					class="mb-4 px-4 py-3 rounded-md text-sm bg-amber-50 text-amber-800 border border-amber-200 space-y-1"
 				>
-					<p class="font-medium">Warning — downstream records exist:</p>
+					<p class="font-medium">Warning - downstream records exist:</p>
 					{#if form.warnings.runNumbers.length > 0}
 						<p>
 							Runs that will lose WIP material: {form.warnings.runNumbers.join(', ')}

@@ -75,7 +75,7 @@
 	);
 </script>
 
-<svelte:head><title>Overview — PandS</title></svelte:head>
+<svelte:head><title>Overview - PandS</title></svelte:head>
 
 <!-- Page header -->
 <header class="page-header px-6 py-3 flex items-center justify-between">

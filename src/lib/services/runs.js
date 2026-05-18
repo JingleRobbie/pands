@@ -8,7 +8,7 @@ function todayStr() {
 }
 
 // NOTE: Duplicate of nextRunNumber() in shipping.js.
-// Copy is intentional — do not import across service files.
+// Copy is intentional - do not import across service files.
 // Consolidate into $lib/services/shared.js if a third copy is ever needed.
 async function nextRunNumber(conn = db) {
 	const prefix = `PR-${todayStr().replace(/-/g, '')}-`;
@@ -332,7 +332,7 @@ export async function confirmRun(runId, rollsActual, userId, runDate = null) {
 
 		const sqftActual = calcSqft(line, rollsActual);
 		if (isProductionLine(line)) {
-			// PRODUCTION line (CUT_LAMINATE path) — write WIP CUT_OUT, not inventory CONSUMPTION
+			// PRODUCTION line (CUT_LAMINATE path) - write WIP CUT_OUT, not inventory CONSUMPTION
 			const cutDown = await getConfirmedCutDownForProductionLine(conn, run.wo_line_id);
 			await conn.query(
 				`INSERT INTO wip_ledger
@@ -344,12 +344,12 @@ export async function confirmRun(runId, rollsActual, userId, runDate = null) {
 					line.width_in,
 					-sqftActual,
 					runDate || dateOnly(run.run_date),
-					`Run ${run.run_number} — WIP consumed`,
+					`Run ${run.run_number} - WIP consumed`,
 					userId ?? null,
 				]
 			);
 		} else {
-			// BILLING or UNBRANCHED line — standard inventory CONSUMPTION
+			// BILLING or UNBRANCHED line - standard inventory CONSUMPTION
 			await conn.query(
 				`INSERT INTO inventory_transactions
 				 (sku_id, transaction_type, sqft_quantity, effective_date, reference_type, reference_id, memo, created_by)
@@ -439,7 +439,7 @@ export async function unproduceRun(runId, rollsToUnproduce, userId) {
 		const sqftToUnproduce = prorateUnproduceSqft(line, run, rollsToUnproduce);
 
 		if (isProductionLine(line)) {
-			// PRODUCTION line — reverse WIP CUT_OUT by inserting a CUT_IN
+			// PRODUCTION line - reverse WIP CUT_OUT by inserting a CUT_IN
 			const [[wipEntry]] = await conn.query(
 				`SELECT id FROM wip_ledger
 				 WHERE wo_line_id = ? AND transaction_type = 'CUT_OUT'
@@ -459,12 +459,12 @@ export async function unproduceRun(runId, rollsToUnproduce, userId) {
 					run.wo_line_id,
 					line.width_in,
 					sqftToUnproduce,
-					`Unproduced run ${run.run_number} — WIP restored`,
+					`Unproduced run ${run.run_number} - WIP restored`,
 					userId ?? null,
 				]
 			);
 		} else {
-			// BILLING or UNBRANCHED line — reverse inventory CONSUMPTION
+			// BILLING or UNBRANCHED line - reverse inventory CONSUMPTION
 			const [[consumption]] = await conn.query(
 				`SELECT id, effective_date
 				 FROM inventory_transactions

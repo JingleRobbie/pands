@@ -27,7 +27,7 @@
 	}
 </script>
 
-<svelte:head><title>{fmtDate(data.date)} Schedule — PandS</title></svelte:head>
+<svelte:head><title>{fmtDate(data.date)} Schedule - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center gap-4">
 	<a href="/calendar" class="text-gray-400 hover:text-gray-600 text-sm">← Calendar</a>
@@ -163,7 +163,7 @@
 	<p class="text-sm font-medium text-gray-900 mb-1">Delete run?</p>
 	{#if pendingDelete}
 		<p class="text-xs text-gray-600 mb-1">
-			{pendingDelete.so_number} — {pendingDelete.customer_name}
+			{pendingDelete.so_number} - {pendingDelete.customer_name}
 		</p>
 		<p class="text-xs text-gray-500 mb-4">
 			{skuLabel(pendingDelete.sku_label, pendingDelete.pebs)} · {pendingDelete.rolls_scheduled} roll{pendingDelete.rolls_scheduled ===

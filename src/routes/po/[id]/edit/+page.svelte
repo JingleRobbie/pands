@@ -9,7 +9,7 @@
 	const detailHref = $derived(withReturnTo(`/po/${po.id}`, returnTo));
 </script>
 
-<svelte:head><title>Edit PO {po.po_number} — PandS</title></svelte:head>
+<svelte:head><title>Edit PO {po.po_number} - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Edit PO {po.po_number}</h1>

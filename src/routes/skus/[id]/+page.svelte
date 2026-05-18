@@ -5,7 +5,7 @@
 	const { sku } = data;
 </script>
 
-<svelte:head><title>{skuLabel(sku.display_label, sku.pebs)} — PandS</title></svelte:head>
+<svelte:head><title>{skuLabel(sku.display_label, sku.pebs)} - PandS</title></svelte:head>
 
 <div class="p-6 max-w-md">
 	<div class="flex items-center justify-between mb-6">

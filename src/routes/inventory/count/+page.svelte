@@ -49,7 +49,7 @@
 	}
 </script>
 
-<svelte:head><title>Record Count — PandS</title></svelte:head>
+<svelte:head><title>Record Count - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center gap-4">
 	<a href="/matrix" class="text-gray-400 hover:text-gray-600 text-sm">← Overview</a>
@@ -154,7 +154,7 @@
 			<div class="card">
 				<div class="card-header">
 					<span class="font-semibold text-sm text-gray-700"
-						>Enter physical counts — leave blank to skip</span
+						>Enter physical counts - leave blank to skip</span
 					>
 				</div>
 				<table class="w-full text-sm">

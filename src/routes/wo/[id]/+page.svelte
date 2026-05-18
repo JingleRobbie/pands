@@ -45,15 +45,15 @@
 	}
 </script>
 
-<svelte:head><title>WO {wo.so_number} — PandS</title></svelte:head>
+<svelte:head><title>WO {wo.so_number} - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<div class="flex items-center gap-4">
 		<a href={returnTo} class="text-gray-400 hover:text-gray-600 text-sm">{backLabel(returnTo, 'Work Orders')}</a>
 		<h1 class="text-lg font-semibold text-gray-900">
 			WO #{wo.so_number}{#if wo.customer_id}
-				— {wo.customer_display_name}{:else if wo.customer_name}
-				— <span class="text-amber-600 font-normal text-base italic">{wo.customer_name}</span
+				- {wo.customer_display_name}{:else if wo.customer_name}
+				- <span class="text-amber-600 font-normal text-base italic">{wo.customer_name}</span
 				>
 				<span class="text-amber-500 text-sm font-normal"> (not linked)</span>
 			{/if}
@@ -161,7 +161,7 @@
 						class="flex gap-2 items-center mt-1"
 					>
 						<select name="customer_id" class="form-select text-sm py-1">
-							<option value="">— link customer —</option>
+							<option value="">- link customer -</option>
 							{#each customers as c (c.id)}
 								<option value={c.id}>{c.name}</option>
 							{/each}
@@ -199,7 +199,7 @@
 				<p class="form-label">Customer PO</p>
 				<form method="POST" action="?/updateCustomerPo" use:enhance class="mt-1">
 					<div class="flex items-center gap-2">
-						<input name="customer_po" type="text" class="form-input text-sm py-1" value={wo.customer_po ?? ''} placeholder="—" />
+						<input name="customer_po" type="text" class="form-input text-sm py-1" value={wo.customer_po ?? ''} placeholder="-" />
 						<button type="submit" class="btn-secondary btn-sm">Save</button>
 					</div>
 				</form>
@@ -294,7 +294,7 @@
 						<td class="px-4 py-2 text-right text-gray-600 tabular-nums font-mono"
 							>{line.length_ft}'</td
 						>
-						<td class="px-4 py-2 text-gray-500">{line.rollfor || '—'}</td>
+						<td class="px-4 py-2 text-gray-500">{line.rollfor || '-'}</td>
 						<td class="px-4 py-2 text-gray-500">
 							{#if line.display_instructions}
 								<button
@@ -311,7 +311,7 @@
 									type="button"
 									class="text-gray-300 hover:text-blue-700 hover:underline"
 									onclick={() => requestInstructionEdit(line)}
-									disabled={!canEdit}>—</button
+									disabled={!canEdit}>-</button
 								>
 							{/if}
 						</td>
@@ -421,7 +421,7 @@
 					<div
 						class="min-h-16 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 whitespace-pre-wrap"
 					>
-						{pendingInstructionsLine.instructions || '—'}
+						{pendingInstructionsLine.instructions || '-'}
 					</div>
 				</div>
 				<form
@@ -533,8 +533,8 @@
 										{contact.role}
 									</p>{/if}
 							</td>
-							<td class="px-4 py-3 text-gray-600">{contact.phone ?? '—'}</td>
-							<td class="px-4 py-3 text-gray-600">{contact.email ?? '—'}</td>
+							<td class="px-4 py-3 text-gray-600">{contact.phone ?? '-'}</td>
+							<td class="px-4 py-3 text-gray-600">{contact.email ?? '-'}</td>
 							<td class="px-4 py-3 text-right">
 								<form method="POST" action="?/deleteContact" use:enhance>
 									<input type="hidden" name="id" value={contact.id} />

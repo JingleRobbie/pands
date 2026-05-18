@@ -189,7 +189,7 @@
 									)}</td
 								>
 								<td class="px-4 py-3 text-gray-600"
-									>{run.run_date ? fmtDate(run.run_date) : '—'}</td
+									>{run.run_date ? fmtDate(run.run_date) : '-'}</td
 								>
 							</tr>
 						{/each}
@@ -202,7 +202,7 @@
 			<div class="card">
 				<div class="card-header">
 					<span class="font-semibold text-sm text-gray-700"
-						>Cut-Ship — Completed Cut-Downs</span
+						>Cut-Ship - Completed Cut-Downs</span
 					>
 				</div>
 				<table class="min-w-full divide-y divide-gray-200 text-sm">
@@ -248,7 +248,7 @@
 									>{fmtSqft(cd.sqft_actual)}</td
 								>
 								<td class="px-4 py-3 text-gray-600"
-									>{cd.run_date ? fmtDate(cd.run_date) : '—'}</td
+									>{cd.run_date ? fmtDate(cd.run_date) : '-'}</td
 								>
 							</tr>
 						{/each}
@@ -261,7 +261,7 @@
 			<div class="card">
 				<div class="card-header">
 					<span class="font-semibold text-sm text-gray-700"
-						>Direct Ship — Unbranched Lines</span
+						>Direct Ship - Unbranched Lines</span
 					>
 				</div>
 				<table class="min-w-full divide-y divide-gray-200 text-sm">

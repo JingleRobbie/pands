@@ -25,7 +25,7 @@ export async function load({ params }) {
 		[cutDown.billing_line_id]
 	);
 
-	// Preview of WIP CUT_IN entries — prorates billing line sqft (usable output), not raw source
+	// Preview of WIP CUT_IN entries - prorates billing line sqft (usable output), not raw source
 	const usableOutputSqft = Number(billingLine.sqft);
 	const totalChildWidth = productionLines.reduce((s, l) => s + Number(l.width_in), 0);
 	let allocatedSqft = 0;

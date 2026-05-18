@@ -11,7 +11,7 @@
 	const returnTo = $derived(getReturnTo(page.url, '/shipments'));
 	const shipmentHref = $derived(withReturnTo(`/shipments/${shipment.id}`, returnTo));
 
-	// Current lines — track which are kept and their roll counts
+	// Current lines - track which are kept and their roll counts
 	let keepLines = new SvelteSet(untrack(() => shipment.lines.map((l) => l.id)));
 	let lineRolls = new SvelteMap(untrack(() => shipment.lines.map((l) => [l.id, l.rolls])));
 	function setLineRolls(id, val) {
@@ -84,7 +84,7 @@
 	);
 </script>
 
-<svelte:head><title>Edit {shipment.shipment_number} — PandS</title></svelte:head>
+<svelte:head><title>Edit {shipment.shipment_number} - PandS</title></svelte:head>
 
 <div class="p-6 max-w-5xl">
 	<div class="flex items-center gap-4 mb-6">
@@ -242,7 +242,7 @@
 									)}</td
 								>
 								<td class="px-4 py-3 text-gray-600"
-									>{line.run_date ? fmtDate(line.run_date) : '—'}</td
+									>{line.run_date ? fmtDate(line.run_date) : '-'}</td
 								>
 							</tr>
 						{/each}
@@ -342,7 +342,7 @@
 									)}</td
 								>
 								<td class="px-4 py-3 text-gray-600"
-									>{run.run_date ? fmtDate(run.run_date) : '—'}</td
+									>{run.run_date ? fmtDate(run.run_date) : '-'}</td
 								>
 							</tr>
 						{/each}

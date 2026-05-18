@@ -92,7 +92,7 @@
 	});
 </script>
 
-<svelte:head><title>Production Calendar — PandS</title></svelte:head>
+<svelte:head><title>Production Calendar - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Production Calendar</h1>

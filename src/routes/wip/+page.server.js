@@ -4,7 +4,7 @@ import { requireAdmin } from '$lib/auth.js';
 import { assignScrap } from '$lib/services/cutdown.js';
 
 export async function load() {
-	// WIP balances per cut-down with WO context — only show positive balance by default
+	// WIP balances per cut-down with WO context - only show positive balance by default
 	const [wipBalances] = await db.query(
 		`SELECT cd.id AS cut_down_id,
 		        wo.so_number, wo.job_name,

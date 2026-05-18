@@ -34,7 +34,7 @@
 	}
 </script>
 
-<svelte:head><title>PO {po.po_number} — PandS</title></svelte:head>
+<svelte:head><title>PO {po.po_number} - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<div>
@@ -136,7 +136,7 @@
 								>{fmtSqft(line.sqft_ordered)}</td
 							>
 							<td class="px-4 py-2 text-right font-mono text-gray-600">
-								{line.sqft_received ? fmtSqft(line.sqft_received) : '—'}
+								{line.sqft_received ? fmtSqft(line.sqft_received) : '-'}
 							</td>
 							<td class="px-4 py-2">
 								{#if line.status === 'RECEIVED'}

@@ -23,10 +23,10 @@
 	const linesForSelectedWo = $derived(selectedWoId ? (linesByWo[selectedWoId]?.lines ?? []) : []);
 </script>
 
-<svelte:head><title>WIP Ledger — PandS</title></svelte:head>
+<svelte:head><title>WIP Ledger - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4">
-	<h1 class="text-lg font-semibold text-gray-900">WIP Ledger — Available Scrap</h1>
+	<h1 class="text-lg font-semibold text-gray-900">WIP Ledger - Available Scrap</h1>
 </header>
 
 <main class="p-6 max-w-4xl space-y-4">
@@ -78,7 +78,7 @@
 								>{fmtSqft(wip.balance)}</td
 							>
 							<td class="px-4 py-2 text-gray-600"
-								>{wip.confirmed_at ? fmtDate(wip.confirmed_at) : '—'}</td
+								>{wip.confirmed_at ? fmtDate(wip.confirmed_at) : '-'}</td
 							>
 							<td class="px-4 py-2 text-right">
 								<button
@@ -128,10 +128,10 @@
 												bind:value={selectedWoId}
 												onchange={() => (selectedLineId = '')}
 											>
-												<option value="">— select WO —</option>
+												<option value="">- select WO -</option>
 												{#each woOptions as wo (wo.id)}
 													<option value={wo.id}
-														>{wo.soNumber} — {wo.jobName}</option
+														>{wo.soNumber} - {wo.jobName}</option
 													>
 												{/each}
 											</select>
@@ -148,10 +148,10 @@
 												bind:value={selectedLineId}
 												disabled={!selectedWoId}
 											>
-												<option value="">— select line —</option>
+												<option value="">- select line -</option>
 												{#each linesForSelectedWo as l (l.id)}
 													<option value={l.id}
-														>{l.width_in}" × {l.length_ft}' — {fmtSqft(
+														>{l.width_in}" × {l.length_ft}' - {fmtSqft(
 															l.sqft
 														)}</option
 													>
@@ -192,8 +192,8 @@
 												⚠ Width mismatch: scrap is {wip.width_in}",
 												destination requires {destLine.width_in}".
 												{Number(wip.width_in) > Number(destLine.width_in)
-													? `${Number(wip.width_in) - Number(destLine.width_in)}" overage — within tolerance, no additional cutting.`
-													: 'Scrap is too narrow — assignment will be blocked.'}
+													? `${Number(wip.width_in) - Number(destLine.width_in)}" overage - within tolerance, no additional cutting.`
+													: 'Scrap is too narrow - assignment will be blocked.'}
 											</p>
 										{/if}
 									{/if}

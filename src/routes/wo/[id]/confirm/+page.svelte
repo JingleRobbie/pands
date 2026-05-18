@@ -116,11 +116,11 @@
 	}
 </script>
 
-<svelte:head><title>Produce WO {wo.so_number} — PandS</title></svelte:head>
+<svelte:head><title>Produce WO {wo.so_number} - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<div>
-		<h1 class="text-lg font-semibold text-gray-900">Record Production — {wo.so_number}</h1>
+		<h1 class="text-lg font-semibold text-gray-900">Record Production - {wo.so_number}</h1>
 		<p class="text-sm text-gray-500 mt-0.5">{wo.customer_name} · {wo.job_name}</p>
 	</div>
 	<a href={returnTo} class="btn-secondary btn-sm">{backLabel(returnTo, 'Production')}</a>
@@ -165,7 +165,7 @@
 						<ul class="text-sm text-amber-700 list-disc list-inside">
 							{#each form.shortfalls as sf (sf.runNumber)}
 								<li>
-									<span class="font-mono">{sf.runNumber}</span> — {sf.rolls} roll{sf.rolls ===
+									<span class="font-mono">{sf.runNumber}</span> - {sf.rolls} roll{sf.rolls ===
 									1
 										? ''
 										: 's'}

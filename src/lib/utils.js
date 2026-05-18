@@ -5,7 +5,7 @@ export function localDate(d = new Date()) {
 
 /** Format a date string or Date object to "Apr 7, 2026" */
 export function fmtDate(d) {
-	if (!d) return '—';
+	if (!d) return '-';
 	const s = typeof d === 'string' ? d : d.toISOString();
 	return new Date(s.slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', {
 		month: 'short',
@@ -16,7 +16,7 @@ export function fmtDate(d) {
 
 /** Format a sqft integer with thousands separator */
 export function fmtSqft(n) {
-	if (n == null) return '—';
+	if (n == null) return '-';
 	return Number(n).toLocaleString();
 }
 

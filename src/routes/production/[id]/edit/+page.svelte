@@ -43,7 +43,7 @@
 	let rollsScheduled = $state(untrack(() => data.run.rolls_scheduled));
 </script>
 
-<svelte:head><title>Edit Run {run.run_number} — PandS</title></svelte:head>
+<svelte:head><title>Edit Run {run.run_number} - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Edit Run {run.run_number}</h1>
@@ -163,7 +163,7 @@
 									</td>
 									<td class="px-4 py-2">{skuLabel(peer.display_label, peer.pebs)}</td>
 									<td class="px-4 py-2 text-gray-500">
-										{peer.run_date ? fmtDate(peer.run_date) : '—'}
+										{peer.run_date ? fmtDate(peer.run_date) : '-'}
 									</td>
 									<td class="px-4 py-2 text-right">
 										<input

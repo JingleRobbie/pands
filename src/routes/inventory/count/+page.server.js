@@ -45,7 +45,7 @@ export const actions = {
 
 		if (preview.length === 0)
 			return fail(400, {
-				error: 'No changes detected — all entered counts match current balances or were left blank.',
+				error: 'No changes detected - all entered counts match current balances or were left blank.',
 			});
 
 		return { preview, memo, countDate };

@@ -67,7 +67,7 @@ For product safety information refer to the CertainTeed Corporation Safety Data 
 </script>
 
 <svelte:head>
-	<title>Labels — WO #{wo.so_number}</title>
+	<title>Labels - WO #{wo.so_number}</title>
 </svelte:head>
 
 <div class="no-print screen-toolbar">
@@ -168,7 +168,7 @@ For product safety information refer to the CertainTeed Corporation Safety Data 
 		border-color: #374151;
 	}
 
-	/* Sheet wrapper — gray desk on screen */
+	/* Sheet wrapper - gray desk on screen */
 	.label-sheet-wrapper {
 		background: #94a3b8;
 		padding: 2rem;
@@ -191,7 +191,7 @@ For product safety information refer to the CertainTeed Corporation Safety Data 
 		flex-direction: column;
 	}
 
-	/* Individual label — half a sheet */
+	/* Individual label - half a sheet */
 	.label {
 		width: 100%;
 		min-height: 5.5in;

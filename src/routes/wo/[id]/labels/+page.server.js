@@ -25,7 +25,7 @@ export async function load({ params }) {
 
 		 UNION ALL
 
-		 -- unbranched faced lines (STANDARD path — no cut_down)
+		 -- unbranched faced lines (STANDARD path - no cut_down)
 		 SELECT wol.id AS source_id, wol.qty AS rolls_scheduled,
 		        wol.thickness_in, wol.width_in AS raw_roll_width_in,
 		        wol.length_ft AS raw_roll_length_ft,

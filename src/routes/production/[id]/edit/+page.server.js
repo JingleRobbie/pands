@@ -90,7 +90,7 @@ export const actions = {
 
 			if (rollsScheduled > maxRolls)
 				return fail(400, {
-					error: `Cannot schedule ${rollsScheduled} rolls — only ${maxRolls} rolls available.`,
+					error: `Cannot schedule ${rollsScheduled} rolls - only ${maxRolls} rolls available.`,
 				});
 
 			const sqftScheduled = Math.round(
@@ -126,7 +126,7 @@ export const actions = {
 				if (!isNaN(peerRolls) && peerRolls >= 1) {
 					if (peerRolls > peerMax)
 						return fail(400, {
-							error: `Cannot schedule ${peerRolls} rolls for ${peer.run_number} — only ${peerMax} available.`,
+							error: `Cannot schedule ${peerRolls} rolls for ${peer.run_number} - only ${peerMax} available.`,
 						});
 					const peerSqft = Math.round(
 						peerRolls * (Number(peerWol.width_in) / 12) * Number(peerWol.length_ft)

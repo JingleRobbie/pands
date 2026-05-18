@@ -2,7 +2,7 @@
 	let { data, form } = $props();
 </script>
 
-<svelte:head><title>PandS — Sign in</title></svelte:head>
+<svelte:head><title>PandS - Sign in</title></svelte:head>
 
 <div class="min-h-screen bg-gray-100 flex items-center justify-center">
 	<div class="bg-white rounded-xl shadow-sm border border-gray-200 w-full max-w-sm p-8">
@@ -17,7 +17,7 @@
 			<div class="mb-4">
 				<label class="form-label" for="user_id">Name</label>
 				<select name="user_id" id="user_id" class="form-select" required>
-					<option value="">— choose —</option>
+					<option value="">- choose -</option>
 					{#each data.users as user (user.id)}
 						<option value={user.id}>{user.display_name}</option>
 					{/each}

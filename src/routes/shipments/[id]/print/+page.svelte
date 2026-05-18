@@ -31,7 +31,7 @@
 		</div>
 		<div>
 			<p style="font-size:9pt;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#555;margin-bottom:2px">Branch</p>
-			<p>{shipment.branch || '—'}</p>
+			<p>{shipment.branch || '-'}</p>
 		</div>
 	</div>
 
@@ -49,7 +49,7 @@
 			{#each shipment.lines as line (line.id)}
 				<tr style="border-bottom:1px solid #ddd">
 					<td style="padding:6px 12px;text-align:right;font-family:monospace">{line.rolls}</td>
-					<td style="padding:6px 12px">{line.rollfor ?? '—'}</td>
+					<td style="padding:6px 12px">{line.rollfor ?? '-'}</td>
 					<td style="padding:6px 12px">{skuLabel(line.display_label, line.pebs)}</td>
 					<td style="padding:6px 12px;text-align:right;font-family:monospace">{line.length_ft} ft</td>
 					<td style="padding:6px 12px;text-align:right;font-family:monospace">{fmtSqft(line.sqft)}</td>

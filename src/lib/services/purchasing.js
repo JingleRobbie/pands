@@ -34,7 +34,7 @@ export async function receivePoLines(poId, receipts, userId, receiptDate = null)
 		await conn.beginTransaction();
 
 		for (const { lineId, sqftReceived } of receipts) {
-			// Fetch sku_id from the DB — never trust the client for this
+			// Fetch sku_id from the DB - never trust the client for this
 			const [[line]] = await conn.query(
 				'SELECT sku_id FROM purchase_order_lines WHERE id = ? AND po_id = ? AND status = ?',
 				[lineId, poId, 'OPEN']

@@ -7,15 +7,15 @@ describe('fmtDate', () => {
 	});
 
 	it('returns em dash for null', () => {
-		expect(fmtDate(null)).toBe('—');
+		expect(fmtDate(null)).toBe('-');
 	});
 
 	it('returns em dash for empty string', () => {
-		expect(fmtDate('')).toBe('—');
+		expect(fmtDate('')).toBe('-');
 	});
 
 	it('returns em dash for undefined', () => {
-		expect(fmtDate(undefined)).toBe('—');
+		expect(fmtDate(undefined)).toBe('-');
 	});
 });
 
@@ -29,11 +29,11 @@ describe('fmtSqft', () => {
 	});
 
 	it('returns em dash for null', () => {
-		expect(fmtSqft(null)).toBe('—');
+		expect(fmtSqft(null)).toBe('-');
 	});
 
 	it('returns em dash for undefined', () => {
-		expect(fmtSqft(undefined)).toBe('—');
+		expect(fmtSqft(undefined)).toBe('-');
 	});
 
 	it('handles zero', () => {

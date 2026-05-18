@@ -43,7 +43,7 @@
 	});
 </script>
 
-<svelte:head><title>Import POs — PandS</title></svelte:head>
+<svelte:head><title>Import POs - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center gap-4">
 	<a href="/po" class="text-gray-400 hover:text-gray-600 text-sm">← Purchase Orders</a>

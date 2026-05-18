@@ -3,7 +3,7 @@
 	let { form } = $props();
 </script>
 
-<svelte:head><title>Add Raw Roll Entry — PandS</title></svelte:head>
+<svelte:head><title>Add Raw Roll Entry - PandS</title></svelte:head>
 
 <div class="p-6 max-w-md">
 	<div class="flex items-center justify-between mb-6">

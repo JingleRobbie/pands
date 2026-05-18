@@ -17,7 +17,7 @@ export const actions = {
 		const role = data.get('role');
 		const password = data.get('password');
 
-		// TODO(human): validate inputs — return fail(400, { createError: '...' }) if:
+		// TODO(human): validate inputs - return fail(400, { createError: '...' }) if:
 		// - display_name is empty
 		// - role is not 'admin' or 'operator'
 		// - password is empty

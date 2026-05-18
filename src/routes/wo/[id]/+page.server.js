@@ -354,7 +354,7 @@ export const actions = {
 		);
 		if (Number(stale) > 0)
 			return fail(400, {
-				completeError: 'Work order has stale billing lines — reconcile before completing.',
+				completeError: 'Work order has stale billing lines - reconcile before completing.',
 			});
 		if (Number(incomplete) > 0)
 			return fail(400, { completeError: 'Not all lines are fully produced.' });

@@ -1,6 +1,6 @@
 /**
  * Seed 10 days of historical PO receipts and confirmed production runs.
- * Safe to re-run — skips records that already exist.
+ * Safe to re-run - skips records that already exist.
  *
  * Usage: node scripts/seed-history.js
  */

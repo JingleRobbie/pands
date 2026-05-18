@@ -12,7 +12,7 @@
 </script>
 
 <svelte:head>
-	<title>Billing Summary {shipment.shipment_number} — PandS</title>
+	<title>Billing Summary {shipment.shipment_number} - PandS</title>
 </svelte:head>
 
 <div class="no-print page-header px-6 py-3 flex items-center justify-between">

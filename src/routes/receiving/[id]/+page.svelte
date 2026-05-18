@@ -33,7 +33,7 @@
 	}
 </script>
 
-<svelte:head><title>Receive PO {po.po_number} — PandS</title></svelte:head>
+<svelte:head><title>Receive PO {po.po_number} - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<div>

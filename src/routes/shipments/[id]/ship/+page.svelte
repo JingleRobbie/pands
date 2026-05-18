@@ -37,7 +37,7 @@
 	);
 </script>
 
-<svelte:head><title>Confirm {shipment.shipment_number} — PandS</title></svelte:head>
+<svelte:head><title>Confirm {shipment.shipment_number} - PandS</title></svelte:head>
 
 <div class="p-6 max-w-5xl">
 	<div class="flex items-center gap-4 mb-6">
@@ -149,7 +149,7 @@
 								)}</td
 							>
 							<td class="px-4 py-3 text-gray-600"
-								>{line.run_date ? fmtDate(line.run_date) : '—'}</td
+								>{line.run_date ? fmtDate(line.run_date) : '-'}</td
 							>
 						</tr>
 					{/each}

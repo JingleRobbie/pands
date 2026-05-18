@@ -33,7 +33,7 @@
 	}
 </script>
 
-<svelte:head><title>Production — PandS</title></svelte:head>
+<svelte:head><title>Production - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Production</h1>
@@ -97,7 +97,7 @@
 							onclick={() => goto(withReturnTo(`/wo/${wo.wo_id}/confirm`, returnTo))}
 						>
 							<td class="align-top {woDateClass(wo.urgency)}">
-								{wo.minDate ? fmtDate(wo.minDate) : '—'}
+								{wo.minDate ? fmtDate(wo.minDate) : '-'}
 							</td>
 							<td class="align-top text-gray-600">{wo.customer_name}</td>
 							<td class="align-top font-medium text-gray-900">{wo.job_name}</td>

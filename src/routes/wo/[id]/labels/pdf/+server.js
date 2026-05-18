@@ -84,9 +84,9 @@ function drawLabel(doc, labelTop, label, wo, rollNumber) {
 	const colW = w / 3;
 	const dimLabels = ['Thickness', 'Width', 'Length'];
 	const dimVals = [
-		label.thickness_in != null ? `${label.thickness_in}"` : '—',
-		label.raw_roll_width_in != null ? `${label.raw_roll_width_in}"` : '—',
-		label.raw_roll_length_ft != null ? `${label.raw_roll_length_ft}'` : '—',
+		label.thickness_in != null ? `${label.thickness_in}"` : '-',
+		label.raw_roll_width_in != null ? `${label.raw_roll_width_in}"` : '-',
+		label.raw_roll_length_ft != null ? `${label.raw_roll_length_ft}'` : '-',
 	];
 
 	for (let i = 0; i < 3; i++) {

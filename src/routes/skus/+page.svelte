@@ -7,7 +7,7 @@
 	const created = $derived($page.url.searchParams.get('created'));
 </script>
 
-<svelte:head><title>SKUs — PandS</title></svelte:head>
+<svelte:head><title>SKUs - PandS</title></svelte:head>
 
 <div class="p-6">
 	<div class="flex items-center justify-between mb-6">
@@ -45,7 +45,7 @@
 						<td class="font-mono text-gray-500">{sku.sku_code}</td>
 						<td class="text-gray-600">{sku.thickness_in}"</td>
 						<td class="text-gray-600">{sku.width_in}"</td>
-						<td class="text-gray-600">{sku.r_value ?? '—'}</td>
+						<td class="text-gray-600">{sku.r_value ?? '-'}</td>
 						<td>
 							{#if sku.is_active}
 								<span class="badge badge-green">Active</span>

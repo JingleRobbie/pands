@@ -23,7 +23,7 @@
 	);
 </script>
 
-<svelte:head><title>Dashboard — PandS</title></svelte:head>
+<svelte:head><title>Dashboard - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<div class="flex items-center gap-3">
@@ -119,7 +119,7 @@
 							<td class="font-mono text-gray-700">{run.run_number}</td>
 							<td class="text-gray-600">{run.so_number}</td>
 							<td class="font-medium text-gray-900">{run.job_name}</td>
-							<td class="text-gray-600">{run.customer_name ?? '—'}</td>
+							<td class="text-gray-600">{run.customer_name ?? '-'}</td>
 							<td class="text-amber-700 font-medium">{fmtDate(run.run_date)}</td>
 							<td>
 								<form method="POST" action="?/rescheduleRun" use:enhance class="flex items-center gap-1">
@@ -142,9 +142,9 @@
 								<td class="font-mono text-gray-700">{run.run_number}</td>
 								<td class="text-gray-600">{run.so_number}</td>
 								<td class="font-medium text-gray-900">{run.job_name}</td>
-								<td class="text-gray-600">{run.customer_name ?? '—'}</td>
+								<td class="text-gray-600">{run.customer_name ?? '-'}</td>
 								<td class="text-gray-400 italic text-xs">
-									{run.ship_date ? 'Ship ' + fmtDate(run.ship_date) : '—'}
+									{run.ship_date ? 'Ship ' + fmtDate(run.ship_date) : '-'}
 								</td>
 								<td>
 									<form method="POST" action="?/rescheduleRun" use:enhance class="flex items-center gap-1">
@@ -199,7 +199,7 @@
 						<tr class="dense-list-row-overdue">
 							<td class="text-gray-600">{cd.so_number}</td>
 							<td class="font-medium text-gray-900">{cd.job_name}</td>
-							<td class="text-gray-600">{cd.customer_name ?? '—'}</td>
+							<td class="text-gray-600">{cd.customer_name ?? '-'}</td>
 							<td class="text-amber-700 font-medium">{fmtDate(cd.run_date)}</td>
 							<td>
 								<form method="POST" action="?/rescheduleCutDown" use:enhance class="flex items-center gap-1">
@@ -221,9 +221,9 @@
 							<tr>
 								<td class="text-gray-600">{cd.so_number}</td>
 								<td class="font-medium text-gray-900">{cd.job_name}</td>
-								<td class="text-gray-600">{cd.customer_name ?? '—'}</td>
+								<td class="text-gray-600">{cd.customer_name ?? '-'}</td>
 								<td class="text-gray-400 italic text-xs">
-									{cd.ship_date ? 'Ship ' + fmtDate(cd.ship_date) : '—'}
+									{cd.ship_date ? 'Ship ' + fmtDate(cd.ship_date) : '-'}
 								</td>
 								<td>
 									<form method="POST" action="?/rescheduleCutDown" use:enhance class="flex items-center gap-1">

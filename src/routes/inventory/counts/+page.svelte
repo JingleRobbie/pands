@@ -5,7 +5,7 @@
 	const counts = $derived(data.counts);
 </script>
 
-<svelte:head><title>Inventory Counts — PandS</title></svelte:head>
+<svelte:head><title>Inventory Counts - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<div class="flex items-center gap-4">
@@ -40,7 +40,7 @@
 								>{fmtDate(count.count_date)}</td
 							>
 							<td class="px-4 py-3 text-gray-600">{count.created_by_name}</td>
-							<td class="px-4 py-3 text-gray-600">{count.memo || '—'}</td>
+							<td class="px-4 py-3 text-gray-600">{count.memo || '-'}</td>
 							<td class="px-4 py-3 text-right tabular-nums text-gray-600"
 								>{count.sku_count}</td
 							>

@@ -6,7 +6,7 @@
 	const created = $derived($page.url.searchParams.get('created'));
 </script>
 
-<svelte:head><title>Raw Roll Lookup — PandS</title></svelte:head>
+<svelte:head><title>Raw Roll Lookup - PandS</title></svelte:head>
 
 <div class="p-6">
 	<div class="flex items-center justify-between mb-6">
@@ -42,12 +42,12 @@
 					>
 						<td class="font-medium text-gray-900">{roll.thickness_in}"</td>
 						<td class="text-gray-600">{roll.width_in}"</td>
-						<td class="text-gray-600">{roll.r_value ?? '—'}</td>
+						<td class="text-gray-600">{roll.r_value ?? '-'}</td>
 						<td>
 							{#if roll.pebs}
 								<span class="badge badge-blue">PEBS</span>
 							{:else}
-								<span class="text-gray-400">—</span>
+								<span class="text-gray-400">-</span>
 							{/if}
 						</td>
 						<td class="text-gray-600">{roll.roll_length_ft} ft</td>

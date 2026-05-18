@@ -22,7 +22,7 @@
 	}
 </script>
 
-<svelte:head><title>Work Orders — PandS</title></svelte:head>
+<svelte:head><title>Work Orders - PandS</title></svelte:head>
 
 <header class="page-header px-6 py-4 flex items-center justify-between">
 	<h1 class="text-lg font-semibold text-gray-900">Work Orders</h1>
@@ -80,9 +80,9 @@
 								<span
 									class="pointer-events-none absolute right-0 top-5 z-20 hidden group-hover:block w-52 rounded bg-gray-800 p-2.5 text-left text-xs text-white shadow-lg leading-relaxed font-normal"
 								>
-									<span class="text-green-400 font-bold">N</span> / total —
+									<span class="text-green-400 font-bold">N</span> / total -
 									produced / total<br />
-									<span class="text-blue-400 font-bold">+N</span> — scheduled
+									<span class="text-blue-400 font-bold">+N</span> - scheduled
 								</span>
 							</span>
 						</th>
@@ -105,7 +105,7 @@
 							</td>
 							<td class="text-gray-500">{wo.branch}</td>
 							<td class="text-gray-600">
-								{#if wo.ship_asap}<span class="badge-red">ASAP</span>{:else}{fmtDate(wo.ship_date) || '—'}{/if}
+								{#if wo.ship_asap}<span class="badge-red">ASAP</span>{:else}{fmtDate(wo.ship_date) || '-'}{/if}
 							</td>
 							{#if data.status !== 'open'}
 								<td class="text-gray-600">{fmtDate(wo.completed_at)}</td>

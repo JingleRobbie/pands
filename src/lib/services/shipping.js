@@ -3,7 +3,7 @@ import { localDate } from '$lib/utils.js';
 import { inferPathType } from '$lib/services/line-paths.js';
 
 // NOTE: Duplicate of nextRunNumber() in runs.js.
-// Copy is intentional — do not import across service files.
+// Copy is intentional - do not import across service files.
 // Consolidate into $lib/services/shared.js if a third copy is ever needed.
 async function nextRunNumber(conn) {
 	const today = localDate().replace(/-/g, '');
@@ -96,7 +96,7 @@ async function reduceShipmentLine(conn, line, newRolls, userId) {
 }
 
 // sources: array of { type: 'PRODUCTION_RUN'|'CUT_DOWN'|'WO_LINE', id }
-// rollsMap: { [runId]: rollsToShip } — only applies to PRODUCTION_RUN sources
+// rollsMap: { [runId]: rollsToShip } - only applies to PRODUCTION_RUN sources
 export async function createShipment(woId, customerId, shipDate, sources, userId, rollsMap = {}) {
 	const conn = await db.getConnection();
 	try {
@@ -177,7 +177,7 @@ export async function createShipment(woId, customerId, shipDate, sources, userId
 		);
 		const shipmentId = result.insertId;
 
-		// PRODUCTION_RUN lines — existing splitRunForShipment logic
+		// PRODUCTION_RUN lines - existing splitRunForShipment logic
 		for (const run of runs) {
 			const rollsToShip = Number(rollsMap[run.id] ?? run.rolls_actual);
 			const shipped = await splitRunForShipment(conn, run, rollsToShip, userId);
@@ -195,7 +195,7 @@ export async function createShipment(woId, customerId, shipDate, sources, userId
 			);
 		}
 
-		// CUT_DOWN lines (CUT_SHIP path) — write WIP CUT_OUT, no rolls
+		// CUT_DOWN lines (CUT_SHIP path) - write WIP CUT_OUT, no rolls
 		for (const cd of cutDowns) {
 			await conn.query(
 				`INSERT INTO shipment_lines (shipment_id, cut_down_id, sku_id, rolls, sqft)
@@ -206,7 +206,7 @@ export async function createShipment(woId, customerId, shipDate, sources, userId
 			await conn.query(
 				`INSERT INTO wip_ledger
 				 (transaction_type, cut_down_id, wo_line_id, width_in, sqft_quantity, effective_date, memo, created_by)
-				 SELECT 'CUT_OUT', ?, wol.id, wol.width_in, ?, ?, 'CUT_SHIP — shipped', ?
+				 SELECT 'CUT_OUT', ?, wol.id, wol.width_in, ?, ?, 'CUT_SHIP - shipped', ?
 				 FROM work_order_lines wol WHERE wol.parent_line_id = ? LIMIT 1`,
 				[cd.id, -(cd.sqft_actual ?? 0), localDate(), userId ?? null, cd.billing_line_id]
 			);
@@ -218,7 +218,7 @@ export async function createShipment(woId, customerId, shipDate, sources, userId
 			);
 		}
 
-		// WO_LINE sources (DIRECT_SHIP path) — write inventory CONSUMPTION, no rolls
+		// WO_LINE sources (DIRECT_SHIP path) - write inventory CONSUMPTION, no rolls
 		for (const wol of woLines) {
 			await conn.query(
 				`INSERT INTO shipment_lines (shipment_id, wo_line_id, sku_id, rolls, sqft)
@@ -234,7 +234,7 @@ export async function createShipment(woId, customerId, shipDate, sources, userId
 					wol.sqft,
 					localDate(),
 					wol.id,
-					`Direct ship — WO line ${wol.id} — ${wo.so_number}`,
+					`Direct ship - WO line ${wol.id} - ${wo.so_number}`,
 					userId ?? null,
 				]
 			);
