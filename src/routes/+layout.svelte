@@ -16,6 +16,7 @@
 		{ href: '/po', label: 'Purchase Orders', icon: 'box' },
 		{ href: '/receiving', label: 'Receiving', icon: 'truck' },
 		{ href: '/wo', label: 'Work Orders', icon: 'clipboard' },
+		{ href: '/npo', label: 'Non-Production', icon: 'doc' },
 		{ href: '/production', label: 'Production', icon: 'check' },
 		{ href: '/customers', label: 'Customers', icon: 'users' },
 		{ href: '/shipments', label: 'Shipments', icon: 'ship' },

@@ -96,8 +96,17 @@ export const actions = {
 		const file = data.get('excel');
 		if (!file || file.size === 0) return fail(400, { error: 'No file selected.' });
 
-		const so_number = file.name.trim().split(/\s/)[0];
-		if (!so_number) return fail(400, { error: 'SO number not found in file name.' });
+		const isStockOrder = data.get('is_stock_order') === 'on';
+		const stockIdentifier = (data.get('stock_identifier') ?? '').trim();
+
+		let so_number;
+		if (isStockOrder) {
+			if (!stockIdentifier) return fail(400, { error: 'Stock identifier is required for stock orders.' });
+			so_number = stockIdentifier;
+		} else {
+			so_number = file.name.trim().split(/\s/)[0];
+			if (!so_number) return fail(400, { error: 'SO number not found in file name.' });
+		}
 
 		let parsed;
 		try {
@@ -166,6 +175,7 @@ export const actions = {
 
 		const wo = {
 			so_number,
+			is_stock_order: isStockOrder,
 			customer_po: header.customer_po || null,
 			customer_name: header.customer,
 			job_name: header.job_name,
@@ -245,7 +255,7 @@ export const actions = {
 						[wo.customer_name]
 					);
 					const [result] = await conn.query(
-						'INSERT INTO work_orders (so_number, customer_po, customer_name, job_name, branch, ship_date, ship_asap, customer_id, ship_addr1, ship_city, ship_state, ship_zip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+						'INSERT INTO work_orders (so_number, customer_po, customer_name, job_name, branch, ship_date, ship_asap, customer_id, ship_addr1, ship_city, ship_state, ship_zip, order_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 						[
 							wo.so_number,
 							wo.customer_po,
@@ -259,6 +269,7 @@ export const actions = {
 							wo.ship_city,
 							wo.ship_state,
 							wo.ship_zip,
+							wo.is_stock_order ? 'STOCK' : 'STANDARD',
 						]
 					);
 					const woId = result.insertId;

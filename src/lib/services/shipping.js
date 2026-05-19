@@ -343,6 +343,32 @@ export async function confirmShipment(shipmentId, lineRolls = {}, userId) {
 		}
 
 		await conn.query(`UPDATE shipments SET status = 'SHIPPED' WHERE id = ?`, [shipmentId]);
+
+		// Auto-complete NPOs when all lines have been shipped
+		const [[{ wo_id }]] = await conn.query(
+			'SELECT wo_id FROM shipments WHERE id = ?',
+			[shipmentId]
+		);
+		const [[{ order_type }]] = await conn.query(
+			'SELECT order_type FROM work_orders WHERE id = ?',
+			[wo_id]
+		);
+		if (order_type === 'NON_PRODUCTION') {
+			const [[{ unshipped }]] = await conn.query(
+				`SELECT COUNT(*) AS unshipped FROM work_order_lines wol
+				 WHERE wol.wo_id = ?
+				   AND NOT EXISTS (
+				     SELECT 1 FROM shipment_lines sl
+				     JOIN shipments s ON s.id = sl.shipment_id
+				     WHERE sl.wo_line_id = wol.id AND s.status = 'SHIPPED'
+				   )`,
+				[wo_id]
+			);
+			if (unshipped === 0) {
+				await conn.query("UPDATE work_orders SET status = 'COMPLETE' WHERE id = ?", [wo_id]);
+			}
+		}
+
 		await conn.commit();
 	} catch (err) {
 		await conn.rollback();

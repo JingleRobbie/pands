@@ -30,7 +30,8 @@ export const actions = {
 		if (invalidLines.length > 0) {
 			return fail(400, { error: 'All roll counts must be at least 1.' });
 		}
-		if (Object.keys(lineRolls).length === 0) {
+		const hasRollLines = data.get('has_roll_lines') === '1';
+		if (hasRollLines && Object.keys(lineRolls).length === 0) {
 			return fail(400, { error: 'No roll lines found.' });
 		}
 

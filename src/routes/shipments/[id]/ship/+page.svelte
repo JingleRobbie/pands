@@ -10,10 +10,14 @@
 	const returnTo = $derived(getReturnTo(page.url, '/shipments'));
 	const shipmentHref = $derived(withReturnTo(`/shipments/${shipment.id}`, returnTo));
 
-	let lineRolls = new SvelteMap(untrack(() => shipment.lines.map((l) => [l.id, l.rolls])));
+	const rollLines = $derived(shipment.lines.filter((l) => l.rolls != null));
+	const directLines = $derived(shipment.lines.filter((l) => l.rolls == null));
+	const hasRollLines = $derived(rollLines.length > 0);
+
+	let lineRolls = new SvelteMap(untrack(() => rollLines.map((l) => [l.id, l.rolls])));
 	let confirmDialog = $state(null);
 	const anyInvalid = $derived(
-		shipment.lines.some((l) => {
+		rollLines.some((l) => {
 			const val = lineRolls.get(l.id) ?? l.rolls;
 			return val < 1 || val > l.rolls;
 		})
@@ -27,13 +31,13 @@
 	}
 
 	const totalRolls = $derived(
-		shipment.lines.reduce((s, l) => s + (lineRolls.get(l.id) ?? l.rolls), 0)
+		rollLines.reduce((s, l) => s + (lineRolls.get(l.id) ?? l.rolls), 0)
 	);
 	const totalSqft = $derived(
-		shipment.lines.reduce((s, l) => {
+		rollLines.reduce((s, l) => {
 			const rolls = lineRolls.get(l.id) ?? l.rolls;
 			return s + Math.round((rolls / l.rolls) * l.sqft);
-		}, 0)
+		}, 0) + directLines.reduce((s, l) => s + l.sqft, 0)
 	);
 </script>
 
@@ -58,6 +62,7 @@
 		class="space-y-6"
 	>
 		<input type="hidden" name="return_to" value={returnTo} />
+		<input type="hidden" name="has_roll_lines" value={hasRollLines ? '1' : '0'} />
 		{#if form?.error}
 			<p class="text-red-600 text-sm">{form.error}</p>
 		{/if}
@@ -107,7 +112,7 @@
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-100 bg-white">
-					{#each shipment.lines as line (line.id)}
+					{#each rollLines as line (line.id)}
 						<tr class="bg-blue-50">
 							<td class="px-4 py-3 text-gray-600">{line.rollfor ?? ''}</td>
 							<td class="px-4 py-3 text-gray-600">{line.facing ?? ''}</td>
@@ -151,6 +156,18 @@
 							<td class="px-4 py-3 text-gray-600"
 								>{line.run_date ? fmtDate(line.run_date) : '-'}</td
 							>
+						</tr>
+					{/each}
+					{#each directLines as line (line.id)}
+						<tr class="bg-green-50">
+							<td class="px-4 py-3 text-gray-500 text-xs italic" colspan="2">Direct ship</td>
+							<td class="px-4 py-3 text-right text-gray-400 text-xs">-</td>
+							<td class="px-4 py-3 text-right tabular-nums text-gray-600">{line.thickness_in ?? ''}"</td>
+							<td class="px-4 py-3 text-right tabular-nums text-gray-600">{line.width_in ?? ''}"</td>
+							<td class="px-4 py-3 text-right tabular-nums text-gray-600">{line.length_ft ?? ''} ft</td>
+							<td class="px-4 py-3 text-right tabular-nums font-mono text-gray-600">-</td>
+							<td class="px-4 py-3 text-right tabular-nums font-mono text-gray-600">{fmtSqft(line.sqft)}</td>
+							<td class="px-4 py-3 text-gray-400">-</td>
 						</tr>
 					{/each}
 				</tbody>

@@ -3,6 +3,7 @@
 	import { fmtDate, fmtSqft, skuLabel } from '$lib/utils.js';
 	let { data, form } = $props();
 	const user = $derived(data.user);
+	let isStockOrder = $state(false);
 
 	const STATUS = {
 		new: { label: 'New', badge: 'badge-green', defaultAccepted: true },
@@ -50,6 +51,7 @@
 						<div class="card-header flex items-center justify-between">
 							<div class="flex items-center gap-3">
 								<span class="font-semibold text-sm text-gray-900">SO #{wo.so_number}</span>
+								{#if wo.is_stock_order}<span class="badge-blue">STOCK</span>{/if}
 								{#if wo.customer_po}<span class="text-sm text-gray-500">PO #{wo.customer_po}</span>{/if}
 								<span class="badge {s.badge}">{s.label}</span>
 							</div>
@@ -256,6 +258,30 @@
 								class="block w-full text-sm text-gray-600 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
 							/>
 						</div>
+						<div class="flex items-center gap-2">
+							<input
+								id="is_stock_order"
+								name="is_stock_order"
+								type="checkbox"
+								bind:checked={isStockOrder}
+								class="h-4 w-4 rounded border-gray-300 text-blue-600"
+							/>
+							<label for="is_stock_order" class="text-sm text-gray-700">Stock Order (internal inventory build)</label>
+						</div>
+						{#if isStockOrder}
+							<div>
+								<label for="stock_identifier" class="form-label">Stock Identifier</label>
+								<input
+									id="stock_identifier"
+									name="stock_identifier"
+									type="text"
+									placeholder="e.g. TULSA STOCK 05-18-26"
+									required={isStockOrder}
+									class="form-input"
+								/>
+								<p class="mt-1 text-xs text-gray-400">Used as the SO# - must be unique.</p>
+							</div>
+						{/if}
 						<p class="text-xs text-gray-400">
 							Upload the Excel workbook from PandS. Must contain a "Work Order" sheet.
 						</p>

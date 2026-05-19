@@ -36,7 +36,7 @@ export async function load({ locals, url }) {
 	}
 
 	const [wos] = await db.query(
-		`SELECT wo.id, wo.so_number, wo.customer_name, wo.job_name, wo.branch, wo.ship_date, wo.ship_asap, wo.status,
+		`SELECT wo.id, wo.so_number, wo.customer_name, wo.job_name, wo.branch, wo.ship_date, wo.ship_asap, wo.status, wo.order_type,
 		        activity.completed_at,
 		        COUNT(wol.id) AS line_count,
 		        COALESCE(SUM(wol.sqft), 0) AS total_sqft,
@@ -66,7 +66,7 @@ export async function load({ locals, url }) {
 		   WHERE pr.status = 'COMPLETED'
 		   GROUP BY wol2.wo_id
 		 ) activity ON activity.wo_id = wo.id
-		 ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+		 ${where.length ? `WHERE ${where.join(' AND ')} AND wo.order_type != 'NON_PRODUCTION'` : "WHERE wo.order_type != 'NON_PRODUCTION'"}
 		 GROUP BY wo.id
 		 ORDER BY COALESCE(activity.completed_at, wo.ship_date) DESC, wo.created_at DESC`,
 		params

@@ -95,7 +95,10 @@
 							class="cursor-pointer"
 							onclick={() => goto(withReturnTo(`/wo/${wo.id}`, returnTo))}
 						>
-							<td class="font-medium text-gray-900">{wo.so_number}</td>
+							<td class="font-medium text-gray-900">
+								{wo.so_number}
+								{#if wo.order_type === 'STOCK'}<span class="badge-blue ml-1 text-xs">STOCK</span>{/if}
+							</td>
 							<td class="text-gray-700">{wo.customer_name}</td>
 							<td class="text-gray-700">
 								{wo.job_name}
